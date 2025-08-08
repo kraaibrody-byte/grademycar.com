@@ -549,7 +549,7 @@
                 <li><a href="#analysis">Sample Analysis</a></li>
             </ul>
             <div class="nav-actions">
-                <a href="#" class="btn btn-primary">
+                <a href="https://chromewebstore.google.com/detail/foolhnigdopgfnmglidodoiopkhconcn?utm_source=item-share-cb" target="_blank" class="btn btn-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
@@ -569,7 +569,7 @@
                 </h1>
                 <p>GradeMyCar is a free Chrome extension that analyzes vehicle listings, giving you expert-level reliability grades and pricing insights in seconds.</p>
                 <div class="hero-actions">
-                    <a href="#" class="btn btn-primary btn-hero">
+                    <a href="https://chromewebstore.google.com/detail/foolhnigdopgfnmglidodoiopkhconcn?utm_source=item-share-cb" target="_blank" class="btn btn-primary btn-hero">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
@@ -748,7 +748,7 @@
             <h2>Ready to Make Smarter Decisions?</h2>
             <p>Install the free GradeMyCar extension today and get instant insights on your next vehicle purchase.</p>
             <div class="hero-actions">
-                <a href="#" class="btn btn-white btn-hero">
+                <a href="https://chromewebstore.google.com/detail/foolhnigdopgfnmglidodoiopkhconcn?utm_source=item-share-cb" target="_blank" class="btn btn-white btn-hero">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                     </svg>
@@ -830,6 +830,10 @@
 
         // Add click handlers for CTA buttons
         document.querySelectorAll('.btn-primary').forEach(button => {
+            if (button.href && button.href.includes('chromewebstore')) {
+                // Let Chrome Web Store buttons work normally
+                return;
+            }
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 alert('This would normally redirect to the Chrome Web Store!');
