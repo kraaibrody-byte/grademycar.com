@@ -1036,9 +1036,10 @@
                 </div>
                 
                 <div class="login-actions">
-                    <button type="submit" class="btn-login">Sign In</button>
+                    <button type="submit" class="btn-login" id="login-submit-btn">Sign In</button>
+                    <button type="button" class="btn-login" id="signup-submit-btn" style="background: linear-gradient(135deg, #10b981, #059669); display: none;">Create Account</button>
                     <div class="signup-link">
-                        Don't have an account? <a href="#" id="signup-link">Sign up for free</a>
+                        <span id="auth-toggle-text">Don't have an account?</span> <a href="#" id="signup-link">Sign up for free</a>
                     </div>
                 </div>
             </form>
@@ -1161,6 +1162,7 @@
 
         // Current user state
         let currentUser = null;
+        let isSignupMode = false;
 
         // Wait for DOM to load
         document.addEventListener('DOMContentLoaded', function() {
@@ -1178,6 +1180,32 @@
             const userDashboard = document.getElementById('user-dashboard');
             const logoutBtn = document.getElementById('logout-btn');
             const signupLink = document.getElementById('signup-link');
+            const loginSubmitBtn = document.getElementById('login-submit-btn');
+            const signupSubmitBtn = document.getElementById('signup-submit-btn');
+            const authToggleText = document.getElementById('auth-toggle-text');
+
+            // Toggle between login and signup modes
+            function toggleAuthMode() {
+                isSignupMode = !isSignupMode;
+                
+                if (isSignupMode) {
+                    // Switch to signup mode
+                    document.querySelector('.login-header h2').textContent = 'Create Account';
+                    document.querySelector('.login-header p').textContent = 'Sign up to start tracking your vehicle searches';
+                    loginSubmitBtn.style.display = 'none';
+                    signupSubmitBtn.style.display = 'block';
+                    authToggleText.textContent = 'Already have an account?';
+                    signupLink.textContent = 'Sign in here';
+                } else {
+                    // Switch to login mode
+                    document.querySelector('.login-header h2').textContent = 'Welcome Back';
+                    document.querySelector('.login-header p').textContent = 'Sign in to access your vehicle analysis dashboard';
+                    loginSubmitBtn.style.display = 'block';
+                    signupSubmitBtn.style.display = 'none';
+                    authToggleText.textContent = "Don't have an account?";
+                    signupLink.textContent = 'Sign up for free';
+                }
+            }
 
             // Show login modal or dashboard
             if (loginBtn) {
@@ -1187,7 +1215,9 @@
                         // If logged in, show dashboard
                         showDashboard();
                     } else {
-                        // Show login modal
+                        // Reset to login mode and show modal
+                        isSignupMode = false;
+                        toggleAuthMode();
                         loginModal.style.display = 'flex';
                     }
                 });
@@ -1197,6 +1227,9 @@
             if (loginCloseBtn) {
                 loginCloseBtn.addEventListener('click', () => {
                     loginModal.style.display = 'none';
+                    // Reset form
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
                 });
             }
 
@@ -1205,22 +1238,37 @@
                 loginModal.addEventListener('click', (e) => {
                     if (e.target === loginModal) {
                         loginModal.style.display = 'none';
+                        // Reset form
+                        document.getElementById('email').value = '';
+                        document.getElementById('password').value = '';
                     }
                 });
             }
 
+            // Toggle between login and signup
+            if (signupLink) {
+                signupLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleAuthMode();
+                });
+            }
+
             // Handle login form submission
-            if (loginForm) {
-                loginForm.addEventListener('submit', async (e) => {
+            if (loginSubmitBtn) {
+                loginSubmitBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     
                     const email = document.getElementById('email').value;
                     const password = document.getElementById('password').value;
-                    const submitBtn = loginForm.querySelector('.btn-login');
+                    
+                    if (!email || !password) {
+                        alert('Please enter both email and password.');
+                        return;
+                    }
                     
                     // Show loading state
-                    submitBtn.textContent = 'Signing In...';
-                    submitBtn.disabled = true;
+                    loginSubmitBtn.textContent = 'Signing In...';
+                    loginSubmitBtn.disabled = true;
                     
                     try {
                         // Firebase sign in
@@ -1261,8 +1309,76 @@
                     }
                     
                     // Reset button
-                    submitBtn.textContent = 'Sign In';
-                    submitBtn.disabled = false;
+                    loginSubmitBtn.textContent = 'Sign In';
+                    loginSubmitBtn.disabled = false;
+                });
+            }
+
+            // Handle signup form submission
+            if (signupSubmitBtn) {
+                signupSubmitBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if (!email || !password) {
+                        alert('Please enter an email and password to sign up.');
+                        return;
+                    }
+                    
+                    if (password.length < 6) {
+                        alert('Password must be at least 6 characters long.');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    signupSubmitBtn.textContent = 'Creating Account...';
+                    signupSubmitBtn.disabled = true;
+                    
+                    try {
+                        // Create new user account
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        
+                        // Create user profile in Firestore
+                        await setDoc(doc(db, 'users', userCredential.user.uid), {
+                            email: email,
+                            createdAt: serverTimestamp(),
+                            totalSearches: 0,
+                            averageGrade: 'N/A',
+                            moneySaved: 0
+                        });
+                        
+                        alert('Account created successfully! You are now logged in.');
+                        loginModal.style.display = 'none';
+                        
+                        // Clear form
+                        document.getElementById('email').value = '';
+                        document.getElementById('password').value = '';
+                        
+                    } catch (error) {
+                        console.error('Signup error:', error);
+                        
+                        let errorMessage = 'Signup failed. Please try again.';
+                        
+                        switch (error.code) {
+                            case 'auth/email-already-in-use':
+                                errorMessage = 'An account with this email already exists. Please log in instead.';
+                                break;
+                            case 'auth/invalid-email':
+                                errorMessage = 'Please enter a valid email address.';
+                                break;
+                            case 'auth/weak-password':
+                                errorMessage = 'Password is too weak. Please use at least 6 characters.';
+                                break;
+                        }
+                        
+                        alert(errorMessage);
+                    }
+                    
+                    // Reset button
+                    signupSubmitBtn.textContent = 'Create Account';
+                    signupSubmitBtn.disabled = false;
                 });
             }
 
@@ -1354,7 +1470,8 @@
             const userDashboard = document.getElementById('user-dashboard');
             
             if (user) {
-                // User is logged in
+                // User is successfully logged in
+                console.log('User authenticated:', user.email);
                 loginBtn.textContent = 'Dashboard';
                 loginBtn.classList.remove('btn-secondary');
                 loginBtn.classList.add('btn-primary');
@@ -1364,6 +1481,7 @@
                 
             } else {
                 // User is logged out
+                console.log('User not authenticated');
                 loginBtn.textContent = 'Log In';
                 loginBtn.classList.remove('btn-primary');
                 loginBtn.classList.add('btn-secondary');
