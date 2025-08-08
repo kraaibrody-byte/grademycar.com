@@ -1,4 +1,4 @@
-/* Responsive */<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -504,8 +504,6 @@
             color: #94a3b8;
         }
 
-
-
         /* Login Modal */
         #login-modal {
             position: fixed;
@@ -742,6 +740,8 @@
         .upgrade-card h3 {
             color: white;
         }
+
+        /* Responsive */
         @media (max-width: 768px) {
             .main-hero .container {
                 grid-template-columns: 1fr;
@@ -937,10 +937,6 @@
                             <div class="grade-value grade-b">B</div>
                         </div>
                         <div class="grade-item">
-                            <div class="grade-item-label">Transmission</div>
-                            <div class="grade-value grade-c">C</div>
-                        </div>
-                        <div class="grade-item">
                             <div class="grade-item-label">Overall</div>
                             <div class="grade-value grade-c">C-</div>
                         </div>
@@ -1133,8 +1129,6 @@
         </div>
     </div>
 
-
-
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -1207,7 +1201,7 @@
                 }
             }
 
-            // Show login modal or dashboard
+            // Show login modal or dashboard - THIS IS THE KEY FIX
             if (loginBtn) {
                 loginBtn.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -1250,19 +1244,6 @@
                 signupLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     toggleAuthMode();
-                });
-            }
-
-            // Handle logout
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', async () => {
-                    try {
-                        await signOut(auth);
-                        // Firebase will trigger onAuthStateChanged
-                    } catch (error) {
-                        console.error('Logout error:', error);
-                        alert('Logout failed. Please try again.');
-                    }
                 });
             }
 
@@ -1407,7 +1388,6 @@
                     }
                 });
             }
-
         });
 
         // Update UI based on authentication state
@@ -1447,6 +1427,22 @@
 
         // Update dashboard with real user data
         async function updateDashboardData(user) {
+            console.log('Updating dashboard for user:', user.email);
+            
+            // Update welcome message immediately
+            const welcomeElement = document.getElementById('welcome-message');
+            const avatarElement = document.getElementById('user-avatar');
+            
+            if (welcomeElement) {
+                const name = user.email.split('@')[0];
+                welcomeElement.textContent = `Welcome back, ${name}!`;
+            }
+            
+            if (avatarElement) {
+                const initials = user.email.substring(0, 2).toUpperCase();
+                avatarElement.textContent = initials;
+            }
+            
             try {
                 // Get user profile from Firestore
                 const userDocRef = doc(db, 'users', user.uid);
@@ -1455,29 +1451,11 @@
                 if (userDoc.exists()) {
                     const userData = userDoc.data();
                     
-                    // Update welcome message
-                    const welcomeText = document.querySelector('.user-menu span');
-                    if (welcomeText) {
-                        const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
-                        welcomeText.textContent = `Welcome back, ${firstName}!`;
-                    }
+                    // Update stats with real data
+                    document.getElementById('stat-searches').textContent = userData.totalSearches || 0;
+                    document.getElementById('stat-grade').textContent = userData.averageGrade || 'N/A';
+                    document.getElementById('stat-money').textContent = `${userData.moneySaved || 0}`;
                     
-                    // Update avatar
-                    const userAvatar = document.querySelector('.user-avatar');
-                    if (userAvatar) {
-                        const initials = user.displayName 
-                            ? user.displayName.split(' ').map(n => n[0]).join('').toUpperCase()
-                            : user.email.substring(0, 2).toUpperCase();
-                        userAvatar.textContent = initials;
-                    }
-                    
-                    // Update stats
-                    const statsNumbers = document.querySelectorAll('.stat-number');
-                    if (statsNumbers.length >= 3) {
-                        statsNumbers[0].textContent = userData.totalSearches || 0;
-                        statsNumbers[1].textContent = userData.averageGrade || 'N/A';
-                        statsNumbers[2].textContent = `${userData.moneySaved || 0}`;
-                    }
                 } else {
                     // Create user document if it doesn't exist
                     await setDoc(userDocRef, {
@@ -1526,7 +1504,6 @@
         window.getCurrentUser = () => currentUser;
         window.getFirebaseAuth = () => auth;
         window.getFirestore = () => db;
-        
     </script>
 
     <!-- Regular JavaScript (non-module) -->
@@ -1543,71 +1520,6 @@
                     });
                 }
             });
-        });
-
-        // Login functionality
-        const loginBtn = document.getElementById('login-btn');
-        const loginModal = document.getElementById('login-modal');
-        const loginCloseBtn = document.getElementById('login-close-btn');
-        const loginForm = document.getElementById('login-form');
-        const userDashboard = document.getElementById('user-dashboard');
-        const logoutBtn = document.getElementById('logout-btn');
-        const signupLink = document.getElementById('signup-link');
-
-        // Show login modal
-        loginBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginModal.style.display = 'flex';
-        });
-
-        // Close login modal
-        loginCloseBtn.addEventListener('click', () => {
-            loginModal.style.display = 'none';
-        });
-
-        // Close modal on background click
-        loginModal.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                loginModal.style.display = 'none';
-            }
-        });
-
-        // Handle login form submission
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            // Simulate login process
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            if (email && password) {
-                // Hide login modal
-                loginModal.style.display = 'none';
-                
-                // Show dashboard
-                userDashboard.style.display = 'block';
-                
-                // Update header to show user is logged in
-                loginBtn.textContent = 'Dashboard';
-                loginBtn.onclick = (e) => {
-                    e.preventDefault();
-                    userDashboard.style.display = 'block';
-                };
-            }
-        });
-
-        // Handle logout
-        logoutBtn.addEventListener('click', () => {
-            userDashboard.style.display = 'none';
-            loginBtn.textContent = 'Log In';
-            loginBtn.onclick = (e) => {
-                e.preventDefault();
-                loginModal.style.display = 'flex';
-            };
-            
-            // Clear form
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
         });
 
         // Add scroll effect to header
@@ -1647,6 +1559,10 @@
         document.querySelectorAll('.btn-primary').forEach(button => {
             if (button.href && button.href.includes('chromewebstore')) {
                 // Let Chrome Web Store buttons work normally
+                return;
+            }
+            if (button.id === 'login-btn') {
+                // Skip login button as it has its own handler in Firebase module
                 return;
             }
             button.addEventListener('click', (e) => {
