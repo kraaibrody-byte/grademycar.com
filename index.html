@@ -1,4 +1,4 @@
-/* Responsive */<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1054,8 +1054,8 @@
                 GradeMyCar Dashboard
             </div>
             <div class="user-menu">
-                <span style="color: #64748b; margin-right: 1rem;">Welcome back, John!</span>
-                <div class="user-avatar">JD</div>
+                <span style="color: #64748b; margin-right: 1rem;" id="welcome-message">Welcome!</span>
+                <div class="user-avatar" id="user-avatar">??</div>
                 <button class="btn btn-secondary" id="logout-btn">Logout</button>
             </div>
         </div>
@@ -1064,19 +1064,19 @@
             <div class="dashboard-grid">
                 <div class="dashboard-card">
                     <h3>Vehicles Analyzed</h3>
-                    <div class="stat-number">47</div>
+                    <div class="stat-number" id="stat-searches">0</div>
                     <p style="color: #64748b; font-size: 0.9rem;">Total searches this month</p>
                 </div>
                 
                 <div class="dashboard-card">
                     <h3>Average Grade</h3>
-                    <div class="stat-number">B+</div>
+                    <div class="stat-number" id="stat-grade">N/A</div>
                     <p style="color: #64748b; font-size: 0.9rem;">Across all your searches</p>
                 </div>
                 
                 <div class="dashboard-card">
                     <h3>Money Saved</h3>
-                    <div class="stat-number">$3,240</div>
+                    <div class="stat-number" id="stat-money">$0</div>
                     <p style="color: #64748b; font-size: 0.9rem;">From avoiding bad deals</p>
                 </div>
                 
@@ -1253,6 +1253,19 @@
                 });
             }
 
+            // Handle logout
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    try {
+                        await signOut(auth);
+                        // Firebase will trigger onAuthStateChanged
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                        alert('Logout failed. Please try again.');
+                    }
+                });
+            }
+
             // Handle login form submission
             if (loginSubmitBtn) {
                 loginSubmitBtn.addEventListener('click', async (e) => {
@@ -1395,73 +1408,6 @@
                 });
             }
 
-            // Handle signup link
-            if (signupLink) {
-                signupLink.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    
-                    const email = document.getElementById('email').value;
-                    const password = document.getElementById('password').value;
-                    
-                    if (!email || !password) {
-                        alert('Please enter an email and password to sign up.');
-                        return;
-                    }
-                    
-                    if (password.length < 6) {
-                        alert('Password must be at least 6 characters long.');
-                        return;
-                    }
-                    
-                    const submitBtn = loginForm.querySelector('.btn-login');
-                    submitBtn.textContent = 'Creating Account...';
-                    submitBtn.disabled = true;
-                    
-                    try {
-                        // Create new user account
-                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                        
-                        // Create user profile in Firestore
-                        await setDoc(doc(db, 'users', userCredential.user.uid), {
-                            email: email,
-                            createdAt: serverTimestamp(),
-                            totalSearches: 0,
-                            averageGrade: 'N/A',
-                            moneySaved: 0
-                        });
-                        
-                        alert('Account created successfully! You are now logged in.');
-                        loginModal.style.display = 'none';
-                        
-                        // Clear form
-                        document.getElementById('email').value = '';
-                        document.getElementById('password').value = '';
-                        
-                    } catch (error) {
-                        console.error('Signup error:', error);
-                        
-                        let errorMessage = 'Signup failed. Please try again.';
-                        
-                        switch (error.code) {
-                            case 'auth/email-already-in-use':
-                                errorMessage = 'An account with this email already exists. Please log in instead.';
-                                break;
-                            case 'auth/invalid-email':
-                                errorMessage = 'Please enter a valid email address.';
-                                break;
-                            case 'auth/weak-password':
-                                errorMessage = 'Password is too weak. Please use at least 6 characters.';
-                                break;
-                        }
-                        
-                        alert(errorMessage);
-                    }
-                    
-                    // Reset button
-                    submitBtn.textContent = 'Sign In';
-                    submitBtn.disabled = false;
-                });
-            }
         });
 
         // Update UI based on authentication state
