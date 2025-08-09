@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+UPDATE<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -115,28 +115,37 @@
             background: #f1f5f9;
         }
 
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4rem 0;
-            text-align: center;
+        /* Main Hero Section */
+        .main-hero {
+            padding: 6rem 0;
+            background: #fafbfc;
         }
 
-        .hero h1 {
-            font-size: 3rem;
+        .main-hero .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .main-hero h1 {
+            font-size: 4rem;
             font-weight: 800;
-            margin-bottom: 1rem;
             line-height: 1.1;
+            margin-bottom: 1.5rem;
         }
 
-        .hero p {
+        .main-hero .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-transparent: true;
+            background-clip: text;
+        }
+
+        .main-hero p {
             font-size: 1.25rem;
+            color: #64748b;
             margin-bottom: 2rem;
-            opacity: 0.9;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
         }
 
         .hero-actions {
@@ -169,66 +178,6 @@
 
         .btn-outline:hover {
             background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Grade Examples */
-        .grade-examples {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .grade-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1rem;
-            border-radius: 12px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .grade {
-            font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-        }
-
-        .grade-label {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        /* Main Hero Section */
-        .main-hero {
-            padding: 6rem 0;
-            background: #fafbfc;
-        }
-
-        .main-hero .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-
-        .main-hero h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-
-        .main-hero .gradient-text {
-            background: linear-gradient(135deg, #3b82f6, #f59e0b);
-            -webkit-background-clip: text;
-            -webkit-text-transparent: true;
-            background-clip: text;
-        }
-
-        .main-hero p {
-            font-size: 1.25rem;
-            color: #64748b;
-            margin-bottom: 2rem;
         }
 
         .car-image {
@@ -520,6 +469,16 @@
             animation: fadeIn 0.3s ease;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         .login-modal-content {
             background: white;
             border-radius: 20px;
@@ -603,6 +562,12 @@
             box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
         }
 
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .signup-link {
             text-align: center;
             color: #64748b;
@@ -617,6 +582,29 @@
 
         .signup-link a:hover {
             text-decoration: underline;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border: 1px solid #fecaca;
+            display: none;
+        }
+
+        .success-message {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            border: 1px solid #bbf7d0;
+            display: none;
         }
 
         /* User Dashboard */
@@ -752,17 +740,9 @@
                 font-size: 2.5rem;
             }
 
-            .hero h1 {
-                font-size: 2rem;
-            }
-
             .hero-actions {
                 flex-direction: column;
                 align-items: center;
-            }
-
-            .grade-examples {
-                flex-wrap: wrap;
             }
 
             .nav-links {
@@ -942,7 +922,7 @@
                         </div>
                         <div class="grade-item">
                             <div class="grade-item-label">Overall</div>
-                            <div class="grade-value grade-c">C-</div>
+                            <div class="grade-value grade-b">B-</div>
                         </div>
                     </div>
                 </div>
@@ -1024,6 +1004,10 @@
                 <p>Sign in to access your vehicle analysis dashboard</p>
             </div>
             
+            <!-- Error/Success Messages -->
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+            
             <form class="login-form" id="login-form">
                 <div class="form-group">
                     <label for="email">Email</label>
@@ -1036,7 +1020,7 @@
                 </div>
                 
                 <div class="login-actions">
-                    <button type="submit" class="btn-login" id="login-submit-btn">Sign In</button>
+                    <button type="button" class="btn-login" id="login-submit-btn">Sign In</button>
                     <button type="button" class="btn-login" id="signup-submit-btn" style="background: linear-gradient(135deg, #10b981, #059669); display: none;">Create Account</button>
                     <div class="signup-link">
                         <span id="auth-toggle-text">Don't have an account?</span> <a href="#" id="signup-link">Sign up for free</a>
@@ -1162,6 +1146,40 @@
         let currentUser = null;
         let isSignupMode = false;
 
+        // Utility functions for messages
+        function showErrorMessage(message) {
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            successDiv.style.display = 'none';
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccessMessage(message) {
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            errorDiv.style.display = 'none';
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        function hideMessages() {
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+        }
+
         // Wait for DOM to load
         document.addEventListener('DOMContentLoaded', function() {
             // Firebase auth state listener
@@ -1184,6 +1202,7 @@
 
             // Toggle between login and signup modes
             function toggleAuthMode() {
+                hideMessages(); // Clear any existing messages
                 isSignupMode = !isSignupMode;
                 
                 if (isSignupMode) {
@@ -1205,7 +1224,7 @@
                 }
             }
 
-            // Show login modal or dashboard - THIS IS THE KEY FIX
+            // Show login modal or dashboard
             if (loginBtn) {
                 loginBtn.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -1216,6 +1235,7 @@
                         // Reset to login mode and show modal
                         isSignupMode = false;
                         toggleAuthMode();
+                        hideMessages();
                         loginModal.style.display = 'flex';
                     }
                 });
@@ -1225,6 +1245,7 @@
             if (loginCloseBtn) {
                 loginCloseBtn.addEventListener('click', () => {
                     loginModal.style.display = 'none';
+                    hideMessages();
                     // Reset form
                     document.getElementById('email').value = '';
                     document.getElementById('password').value = '';
@@ -1236,6 +1257,7 @@
                 loginModal.addEventListener('click', (e) => {
                     if (e.target === loginModal) {
                         loginModal.style.display = 'none';
+                        hideMessages();
                         // Reset form
                         document.getElementById('email').value = '';
                         document.getElementById('password').value = '';
@@ -1255,12 +1277,13 @@
             if (loginSubmitBtn) {
                 loginSubmitBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
+                    hideMessages();
                     
-                    const email = document.getElementById('email').value;
+                    const email = document.getElementById('email').value.trim();
                     const password = document.getElementById('password').value;
                     
                     if (!email || !password) {
-                        alert('Please enter both email and password.');
+                        showErrorMessage('Please enter both email and password.');
                         return;
                     }
                     
@@ -1273,7 +1296,12 @@
                         await signInWithEmailAndPassword(auth, email, password);
                         
                         // Success - Firebase will trigger onAuthStateChanged
-                        loginModal.style.display = 'none';
+                        showSuccessMessage('Login successful! Welcome back.');
+                        
+                        setTimeout(() => {
+                            loginModal.style.display = 'none';
+                            hideMessages();
+                        }, 1500);
                         
                         // Clear form
                         document.getElementById('email').value = '';
@@ -1303,7 +1331,7 @@
                                 break;
                         }
                         
-                        alert(errorMessage);
+                        showErrorMessage(errorMessage);
                     }
                     
                     // Reset button
@@ -1312,21 +1340,22 @@
                 });
             }
 
-            // Handle signup form submission
+            // Handle signup form submission - FIXED ERROR HANDLING
             if (signupSubmitBtn) {
                 signupSubmitBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
+                    hideMessages();
                     
-                    const email = document.getElementById('email').value;
+                    const email = document.getElementById('email').value.trim();
                     const password = document.getElementById('password').value;
                     
                     if (!email || !password) {
-                        alert('Please enter an email and password to sign up.');
+                        showErrorMessage('Please enter an email and password to sign up.');
                         return;
                     }
                     
                     if (password.length < 6) {
-                        alert('Password must be at least 6 characters long.');
+                        showErrorMessage('Password must be at least 6 characters long.');
                         return;
                     }
                     
@@ -1347,17 +1376,31 @@
                             moneySaved: 0
                         });
                         
-                        alert('Account created successfully! You are now logged in.');
-                        loginModal.style.display = 'none';
+                        // Update current user immediately
+                        currentUser = userCredential.user;
                         
-                        // Clear form
+                        // Clear form immediately
                         document.getElementById('email').value = '';
                         document.getElementById('password').value = '';
+                        
+                        console.log('Account created, about to close modal and show dashboard');
+                        
+                        // Close modal immediately and show dashboard
+                        loginModal.style.display = 'none';
+                        hideMessages();
+                        
+                        // Update UI and show dashboard immediately
+                        updateUIForAuthState(currentUser);
+                        
+                        console.log('About to call showDashboard()');
+                        showDashboard();
+                        console.log('showDashboard() called');
                         
                     } catch (error) {
                         console.error('Signup error:', error);
                         
-                        let errorMessage = 'Signup failed. Please try again.';
+                        // PROPER ERROR HANDLING FOR SIGNUP
+                        let errorMessage = 'Account creation failed. Please try again.';
                         
                         switch (error.code) {
                             case 'auth/email-already-in-use':
@@ -1369,9 +1412,18 @@
                             case 'auth/weak-password':
                                 errorMessage = 'Password is too weak. Please use at least 6 characters.';
                                 break;
+                            case 'auth/operation-not-allowed':
+                                errorMessage = 'Account creation is currently disabled. Please try again later.';
+                                break;
+                            case 'auth/network-request-failed':
+                                errorMessage = 'Network error. Please check your connection and try again.';
+                                break;
+                            default:
+                                errorMessage = `Signup failed: ${error.message}`;
+                                break;
                         }
                         
-                        alert(errorMessage);
+                        showErrorMessage(errorMessage);
                     }
                     
                     // Reset button
@@ -1388,7 +1440,7 @@
                         // Firebase will trigger onAuthStateChanged
                     } catch (error) {
                         console.error('Logout error:', error);
-                        alert('Logout failed. Please try again.');
+                        showErrorMessage('Logout failed. Please try again.');
                     }
                 });
             }
@@ -1426,7 +1478,27 @@
         // Show dashboard
         function showDashboard() {
             const userDashboard = document.getElementById('user-dashboard');
-            userDashboard.style.display = 'block';
+            const loginModal = document.getElementById('login-modal');
+            
+            // Make sure modal is completely hidden
+            if (loginModal) {
+                loginModal.style.display = 'none';
+            }
+            
+            // Force show dashboard
+            if (userDashboard) {
+                userDashboard.style.display = 'block';
+                userDashboard.style.visibility = 'visible';
+                userDashboard.style.opacity = '1';
+                userDashboard.style.zIndex = '99998';
+                
+                // Scroll to top of dashboard
+                userDashboard.scrollTop = 0;
+                
+                console.log('Dashboard should now be visible');
+            } else {
+                console.error('Dashboard element not found!');
+            }
         }
 
         // Update dashboard with real user data
@@ -1516,7 +1588,14 @@
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const href = this.getAttribute('href');
+                
+                // Skip if href is just '#' or empty
+                if (!href || href === '#' || href.length <= 1) {
+                    return;
+                }
+                
+                const target = document.querySelector(href);
                 if (target) {
                     target.scrollIntoView({
                         behavior: 'smooth',
@@ -1571,7 +1650,10 @@
             }
             button.addEventListener('click', (e) => {
                 e.preventDefault();
-                alert('This would normally redirect to the Chrome Web Store!');
+                // For demo purposes, show alert
+                if (confirm('This would normally redirect to the Chrome Web Store. Would you like to visit it?')) {
+                    window.open('https://chromewebstore.google.com/detail/foolhnigdopgfnmglidodoiopkhconcn?utm_source=item-share-cb', '_blank');
+                }
             });
         });
     </script>
