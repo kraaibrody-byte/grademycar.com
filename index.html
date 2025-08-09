@@ -1,4 +1,4 @@
-UPDATE<!DOCTYPE html>
+UPDATED<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1340,7 +1340,7 @@ UPDATE<!DOCTYPE html>
                 });
             }
 
-            // Handle signup form submission - FIXED ERROR HANDLING
+            // Handle signup form submission
             if (signupSubmitBtn) {
                 signupSubmitBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
@@ -1359,15 +1359,12 @@ UPDATE<!DOCTYPE html>
                         return;
                     }
                     
-                    // Show loading state
                     signupSubmitBtn.textContent = 'Creating Account...';
                     signupSubmitBtn.disabled = true;
                     
                     try {
-                        // Create new user account
                         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                         
-                        // Create user profile in Firestore
                         await setDoc(doc(db, 'users', userCredential.user.uid), {
                             email: email,
                             createdAt: serverTimestamp(),
@@ -1375,33 +1372,19 @@ UPDATE<!DOCTYPE html>
                             averageGrade: 'N/A',
                             moneySaved: 0
                         });
-                        
-                        // Update current user immediately
-                        currentUser = userCredential.user;
-                        
-                        // Clear form immediately
+
+                        // Clear form fields
                         document.getElementById('email').value = '';
                         document.getElementById('password').value = '';
-                        
-                        console.log('Account created, about to close modal and show dashboard');
-                        
-                        // Close modal immediately and show dashboard
+
+                        // Close modal and rely on onAuthStateChanged to handle dashboard
                         loginModal.style.display = 'none';
                         hideMessages();
-                        
-                        // Update UI and show dashboard immediately
-                        updateUIForAuthState(currentUser);
-                        
-                        console.log('About to call showDashboard()');
-                        showDashboard();
-                        console.log('showDashboard() called');
                         
                     } catch (error) {
                         console.error('Signup error:', error);
                         
-                        // PROPER ERROR HANDLING FOR SIGNUP
                         let errorMessage = 'Account creation failed. Please try again.';
-                        
                         switch (error.code) {
                             case 'auth/email-already-in-use':
                                 errorMessage = 'An account with this email already exists. Please log in instead.';
@@ -1426,7 +1409,6 @@ UPDATE<!DOCTYPE html>
                         showErrorMessage(errorMessage);
                     }
                     
-                    // Reset button
                     signupSubmitBtn.textContent = 'Create Account';
                     signupSubmitBtn.disabled = false;
                 });
