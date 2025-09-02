@@ -800,7 +800,7 @@
         </div>
     </section>
 
-    <!-- Features Section -->
+   <!-- Features Section -->
     <section class="features" id="features">
         <div class="container">
             <h2>The Ultimate Car Buyer's Toolkit</h2>
@@ -957,6 +957,382 @@
             </div>
         </div>
     </section>
+<!-- Add this section to your index.html, replacing your existing pricing section -->
+
+<section id="pricing" class="pricing">
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 3rem; font-size: 2.5rem; font-weight: 700;">
+            Choose Your Plan
+        </h2>
+        
+        <!-- Credit Status Display (for logged-in users) -->
+        <div id="credit-status" style="text-align: center; margin-bottom: 2rem; display: none;">
+            <div class="credit-display" style="
+                display: inline-block;
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                padding: 0.75rem 1.5rem;
+                border-radius: 25px;
+                font-weight: 600;
+                font-size: 1.1rem;
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            ">
+                0 report credits
+            </div>
+        </div>
+
+        <div class="pricing-grid">
+            
+            <!-- Starter Bundle -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Basic</h3>
+                    <div class="price">
+                        <span class="currency">$</span>
+                        <span class="amount">1.99</span>
+                    </div>
+                    <p class="price-desc">Perfect for trying it out</p>
+                </div>
+                
+                <div class="pricing-features">
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>5 detailed car reports</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Reliability scoring</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Safety & recall data</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Credits never expire</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary purchase-btn" 
+                        data-bundle="starter" 
+                        onclick="purchaseBundle('starter')">
+                    Purchase Basic
+                </button>
+            </div>
+
+            <!-- Value Bundle - Most Popular -->
+            <div class="pricing-card featured">
+                <div class="popular-badge">Most Popular</div>
+                <div class="pricing-header">
+                    <h3>Value Pack</h3>
+                    <div class="price">
+                        <span class="currency">$</span>
+                        <span class="amount">4.99</span>
+                    </div>
+                    <p class="price-desc">Best value for regular users</p>
+                </div>
+                
+                <div class="pricing-features">
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>15 detailed car reports</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>3x more value than basic</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Priority support</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Credits never expire</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary purchase-btn" 
+                        data-bundle="value" 
+                        onclick="purchaseBundle('value')">
+                    Purchase Value Pack
+                </button>
+            </div>
+
+            <!-- Weekend Unlimited -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Weekend Warrior</h3>
+                    <div class="price">
+                        <span class="currency">$</span>
+                        <span class="amount">14.99</span>
+                    </div>
+                    <p class="price-desc">48 hours of unlimited access</p>
+                </div>
+                
+                <div class="pricing-features">
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Unlimited reports for 48 hours</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Perfect for car shopping trips</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Instant activation</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>All premium features</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary purchase-btn" 
+                        data-bundle="weekend" 
+                        onclick="purchaseBundle('weekend')">
+                    Start Weekend Access
+                </button>
+            </div>
+
+            <!-- Extended Unlimited -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Extended Access</h3>
+                    <div class="price">
+                        <span class="currency">$</span>
+                        <span class="amount">29.99</span>
+                    </div>
+                    <p class="price-desc">2 weeks of unlimited access</p>
+                </div>
+                
+                <div class="pricing-features">
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Unlimited reports for 2 weeks</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Best for serious car shopping</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Premium analytics</span>
+                    </div>
+                    <div class="feature">
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Export reports feature</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary purchase-btn" 
+                        data-bundle="extended" 
+                        onclick="purchaseBundle('extended')">
+                    Get Extended Access
+                </button>
+            </div>
+        </div>
+        
+        <!-- Login prompt for non-logged-in users -->
+        <div id="login-prompt" style="
+            text-align: center; 
+            margin-top: 2rem; 
+            padding: 2rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 15px;
+            border: 2px dashed rgba(59, 130, 246, 0.3);
+            display: none;
+        ">
+            <p style="color: #1e40af; font-weight: 600; margin-bottom: 1rem;">
+                🔐 Please log in to purchase report credits
+            </p>
+            <button class="btn btn-secondary" onclick="document.getElementById('login-modal').style.display = 'block'">
+                Log In / Sign Up
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- Add the corresponding CSS (put this in your existing <style> section or CSS file) -->
+<style>
+.pricing {
+    padding: 5rem 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pricing-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.pricing-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.pricing-card.featured {
+    border: 2px solid #3b82f6;
+    transform: scale(1.05);
+}
+
+.popular-badge {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+}
+
+.pricing-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.pricing-header h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.currency {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.price-desc {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.pricing-features {
+    margin-bottom: 2rem;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.feature-icon {
+    width: 20px;
+    height: 20px;
+    color: #10b981;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.purchase-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.purchase-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+.credit-display.unlimited-active {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .pricing-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+    
+    .pricing-card.featured {
+        transform: none;
+    }
+}
+</style>
 
     <!-- CTA Section -->
     <section class="cta">
@@ -1121,8 +1497,9 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+        import { getDatabase, ref, set, get, push, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
         // Your Firebase configuration
         const firebaseConfig = {
@@ -1137,10 +1514,65 @@
         };
 
         // Initialize Firebase
+        // Update your existing Firebase initialization
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        const db = getDatabase(app); // Keep using Realtime Database
+        const functions = getFunctions(app); // Add this line
         const analytics = getAnalytics(app);
+        // Add purchase bundle function
+        window.purchaseBundle = async function(bundleType) {
+         try {
+        // Check if user is authenticated
+        const user = auth.currentUser;
+        if (!user) {
+            alert('Please log in first');
+            document.getElementById('login-modal').style.display = 'block';
+            return;
+        }
+
+        
+        console.log('Starting purchase for bundle:', bundleType);
+
+        // Show loading state
+        const purchaseButtons = document.querySelectorAll(`[data-bundle="${bundleType}"]`);
+        purchaseButtons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Processing...';
+        });
+
+        // Call Firebase Function to create checkout session
+        const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+        const result = await createCheckoutSession({ bundleType: bundleType });
+
+        console.log('Checkout session created:', result.data);
+
+        // Redirect to Stripe Checkout
+        window.location.href = result.data.url;
+
+    } catch (error) {
+        console.error('Error starting purchase:', error);
+        
+        // Reset buttons
+        const purchaseButtons = document.querySelectorAll(`[data-bundle="${bundleType}"]`);
+        purchaseButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.innerHTML = btn.getAttribute('data-original-text') || 'Purchase';
+        });
+
+        // Show user-friendly error
+        let errorMessage = 'Failed to start checkout. Please try again.';
+        if (error.code === 'unauthenticated') {
+            errorMessage = 'Please log in first.';
+            document.getElementById('login-modal').style.display = 'block';
+        } else if (error.message.includes('Invalid bundle')) {
+            errorMessage = 'Invalid bundle selection. Please refresh and try again.';
+        }
+
+        alert(errorMessage);
+    }
+};
+
 
         // Current user state
         let currentUser = null;
@@ -1186,7 +1618,110 @@
             onAuthStateChanged(auth, (user) => {
                 currentUser = user;
                 updateUIForAuthState(user);
+                // Update button click handlers
+    document.addEventListener('DOMContentLoaded', function() {
+    // Store original button text and add click handlers
+    document.querySelectorAll('[data-bundle]').forEach(button => {
+        button.setAttribute('data-original-text', button.innerHTML);
+        
+        button.addEventListener('click', function() {
+            const bundleType = this.getAttribute('data-bundle');
+            window.purchaseBundle(bundleType);
+        });
+    });
+
+    // Add check for successful purchase on page load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('purchase') === 'success') {
+        showPurchaseSuccess();
+    }
+});
+
+// Show success message
+function showPurchaseSuccess() {
+    // Create success notification
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 1.5rem 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        z-index: 10000;
+        font-weight: 600;
+        max-width: 400px;
+    `;
+    
+    notification.innerHTML = `
+        <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">🎉 Purchase Successful!</div>
+        <div style="font-size: 0.9rem; opacity: 0.9;">Your report credits have been added to your account.</div>
+        <button onclick="this.parentElement.remove()" style="
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        ">×</button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 10000);
+}                
             });
+            // Function to check user's current credits (call this after login)
+window.checkUserCredits = async function() {
+    try {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const checkReportAccess = httpsCallable(functions, 'checkReportAccess');
+        const result = await checkReportAccess();
+        
+        const status = result.data;
+        console.log('User credit status:', status);
+
+        // Update UI elements that show credit count
+        const creditElements = document.querySelectorAll('.credit-display');
+        creditElements.forEach(element => {
+            if (status.unlimitedActive) {
+                element.innerHTML = `🔥 Unlimited Active (expires ${new Date(status.unlimitedExpiry).toLocaleDateString()})`;
+                element.style.color = '#10b981';
+            } else {
+                element.innerHTML = `${status.credits} report credits`;
+                element.style.color = status.credits > 0 ? '#3b82f6' : '#ef4444';
+            }
+        });
+
+        return status;
+
+    } catch (error) {
+        console.error('Error checking credits:', error);
+        return null;
+    }
+};
+
+// Call this when user logs in successfully
+auth.onAuthStateChanged(async (user) => {
+    currentUser = user;
+    updateUIForAuthState(user);
+    
+    if (user) {
+        // Check user's credits after login
+        await checkUserCredits();
+    }
+});
 
             // Get DOM elements
             const loginBtn = document.getElementById('login-btn');
@@ -1621,23 +2156,23 @@
         });
 
         // Add click handlers for CTA buttons
-        document.querySelectorAll('.btn-primary').forEach(button => {
-            if (button.href && button.href.includes('chromewebstore')) {
-                // Let Chrome Web Store buttons work normally
-                return;
-            }
-            if (button.id === 'login-btn') {
-                // Skip login button as it has its own handler in Firebase module
-                return;
-            }
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                // For demo purposes, show alert
-                if (confirm('This would normally redirect to the Chrome Web Store. Would you like to visit it?')) {
-                    window.open('https://chromewebstore.google.com/detail/foolhnigdopgfnmglidodoiopkhconcn?utm_source=item-share-cb', '_blank');
-                }
-            });
-        });
+        //document.querySelectorAll('.btn-primary').forEach(button => {
+         //   if (button.href && button.href.includes('chromewebstore')) {
+         //       // Let Chrome Web Store buttons work normally
+          //      return;
+          //  }
+          //  if (button.id === 'login-btn') {
+          //      // Skip login button as it has its own handler in Firebase module
+          //      return;
+           // }
+           // button.addEventListener('click', (e) => {
+           //     e.preventDefault();
+           //     // For demo purposes, show alert
+            //    if (confirm('This would normally redirect to the Chrome Web Store. Would you like to visit it?')) {
+            //        window.open('https://chromewebstore.google.com/detail/foolhnigdopgfnmglidodoiopkhconcn?utm_source=item-share-cb', '_blank');
+           //     }
+           // });
+       // });
     </script>
 </body>
 </html>
