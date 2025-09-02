@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - GradeMyCar</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .success-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            color: #10b981;
+            margin-bottom: 1rem;
+        }
+        
+        .success-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .success-message {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .return-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .return-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .details {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .details-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        
+        .details-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            color: #6b7280;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="success-icon">🎉</div>
+        <h1 class="success-title">Payment Successful!</h1>
+        <p class="success-message">
+            Thank you for your purchase! Your credits are being added to your account.
+        </p>
+        
+        <div class="details">
+            <div class="details-title">Purchase Details</div>
+            <div class="details-item">
+                <span>Bundle:</span>
+                <span id="bundle-name">Loading...</span>
+            </div>
+            <div class="details-item">
+                <span>Credits:</span>
+                <span id="bundle-credits">Loading<div class="loading"></div></span>
+            </div>
+            <div class="details-item">
+                <span>Amount:</span>
+                <span id="bundle-amount">Loading...</span>
+            </div>
+            <div class="details-item">
+                <span>Session ID:</span>
+                <span id="session-id">Loading...</span>
+            </div>
+        </div>
+        
+        <a href="/" class="return-btn">Return to GradeMyCar</a>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
+
+        // Firebase configuration (same as your main site)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsVQCXfyRFt7fpcE-5Xvm_P3bULlGYMIU",
+            authDomain: "grademycar.firebaseapp.com",
+            databaseURL: "https://grademycar-default-rtdb.firebaseio.com",
+            projectId: "grademycar",
+            storageBucket: "grademycar.firebasestorage.app",
+            messagingSenderId: "724919836813",
+            appId: "1:724919836813:web:ca0ccd5bfe7ae3de3502c4",
+            measurementId: "G-TT0RZ0WFN0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const functions = getFunctions(app);
+
+        // Bundle configurations (same as your main site)
+        const BUNDLE_CONFIGS = {
+            'starter': {
+                credits: 5,
+                price: 1.99,
+                name: '5 Car Reports'
+            },
+            'value': {
+                credits: 15,
+                price: 4.99,
+                name: '15 Car Reports'
+            },
+            'weekend': {
+                credits: -1,
+                price: 14.99,
+                name: '48-Hour Unlimited'
+            },
+            'extended': {
+                credits: -1,
+                price: 29.99,
+                name: '2-Week Unlimited'
+            }
+        };
+
+        // Get session ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('session_id');
+
+        if (sessionId) {
+            document.getElementById('session-id').textContent = sessionId;
+            
+            // Wait for user authentication, then check their updated credits
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // Wait a moment for webhook processing
+                    setTimeout(async () => {
+                        try {
+                            const checkReportAccess = httpsCallable(functions, 'checkReportAccess');
+                            const result = await checkReportAccess();
+                            const status = result.data;
+                            
+                            // Try to determine which bundle was purchased
+                            // This is a simple approach - you might want to store this info differently
+                            let bundleType = 'starter'; // default
+                            
+                            if (status.unlimitedActive) {
+                                bundleType = 'weekend'; // or 'extended', you'd need to detect this
+                                document.getElementById('bundle-credits').textContent = 'Unlimited Access';
+                            } else {
+                                document.getElementById('bundle-credits').textContent = status.credits + ' credits';
+                            }
+                            
+                            const bundle = BUNDLE_CONFIGS[bundleType];
+                            document.getElementById('bundle-name').textContent = bundle.name;
+                            document.getElementById('bundle-amount').textContent = '$' + bundle.price.toFixed(2);
+                            
+                        } catch (error) {
+                            console.error('Error fetching updated status:', error);
+                            document.getElementById('bundle-credits').textContent = 'Error loading';
+                        }
+                    }, 3000); // Wait 3 seconds for webhook processing
+                } else {
+                    // User not logged in, redirect to login
+                    window.location.href = '/?login=required';
+                }
+            });
+        } else {
+            // No session ID, probably accessed directly
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
