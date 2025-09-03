@@ -1535,56 +1535,101 @@
 
         // Purchase bundle function
         window.purchaseBundle = async function(bundleType) {
-            try {
-                const user = auth.currentUser;
-                if (!user) {
-                    alert('Please log in first');
-                    document.getElementById('login-modal').style.display = 'block';
-                    return;
-                }
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            alert('Please log in first');
+            document.getElementById('login-modal').style.display = 'block';
+            return;
+        }
 
-                console.log('Starting purchase for bundle:', bundleType);
+        console.log('Starting purchase for bundle:', bundleType);
 
-                const purchaseButtons = document.querySelectorAll(`[data-bundle="${bundleType}"]`);
-                purchaseButtons.forEach(btn => {
-                    if (!btn.dataset.originalText) {
-                        btn.dataset.originalText = btn.innerHTML;
-                    }
-                    btn.disabled = true;
-                    btn.innerHTML = '⏳ Processing...';
-                });
-
-                const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-                const result = await createCheckoutSession({ bundleType: bundleType });
-
-                console.log('Checkout session created:', result.data);
-
-                if (result.data && result.data.url) {
-                    window.location.href = result.data.url;
-                } else {
-                    throw new Error('No checkout URL received');
-                }
-
-            } catch (error) {
-                console.error('Error starting purchase:', error);
-                
-                const purchaseButtons = document.querySelectorAll(`[data-bundle="${bundleType}"]`);
-                purchaseButtons.forEach(btn => {
-                    btn.disabled = false;
-                    btn.innerHTML = btn.dataset.originalText || 'Purchase';
-                });
-
-                let errorMessage = 'Failed to start checkout. Please try again.';
-                if (error.code === 'unauthenticated') {
-                    errorMessage = 'Please log in first.';
-                    document.getElementById('login-modal').style.display = 'block';
-                } else if (error.code === 'functions/invalid-argument') {
-                    errorMessage = 'Invalid bundle selection. Please refresh and try again.';
-                }
-
-                alert(errorMessage);
+        const purchaseButtons = document.querySelectorAll(`[data-bundle="${bundleType}"]`);
+        purchaseButtons.forEach(btn => {
+            if (!btn.dataset.originalText) {
+                btn.dataset.originalText = btn.innerHTML;
             }
-        };
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Processing...';
+        });
+
+        // CHECK IF USER CAME FROM EXTENSION
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromExtension = urlParams.get('source') === 'extension';
+        if (fromExtension) {
+    console.log('Extension user detected, customizing page...');
+    
+    // Update hero text for extension users
+    const heroTitle = document.querySelector('.main-hero h1');
+    const heroDesc = document.querySelector('.main-hero p');
+    
+    if (heroTitle) {
+        heroTitle.innerHTML = 'Upgrade Your Extension to Premium 🚀';
+    }
+    
+    if (heroDesc) {
+        heroDesc.innerHTML = 'Get unlimited detailed car analysis reports right in your browser extension.';
+    }
+    
+    // Add extension-specific banner
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        text-align: center;
+        padding: 12px;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        font-size: 14px;
+    `;
+    banner.innerHTML = '🎯 Upgrading from Extension - Credits will sync automatically after purchase!';
+    document.body.insertBefore(banner, document.body.firstChild);
+}
+
+        const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+        const result = await createCheckoutSession({ 
+            bundleType: bundleType,
+            sourceExtension: fromExtension // ADD THIS LINE
+        });
+
+        console.log('Checkout session created:', result.data);
+
+        if (result.data && result.data.url) {
+    // Store extension context for success page
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromExtension = urlParams.get('source') === 'extension';
+    
+    if (fromExtension) {
+        sessionStorage.setItem('returnToExtension', 'true');
+        sessionStorage.setItem('purchaseBundle', bundleType);
+    }
+    
+    window.location.href = result.data.url;
+}
+
+    } catch (error) {
+        console.error('Error starting purchase:', error);
+        
+        const purchaseButtons = document.querySelectorAll(`[data-bundle="${bundleType}"]`);
+        purchaseButtons.forEach(btn => {
+            btn.disabled = false;
+            btn.innerHTML = btn.dataset.originalText || 'Purchase';
+        });
+
+        let errorMessage = 'Failed to start checkout. Please try again.';
+        if (error.code === 'unauthenticated') {
+            errorMessage = 'Please log in first.';
+            document.getElementById('login-modal').style.display = 'block';
+        } else if (error.code === 'functions/invalid-argument') {
+            errorMessage = 'Invalid bundle selection. Please refresh and try again.';
+        }
+        
+        alert(errorMessage);
+    }
+};
 
         // Check user credits function
         window.checkUserCredits = async function() {
@@ -1672,7 +1717,6 @@
                 currentUser = user;
                 updateUIForAuthState(user);
             });
-
             // Set up purchase button event listeners
             document.querySelectorAll('[data-bundle]').forEach(button => {
                 button.setAttribute('data-original-text', button.innerHTML);
@@ -1690,6 +1734,7 @@
             }
 
             // Get DOM elements
+            
             const loginBtn = document.getElementById('login-btn');
             const loginModal = document.getElementById('login-modal');
             const loginCloseBtn = document.getElementById('login-close-btn');
