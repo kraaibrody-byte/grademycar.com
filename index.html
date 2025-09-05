@@ -2186,5 +2186,42 @@
             observer.observe(card);
         });
     </script>
+    <script>
+// Handle URL parameters for scrolling when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const scrollTo = urlParams.get('scroll');
+    
+    if (scrollTo) {
+        // Wait a bit for the page to fully load, then scroll
+        setTimeout(() => {
+            const element = document.getElementById(scrollTo);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                console.log(`Scrolled to ${scrollTo} section`);
+            }
+        }, 1000); // Wait 1 second for page to load
+    }
+});
+
+// Also handle hash in URL as backup
+window.addEventListener('load', function() {
+    if (window.location.hash) {
+        setTimeout(() => {
+            const element = document.querySelector(window.location.hash);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }, 1000);
+    }
+});
+</script>
+
 </body>
 </html>
