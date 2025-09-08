@@ -1709,14 +1709,84 @@
             document.getElementById('error-message').style.display = 'none';
             document.getElementById('success-message').style.display = 'none';
         }
+        
+        // ADD THIS FUNCTION HERE:
+function notifyExtensionOfAuthChange(user, userData) {
+    // Send message to extension about auth state change
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+        chrome.runtime.sendMessage('foolhnigdopgfnmglidodoiopkhconcn', {
+            action: 'authStateChanged',
+            userId: user ? user.uid : null,
+            userEmail: user ? user.email : null,
+            credits: user ? (userData?.reportCredits || 0) : 0,
+            unlimitedAccess: user ? (userData?.unlimitedAccess || {}) : {}
+        }, (response) => {
+            console.log('Extension notified of auth change:', response);
+        });
+    }
+}
 
         // DOM loaded event listener
-        document.addEventListener('DOMContentLoaded', function() {
-            // Firebase auth state listener
-            onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-                updateUIForAuthState(user);
+document.addEventListener('DOMContentLoaded', function() {
+    // Firebase auth state listener with extension notification
+    onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
+        updateUIForAuthState(user);
+        
+        // Call the function we just added above
+        if (user) {
+            try {
+                const userRef = ref(database, `users/${user.uid}`);
+                const snapshot = await get(userRef);
+                const userData = snapshot.val() || {};
+                
+                notifyExtensionOfAuthChange(user, userData);
+            } catch (error) {
+                console.log('Could not notify extension:', error);
+            }
+        } else {
+            notifyExtensionOfAuthChange(null, null);
+        }
+    
+    
+    // NEW: Notify extension of auth state change
+    if (user) {
+        // User logged in - get their data and notify extension
+        try {
+            const userRef = ref(database, `users/${user.uid}`);
+            const snapshot = await get(userRef);
+            const userData = snapshot.val() || {};
+            
+            // Notify extension
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage('foolhnigdopgfnmglidodoiopkhconcn', {
+                    action: 'authStateChanged',
+                    userId: user.uid,
+                    userEmail: user.email,
+                    credits: userData.reportCredits || 0,
+                    unlimitedAccess: userData.unlimitedAccess || {}
+                }, (response) => {
+                    console.log('Extension notified of login:', response);
+                });
+            }
+        } catch (error) {
+            console.log('Could not notify extension:', error);
+        }
+    } else {
+        // User logged out - notify extension
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.sendMessage('foolhnigdopgfnmglidodoiopkhconcn', {
+                action: 'authStateChanged',
+                userId: null,
+                userEmail: null,
+                credits: 0,
+                unlimitedAccess: {}
+            }, (response) => {
+                console.log('Extension notified of logout:', response);
             });
+        }
+    }
+});
             // Set up purchase button event listeners
             document.querySelectorAll('[data-bundle]').forEach(button => {
                 button.setAttribute('data-original-text', button.innerHTML);
