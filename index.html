@@ -1509,6 +1509,7 @@
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        
         onIdTokenChanged(auth, async (user) => {
   if (!user) {
     window.postMessage(
@@ -1528,8 +1529,19 @@
       email: user.email,
     },
     location.origin
-  );
+        );
+      });
+        onIdTokenChanged(auth, async (user) => {
+  if (user) {
+    const t = await user.getIdToken(false);
+    console.log("[SITE] posting idToken to extension, len:", t.length);
+    window.postMessage({ type: "GRADECAR_AUTH_CHANGE", idToken: t, uid: user.uid, email: user.email }, location.origin);
+  } else {
+    console.log("[SITE] user signed out — posting null token");
+    window.postMessage({ type: "GRADECAR_AUTH_CHANGE", idToken: null }, location.origin);
+  }
 });
+
         const database = getDatabase(app);
         const functions = getFunctions(app);
         const analytics = getAnalytics(app);
