@@ -1490,6 +1490,35 @@
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
+        import { onIdTokenChanged } from "firebase/auth";
+
+onIdTokenChanged(auth, async (user) => {
+  if (!user) {
+    // User signed out — tell extension
+    window.postMessage(
+      { type: "GRADECAR_AUTH_CHANGE", idToken: null },
+      window.origin
+    );
+    return;
+  }
+
+  // User signed in — get a fresh token
+  const idToken = await user.getIdToken(/* forceRefresh= */ false);
+
+  // Send token + basic user info to extension
+  window.postMessage(
+    {
+      type: "GRADECAR_AUTH_CHANGE",
+      idToken,
+      uid: user.uid,
+      email: user.email,
+      // optional: include credits/unlimited if you compute them server-side
+    },
+    window.origin
+  );
+});
+
+
         // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCsVQCXfyRFt7fpcE-5Xvm_P3bULlGYMIU",
@@ -1723,6 +1752,8 @@ function notifyExtensionOfAuthChange(user, userData) {
     
     console.log('Posted auth change message to extension content script');
 }
+
+
 
         // DOM loaded event listener
 document.addEventListener('DOMContentLoaded', function() {
