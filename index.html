@@ -1712,18 +1712,16 @@
         
         // ADD THIS FUNCTION HERE:
 function notifyExtensionOfAuthChange(user, userData) {
-    // Send message to extension about auth state change
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.sendMessage('ekndbdeehnjhffbhmademgilonmmdnfb', {
-            action: 'authStateChanged',
-            userId: user ? user.uid : null,
-            userEmail: user ? user.email : null,
-            credits: user ? (userData?.reportCredits || 0) : 0,
-            unlimitedAccess: user ? (userData?.unlimitedAccess || {}) : {}
-        }, (response) => {
-            console.log('Extension notified of auth change:', response);
-        });
-    }
+    // Send message to extension content script via postMessage
+    window.postMessage({
+        type: 'GRADECAR_AUTH_CHANGE',
+        userId: user ? user.uid : null,
+        userEmail: user ? user.email : null,
+        credits: user ? (userData?.reportCredits || 0) : 0,
+        unlimitedAccess: user ? (userData?.unlimitedAccess || {}) : {}
+    }, '*');
+    
+    console.log('Posted auth change message to extension content script');
 }
 
         // DOM loaded event listener
