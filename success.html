@@ -193,7 +193,7 @@
                     setTimeout(async () => {
                         setTimeout(async () => {
   try {
-    document.getElementById('success-title').textContent = 'Payment Successful!';
+    document.querySelector('.success-title').textContent = 'Payment Successful!';
 
     const response = await fetch(
       `https://us-central1-grademycar.cloudfunctions.net/getCheckoutSummary?session_id=${encodeURIComponent(sessionId)}`
