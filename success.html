@@ -191,30 +191,43 @@
                 if (user) {
                     // Wait a moment for webhook processing
                     setTimeout(async () => {
-                        try {
-                            const checkReportAccess = httpsCallable(functions, 'checkReportAccess');
-                            const result = await checkReportAccess();
-                            const status = result.data;
-                            
-                            // Try to determine which bundle was purchased
-                            // This is a simple approach - you might want to store this info differently
-                            let bundleType = 'starter'; // default
-                            
-                            if (status.unlimitedActive) {
-                                bundleType = 'weekend'; // or 'extended', you'd need to detect this
-                                document.getElementById('bundle-credits').textContent = 'Unlimited Access';
-                            } else {
-                                document.getElementById('bundle-credits').textContent = status.credits + ' credits';
-                            }
-                            
-                            const bundle = BUNDLE_CONFIGS[bundleType];
-                            document.getElementById('bundle-name').textContent = bundle.name;
-                            document.getElementById('bundle-amount').textContent = '$' + bundle.price.toFixed(2);
-                            
-                        } catch (error) {
-                            console.error('Error fetching updated status:', error);
-                            document.getElementById('bundle-credits').textContent = 'Error loading';
-                        }
+                        setTimeout(async () => {
+  try {
+    document.getElementById('success-title').textContent = 'Payment Successful!';
+
+    const response = await fetch(
+      `https://us-central1-grademycar.cloudfunctions.net/getCheckoutSummary?session_id=${encodeURIComponent(sessionId)}`
+    );
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    const dollars = (cents) => (cents / 100).toFixed(2);
+
+    // REAL Stripe amount
+    document.getElementById('bundle-amount').textContent =
+      `$${dollars(data.amount_total)} ${data.currency.toUpperCase()}`;
+
+    // REAL item name
+    if (data.items && data.items.length > 0) {
+      document.getElementById('bundle-name').textContent =
+        data.items[0].description;
+    }
+
+    // Credits from Stripe metadata (more reliable)
+    if (data.metadata && data.metadata.credits) {
+      const c = parseInt(data.metadata.credits, 10);
+      document.getElementById('bundle-credits').textContent =
+        c > 0 ? `${c} credits` : 'Unlimited Access';
+    }
+
+  } catch (error) {
+    console.error('Error loading purchase details:', error);
+  }
+}, 3000);
                     }, 3000); // Wait 3 seconds for webhook processing
                 } else {
                     // User not logged in, redirect to login
