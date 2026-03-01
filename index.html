@@ -254,7 +254,17 @@
             font-weight: 600;
         }
 
-        .feature-card h3 {
+        
+        .premium-badge.premium {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        /* Prevent long IDs from breaking the layout */
+        .search-vehicle, #session-id, .purchase-details-id {
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+.feature-card h3 {
             font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 1rem;
@@ -962,42 +972,42 @@
                 </div>
 
                 <div class="feature-card">
-                    <div class="premium-badge">Coming Soon</div>
+                    <div class="premium-badge premium">Premium</div>
                     <div class="feature-icon">🎯</div>
                     <h3>Deal Scoring Algorithm</h3>
                     <p>Our algorithm analyzes market data to tell you if the asking price is a great deal, fair, or overpriced.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="premium-badge">Coming Soon</div>
+                    <div class="premium-badge premium">Premium</div>
                     <div class="feature-icon">💙</div>
                     <h3>Lifespan Calculator</h3>
                     <p>Estimate how many more years and miles you can expect from the vehicle based on its history.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="premium-badge">Coming Soon</div>
+                    <div class="premium-badge premium">Premium</div>
                     <div class="feature-icon">⚖️</div>
                     <h3>Value Per Mile Analysis</h3>
                     <p>Understand the true cost of ownership by analyzing the vehicle's value relative to its mileage.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="premium-badge">Coming Soon</div>
+                    <div class="premium-badge premium">Premium</div>
                     <div class="feature-icon">📊</div>
                     <h3>Market Comparison</h3>
                     <p>See how this vehicle stacks up against similar listings in your area and nationwide.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="premium-badge">Coming Soon</div>
+                    <div class="premium-badge premium">Premium</div>
                     <div class="feature-icon">📅</div>
                     <h3>Maintenance Timeline</h3>
                     <p>Predict upcoming major maintenance milestones and their estimated costs.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="premium-badge">Coming Soon</div>
+                    <div class="premium-badge premium">Premium</div>
                     <div class="feature-icon">💎</div>
                     <h3>Safety Data Integration</h3>
                     <p>Access official safety ratings and recall information directly within the listing.</p>
@@ -1432,52 +1442,23 @@
                 <div class="dashboard-card upgrade-card">
                     <h3>Upgrade to Premium</h3>
                     <p style="margin-bottom: 1.5rem; opacity: 0.9;">Unlock advanced deal scoring, lifespan calculator, and market analysis</p>
-                    <button class="btn btn-white" style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);">Coming Soon</button>
+                    <button class="btn btn-white" id="dashboard-view-plans-btn" style="background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.3);">View Plans</button>
                 </div>
             </div>
             
             <div class="recent-searches">
                 <h3>Recent Vehicle Searches</h3>
-                
-                <div class="search-item">
-                    <div>
-                        <div class="search-vehicle">2019 Toyota Camry</div>
-                        <div style="color: #64748b; font-size: 0.9rem;">Searched 2 hours ago</div>
-                    </div>
-                    <div class="search-grade grade-a">A</div>
+
+                <div id="recent-searches-list"></div>
+                <div id="recent-searches-empty" style="color: #64748b; font-size: 0.95rem; padding: 1rem 0; display: none;">
+                    No searches yet. Run a report from the extension and it’ll show up here.
                 </div>
-                
-                <div class="search-item">
-                    <div>
-                        <div class="search-vehicle">2020 Honda Civic</div>
-                        <div style="color: #64748b; font-size: 0.9rem;">Searched yesterday</div>
-                    </div>
-                    <div class="search-grade grade-a">A-</div>
-                </div>
-                
-                <div class="search-item">
-                    <div>
-                        <div class="search-vehicle">2018 Nissan Altima</div>
-                        <div style="color: #64748b; font-size: 0.9rem;">Searched 3 days ago</div>
-                    </div>
-                    <div class="search-grade grade-c">C+</div>
-                </div>
-                
-                <div class="search-item">
-                    <div>
-                        <div class="search-vehicle">2017 Ford Focus</div>
-                        <div style="color: #64748b; font-size: 0.9rem;">Searched 1 week ago</div>
-                    </div>
-                    <div class="search-grade grade-d" style="background: #fecaca; color: #dc2626;">D</div>
-                </div>
-                
-                <div class="search-item">
-                    <div>
-                        <div class="search-vehicle">2021 Subaru Outback</div>
-                        <div style="color: #64748b; font-size: 0.9rem;">Searched 1 week ago</div>
-                    </div>
-                    <div class="search-grade grade-b">B+</div>
-                </div>
+
+            </div>
+        </div>
+    </div>
+
+    </div>
             </div>
         </div>
     </div>
@@ -1486,7 +1467,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-        import { getDatabase, ref, set, get, push, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+        import { getDatabase, ref, set, get, push, update, serverTimestamp, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
@@ -1531,16 +1512,6 @@
     location.origin
         );
       });
-        onIdTokenChanged(auth, async (user) => {
-  if (user) {
-    const t = await user.getIdToken(false);
-    console.log("[SITE] posting idToken to extension, len:", t.length);
-    window.postMessage({ type: "GRADECAR_AUTH_CHANGE", idToken: t, uid: user.uid, email: user.email }, location.origin);
-  } else {
-    console.log("[SITE] user signed out — posting null token");
-    window.postMessage({ type: "GRADECAR_AUTH_CHANGE", idToken: null }, location.origin);
-  }
-});
 
         const database = getDatabase(app);
         const functions = getFunctions(app);
@@ -2125,6 +2096,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+
+        // Dashboard: jump to pricing
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('dashboard-view-plans-btn');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const userDashboard = document.getElementById('user-dashboard');
+                    if (userDashboard) userDashboard.style.display = 'none';
+                    // Use the existing scroll handler (hash + smooth scroll)
+                    window.location.hash = '#pricing';
+                });
+            }
+        });
+
         // Update dashboard with real user data
         async function updateDashboardData(user) {
             const welcomeElement = document.getElementById('welcome-message');
@@ -2149,7 +2134,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     document.getElementById('stat-searches').textContent = userData.totalSearches || 0;
                     document.getElementById('stat-grade').textContent = userData.averageGrade || 'N/A';
-                    document.getElementById('stat-money').textContent = `${userData.moneySaved || 0}`;
+                    document.getElementById('stat-money').textContent = `$${Number(userData.moneySaved || 0).toLocaleString()}`;
+                    await loadRecentSearches(user);
                     
                 } else {
                     await set(userRef, {
@@ -2167,7 +2153,77 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Show purchase success notification
+        
+        // Load recent searches into the dashboard
+        async function loadRecentSearches(user) {
+            const listEl = document.getElementById('recent-searches-list');
+            const emptyEl = document.getElementById('recent-searches-empty');
+            if (!listEl) return;
+
+            listEl.innerHTML = '';
+            if (emptyEl) emptyEl.style.display = 'none';
+
+            try {
+                // Preferred (matches your security rules): vehicle_searches/{uid}/{pushId}
+                const recentQ = query(ref(database, `vehicle_searches/${user.uid}`), orderByChild('searchedAt'), limitToLast(5));
+                const snap = await get(recentQ);
+
+                if (!snap.exists()) {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    return;
+                }
+
+                // Convert to sorted array (limitToLast returns ascending-ish, but we’ll be explicit)
+                const items = Object.entries(snap.val()).map(([id, v]) => ({ id, ...v }));
+                items.sort((a, b) => (b.searchedAt || 0) - (a.searchedAt || 0));
+
+                items.forEach((s) => {
+                    const vehicle = [s.year, s.make, s.model].filter(Boolean).join(' ');
+                    const grade = (s.grade || '—').toString().toUpperCase();
+
+                    const timeLabel = (() => {
+                        if (!s.searchedAt) return '';
+                        const diffMs = Date.now() - Number(s.searchedAt);
+                        const mins = Math.floor(diffMs / 60000);
+                        if (mins < 60) return `Searched ${mins} min ago`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `Searched ${hrs} hour${hrs === 1 ? '' : 's'} ago`;
+                        const days = Math.floor(hrs / 24);
+                        return `Searched ${days} day${days === 1 ? '' : 's'} ago`;
+                    })();
+
+                    const gradeClass = grade.startsWith('A') ? 'grade-a'
+                                    : grade.startsWith('B') ? 'grade-b'
+                                    : grade.startsWith('C') ? 'grade-c'
+                                    : grade.startsWith('D') ? 'grade-d'
+                                    : 'grade-c';
+
+                    const gradeStyle = gradeClass === 'grade-d'
+                        ? 'background: #fecaca; color: #dc2626;'
+                        : '';
+
+                    const row = document.createElement('div');
+                    row.className = 'search-item';
+                    row.innerHTML = `
+                        <div>
+                            <div class="search-vehicle">${vehicle || 'Unknown vehicle'}</div>
+                            <div style="color: #64748b; font-size: 0.9rem;">${timeLabel}</div>
+                        </div>
+                        <div class="search-grade ${gradeClass}" style="${gradeStyle}">${grade}</div>
+                    `;
+                    listEl.appendChild(row);
+                });
+
+            } catch (e) {
+                console.error('Error loading recent searches:', e);
+                if (emptyEl) {
+                    emptyEl.style.display = 'block';
+                    emptyEl.textContent = 'Could not load recent searches right now.';
+                }
+            }
+        }
+
+// Show purchase success notification
         function showPurchaseSuccess() {
             const notification = document.createElement('div');
             notification.style.cssText = `
@@ -2214,15 +2270,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 const userId = currentUser.uid;
-                const searchRef = push(ref(database, 'vehicle_searches'));
-                
+                const searchRef = push(ref(database, `vehicle_searches/${userId}`));
+
                 await set(searchRef, {
                     userId: userId,
                     make: vehicleData.make,
                     model: vehicleData.model,
                     year: vehicleData.year,
                     grade: vehicleData.grade || null,
-                    searchedAt: serverTimestamp()
+                    searchedAt: Date.now()
                 });
                 
                 console.log('Vehicle search saved successfully');
