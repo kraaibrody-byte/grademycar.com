@@ -147,7 +147,7 @@
   <h2>1. Information We Collect</h2>
   <p>We collect only what is necessary to provide the service:</p>
   <ul>
-    <li><b>Account information</b> — Your email address and hashed password, collected via Firebase Authentication (Google) when you create an account.</li>
+    <li><b>Account information</b> — Your email address, collected via Firebase Authentication (Google) when you create an account. Passwords are managed entirely by Firebase — we never see or store them.</li>
     <li><b>Payment information</b> — Payments are processed by Stripe. We never see or store your credit card number, billing address, or any other payment details.</li>
     <li><b>Credit balance</b> — The number of report credits remaining on your account, stored in our database.</li>
     <li><b>Anonymized usage data</b> — Aggregate, non-identifiable statistics (e.g., total reports generated) used to improve the product.</li>
@@ -217,7 +217,15 @@
     the top of this page. Continued use of the extension constitutes acceptance of the updated policy.
   </p>
 
-  <h2>10. Contact Us</h2>
+  <h2>10. Chrome Extension Permissions</h2>
+  <p>GradeMyCar requests the following browser permissions to function:</p>
+  <ul>
+    <li><b>Access to car listing websites</b> (<code>activeTab</code> and host permissions) — Used to read vehicle data displayed on the page (make, model, year, mileage, price). No data from these pages is sent to our servers; all analysis runs locally in your browser.</li>
+    <li><b>Local storage</b> (<code>storage</code>) — Used to cache your credit balance and authentication state so the extension works without a network round-trip on every page load. This data stays on your device.</li>
+  </ul>
+  <p>We do not use these permissions to track your browsing history or collect any information unrelated to grading a vehicle listing.</p>
+
+  <h2>11. Contact Us</h2>
   <div class="contact-block">
     <p><b>GradeMyCar</b></p>
     <p><a href="mailto:support@grademycar.com">support@grademycar.com</a></p>
