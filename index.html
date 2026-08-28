@@ -974,6 +974,159 @@
             font-size: 0.9rem;
         }
 
+        /* Premium upsell within lookup result */
+        .premium-unlock {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .premium-unlock-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .premium-unlock-header h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .premium-tag {
+            background: #6b7280;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .premium-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+            margin-bottom: 1rem;
+        }
+
+        .premium-inputs .lookup-field input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #1e293b;
+            background: #fafbfc;
+        }
+
+        .premium-report {
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .premium-report.show {
+            display: block;
+        }
+
+        .premium-report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .premium-report-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+
+        .premium-report-card .label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.4rem;
+        }
+
+        .premium-report-card .value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .premium-report-card .sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        .premium-issues {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .premium-issues h5 {
+            font-size: 0.9rem;
+            color: #1e293b;
+            margin-bottom: 0.6rem;
+        }
+
+        .premium-issues ul {
+            padding-left: 1.2rem;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .premium-recall-item {
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .premium-recall-item .component {
+            font-weight: 700;
+            color: #991b1b;
+            margin-bottom: 0.3rem;
+        }
+
+        .premium-recall-item .summary {
+            font-size: 0.85rem;
+            color: #7f1d1d;
+        }
+
+        .premium-no-recalls {
+            color: #16a34a;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .premium-error, .premium-need-credits {
+            color: #dc2626;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .premium-loading {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .premium-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .lookup-form {
                 grid-template-columns: 1fr;
@@ -2467,6 +2620,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 await updateDashboardData(currentUser);
             }
         };
+
+        // Calls the useReportCredit Cloud Function — deduction happens server-side,
+        // safely bypassing the locked-down client write rules on reportCredits.
+        window.spendOneCredit = async function(vehicleInfo) {
+            if (!currentUser) {
+                return { success: false, reason: 'not-logged-in' };
+            }
+            try {
+                const useReportCredit = httpsCallable(functions, 'useReportCredit');
+                const result = await useReportCredit({
+                    vehicleInfo: vehicleInfo || {},
+                    reportData: { source: 'website-premium-lookup' }
+                });
+                return {
+                    success: true,
+                    remaining: result.data.creditsRemaining,
+                    unlimitedActive: result.data.unlimitedActive
+                };
+            } catch (error) {
+                console.error('Error spending credit:', error);
+                if (error.code === 'functions/failed-precondition') {
+                    return { success: false, reason: 'insufficient-credits' };
+                }
+                if (error.code === 'functions/unauthenticated') {
+                    return { success: false, reason: 'not-logged-in' };
+                }
+                return { success: false, reason: 'error' };
+            }
+        };
     </script>
 
     <!-- Vehicle Lookup Tool -->
@@ -2595,8 +2777,99 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="value ${gradeColorClass(rating.overall)}">${rating.overall || 'N/A'}</div>
                         </div>
                     </div>
+
+                    <div class="premium-unlock">
+                        <div class="premium-unlock-header">
+                            <h4>Unlock Premium Report</h4>
+                            <span class="premium-tag">1 credit</span>
+                        </div>
+                        <p class="lookup-subtitle" style="margin-bottom: 1rem;">
+                            Get estimated remaining lifespan, common issues for this model, and full NHTSA safety &amp; recall data.
+                        </p>
+                        <div class="premium-inputs">
+                            <div class="lookup-field">
+                                <label for="premium-mileage">Current Mileage</label>
+                                <input type="number" id="premium-mileage" min="0" placeholder="e.g. 85000">
+                            </div>
+                            <div class="lookup-field">
+                                <label for="premium-price">Asking Price (optional)</label>
+                                <input type="number" id="premium-price" min="0" placeholder="e.g. 18000">
+                            </div>
+                            <button class="btn btn-primary" id="premium-unlock-btn">Unlock Report</button>
+                        </div>
+                        <div id="premium-status"></div>
+                        <div class="premium-report" id="premium-report"></div>
+                    </div>
                 `;
                 resultBox.classList.add('show');
+
+                // Wire up the premium unlock button for this specific vehicle
+                const premiumBtn = document.getElementById('premium-unlock-btn');
+                const premiumStatus = document.getElementById('premium-status');
+                const premiumReport = document.getElementById('premium-report');
+                const mileageInput = document.getElementById('premium-mileage');
+                const priceInput = document.getElementById('premium-price');
+
+                premiumBtn.addEventListener('click', async () => {
+                    premiumStatus.innerHTML = '';
+                    premiumReport.classList.remove('show');
+                    premiumReport.innerHTML = '';
+
+                    const mileage = parseInt(mileageInput.value, 10);
+                    if (!mileage || mileage < 0) {
+                        premiumStatus.innerHTML = '<p class="premium-error">Enter your current mileage to continue.</p>';
+                        return;
+                    }
+
+                    if (typeof window.getCurrentUser !== 'function' || !window.getCurrentUser()) {
+                        premiumStatus.innerHTML = '<p class="premium-error">Please log in to unlock a premium report.</p>';
+                        return;
+                    }
+
+                    premiumBtn.disabled = true;
+                    premiumStatus.innerHTML = '<p class="premium-loading">Checking credits…</p>';
+
+                    const spendResult = await window.spendOneCredit({
+                        make: toTitleCase(make),
+                        model: toTitleCase(model),
+                        year: year,
+                        mileage: mileage
+                    });
+
+                    if (!spendResult.success) {
+                        premiumBtn.disabled = false;
+                        if (spendResult.reason === 'insufficient-credits') {
+                            premiumStatus.innerHTML = '<p class="premium-need-credits">You\'re out of credits. <a href="#pricing">Buy more credits</a> to unlock this report.</p>';
+                        } else {
+                            premiumStatus.innerHTML = '<p class="premium-error">Something went wrong. Please try again.</p>';
+                        }
+                        return;
+                    }
+
+                    premiumStatus.innerHTML = '<p class="premium-loading">Building your premium report…</p>';
+
+                    try {
+                        await buildPremiumReport({
+                            make, model, year, mileage,
+                            price: parseInt(priceInput.value, 10) || null,
+                            container: premiumReport
+                        });
+                        const usageMsg = spendResult.unlimitedActive
+                            ? 'Unlimited plan active — no credit used.'
+                            : `1 credit used — ${spendResult.remaining} remaining.`;
+                        premiumStatus.innerHTML = `<p style="color:#16a34a; font-size:0.85rem;">${usageMsg}</p>`;
+                        premiumReport.classList.add('show');
+                        if (typeof window.refreshDashboardAfterSearch === 'function') {
+                            await window.refreshDashboardAfterSearch();
+                        }
+                    } catch (e) {
+                        console.error('Premium report error:', e);
+                        premiumStatus.innerHTML = '<p class="premium-error">Could not fully load premium data (safety/recall service may be unavailable). Your credit was still used.</p>';
+                        premiumReport.classList.add('show');
+                    } finally {
+                        premiumBtn.disabled = false;
+                    }
+                });
 
                 // Log the search if the user is logged in, then refresh dashboard stats/list
                 if (typeof window.saveVehicleSearch === 'function' && typeof window.getCurrentUser === 'function' && window.getCurrentUser()) {
@@ -2611,6 +2884,94 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+
+            // Builds the premium report: lifespan estimate + NHTSA safety/recalls
+            async function buildPremiumReport({ make, model, year, mileage, price, container }) {
+                const lifespanData = (window.LIFESPAN_DATA && window.LIFESPAN_DATA[make] && window.LIFESPAN_DATA[make][model]) || null;
+
+                let lifespanHtml = '';
+                if (lifespanData) {
+                    const avgLifespan = lifespanData.avgLifespan || null;
+                    const milesRemaining = avgLifespan ? Math.max(0, avgLifespan - mileage) : null;
+                    const pctUsed = avgLifespan ? Math.min(100, Math.round((mileage / avgLifespan) * 100)) : null;
+
+                    lifespanHtml = `
+                        <div class="premium-report-grid">
+                            <div class="premium-report-card">
+                                <div class="label">Avg. Expected Lifespan</div>
+                                <div class="value">${avgLifespan ? avgLifespan.toLocaleString() + ' mi' : 'N/A'}</div>
+                            </div>
+                            <div class="premium-report-card">
+                                <div class="label">Estimated Miles Remaining</div>
+                                <div class="value">${milesRemaining !== null ? milesRemaining.toLocaleString() + ' mi' : 'N/A'}</div>
+                                <div class="sub">${pctUsed !== null ? pctUsed + '% of expected lifespan used' : ''}</div>
+                            </div>
+                            <div class="premium-report-card">
+                                <div class="label">Max Reported Mileage</div>
+                                <div class="value">${lifespanData.maxReported ? lifespanData.maxReported.toLocaleString() + ' mi' : 'N/A'}</div>
+                            </div>
+                        </div>
+                        ${lifespanData.commonIssues && lifespanData.commonIssues.length ? `
+                            <div class="premium-issues">
+                                <h5>Commonly Reported Issues</h5>
+                                <ul>${lifespanData.commonIssues.map(i => `<li>${i}</li>`).join('')}</ul>
+                            </div>
+                        ` : ''}
+                    `;
+                } else {
+                    lifespanHtml = `<p class="lookup-not-found">Lifespan data not available for this specific model yet.</p>`;
+                }
+
+                container.innerHTML = lifespanHtml + '<div id="premium-safety-slot"><p class="premium-loading">Loading safety &amp; recall data…</p></div>';
+
+                const safetySlot = document.getElementById('premium-safety-slot');
+
+                try {
+                    const [recallData] = await Promise.all([
+                        fetchNhtsaRecalls(make, model, year)
+                    ]);
+
+                    let recallsHtml = '';
+                    if (recallData.totalRecalls === 0) {
+                        recallsHtml = '<p class="premium-no-recalls">✓ No recalls found for this make/model/year.</p>';
+                    } else {
+                        recallsHtml = recallData.recalls.slice(0, 5).map(r => `
+                            <div class="premium-recall-item">
+                                <div class="component">${r.component || 'Recall'}</div>
+                                <div class="summary">${(r.summary || '').slice(0, 220)}${(r.summary || '').length > 220 ? '…' : ''}</div>
+                            </div>
+                        `).join('');
+                    }
+
+                    safetySlot.innerHTML = `
+                        <div class="premium-issues">
+                            <h5>Safety &amp; Recalls (NHTSA)</h5>
+                            ${recallsHtml}
+                        </div>
+                    `;
+                } catch (e) {
+                    safetySlot.innerHTML = `<p class="premium-error">Safety/recall data temporarily unavailable.</p>`;
+                }
+            }
+
+            async function fetchNhtsaRecalls(make, model, year) {
+                const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${encodeURIComponent(year)}`;
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
+                if (res.status === 400) {
+                    return { totalRecalls: 0, recalls: [] };
+                }
+                if (!res.ok) throw new Error(`Recall API error: ${res.status}`);
+
+                const responseData = await res.json();
+                const results = Array.isArray(responseData?.results) ? responseData.results : [];
+                const recalls = results.map(r => ({
+                    component: r.Component,
+                    summary: r.Summary
+                }));
+
+                return { totalRecalls: recalls.length, recalls };
+            }
 
             populateMakes();
         })();
