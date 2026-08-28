@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GradeMyCar - Instant Vehicle Reliability Analysis</title>
+    <script src="reliability-data.js"></script>
     <style>
         * {
             margin: 0;
@@ -855,6 +856,130 @@
             border: 1px solid #e2e8f0;
         }
 
+        /* Vehicle Lookup Tool */
+        .lookup-tool {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 2rem;
+        }
+
+        .lookup-tool h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.35rem;
+        }
+
+        .lookup-subtitle {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .lookup-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .lookup-field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.4rem;
+        }
+
+        .lookup-field select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: #1e293b;
+            background: #fafbfc;
+            cursor: pointer;
+        }
+
+        .lookup-field select:disabled {
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .lookup-submit {
+            padding: 0.75rem 1.75rem;
+            white-space: nowrap;
+        }
+
+        .lookup-result {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+
+        .lookup-result.show {
+            display: block;
+        }
+
+        .lookup-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .lookup-result-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .lookup-grades {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .lookup-grade-item {
+            text-align: center;
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .lookup-grade-item .label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .lookup-grade-item .value {
+            display: inline-block;
+            padding: 0.25rem 0.9rem;
+            border-radius: 20px;
+            font-weight: 700;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .lookup-not-found {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .lookup-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .search-item {
             display: flex;
             justify-content: space-between;
@@ -1462,6 +1587,35 @@
                 </div>
             </div>
             
+            <div class="lookup-tool">
+                <h3>Look Up Any Vehicle</h3>
+                <p class="lookup-subtitle">Check reliability grades for a car you already own or one you're considering — no listing required.</p>
+
+                <div class="lookup-form">
+                    <div class="lookup-field">
+                        <label for="lookup-make">Make</label>
+                        <select id="lookup-make">
+                            <option value="">Select make</option>
+                        </select>
+                    </div>
+                    <div class="lookup-field">
+                        <label for="lookup-model">Model</label>
+                        <select id="lookup-model" disabled>
+                            <option value="">Select make first</option>
+                        </select>
+                    </div>
+                    <div class="lookup-field">
+                        <label for="lookup-year">Year</label>
+                        <select id="lookup-year" disabled>
+                            <option value="">Select model first</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary lookup-submit" id="lookup-submit-btn" disabled>Check Grade</button>
+                </div>
+
+                <div class="lookup-result" id="lookup-result"></div>
+            </div>
+
             <div class="recent-searches">
                 <h3>Recent Vehicle Searches</h3>
 
@@ -2308,6 +2462,158 @@ document.addEventListener('DOMContentLoaded', function() {
         window.getCurrentUser = () => currentUser;
         window.getFirebaseAuth = () => auth;
         window.getDatabase = () => database;
+        window.refreshDashboardAfterSearch = async function() {
+            if (currentUser) {
+                await updateDashboardData(currentUser);
+            }
+        };
+    </script>
+
+    <!-- Vehicle Lookup Tool -->
+    <script>
+        (function () {
+            const makeSelect = document.getElementById('lookup-make');
+            const modelSelect = document.getElementById('lookup-model');
+            const yearSelect = document.getElementById('lookup-year');
+            const submitBtn = document.getElementById('lookup-submit-btn');
+            const resultBox = document.getElementById('lookup-result');
+
+            if (!makeSelect) return; // lookup tool not on this page
+
+            const data = window.RELIABILITY_DATA || {};
+
+            function toTitleCase(str) {
+                return String(str).replace(/\b\w/g, c => c.toUpperCase());
+            }
+
+            function gradeColorClass(grade) {
+                if (!grade) return 'grade-c';
+                const g = grade.toUpperCase();
+                if (g.startsWith('A')) return 'grade-a';
+                if (g.startsWith('B')) return 'grade-b';
+                if (g.startsWith('C')) return 'grade-c';
+                return 'grade-d';
+            }
+
+            function populateMakes() {
+                const makes = Object.keys(data).sort();
+                makes.forEach(make => {
+                    const opt = document.createElement('option');
+                    opt.value = make;
+                    opt.textContent = toTitleCase(make);
+                    makeSelect.appendChild(opt);
+                });
+            }
+
+            function populateModels(make) {
+                modelSelect.innerHTML = '<option value="">Select model</option>';
+                if (!make || !data[make]) {
+                    modelSelect.disabled = true;
+                    return;
+                }
+                const models = Object.keys(data[make]).sort();
+                models.forEach(model => {
+                    const opt = document.createElement('option');
+                    opt.value = model;
+                    opt.textContent = toTitleCase(model);
+                    modelSelect.appendChild(opt);
+                });
+                modelSelect.disabled = false;
+            }
+
+            function populateYears() {
+                yearSelect.innerHTML = '<option value="">Select year</option>';
+                const currentYear = new Date().getFullYear();
+                for (let y = currentYear + 1; y >= 1990; y--) {
+                    const opt = document.createElement('option');
+                    opt.value = y;
+                    opt.textContent = y;
+                    yearSelect.appendChild(opt);
+                }
+                yearSelect.disabled = false;
+            }
+
+            function checkFormReady() {
+                submitBtn.disabled = !(makeSelect.value && modelSelect.value && yearSelect.value);
+            }
+
+            makeSelect.addEventListener('change', () => {
+                populateModels(makeSelect.value);
+                yearSelect.innerHTML = '<option value="">Select model first</option>';
+                yearSelect.disabled = true;
+                resultBox.classList.remove('show');
+                checkFormReady();
+            });
+
+            modelSelect.addEventListener('change', () => {
+                if (modelSelect.value) {
+                    populateYears();
+                } else {
+                    yearSelect.innerHTML = '<option value="">Select model first</option>';
+                    yearSelect.disabled = true;
+                }
+                resultBox.classList.remove('show');
+                checkFormReady();
+            });
+
+            yearSelect.addEventListener('change', checkFormReady);
+
+            submitBtn.addEventListener('click', async () => {
+                const make = makeSelect.value;
+                const model = modelSelect.value;
+                const year = yearSelect.value;
+                const rating = data[make] && data[make][model];
+
+                const displayName = `${year} ${toTitleCase(make)} ${toTitleCase(model)}`;
+
+                if (!rating) {
+                    resultBox.innerHTML = `
+                        <div class="lookup-result-header">
+                            <div class="lookup-result-title">${displayName}</div>
+                        </div>
+                        <p class="lookup-not-found">No reliability data available for this vehicle yet.</p>
+                    `;
+                    resultBox.classList.add('show');
+                    return;
+                }
+
+                resultBox.innerHTML = `
+                    <div class="lookup-result-header">
+                        <div class="lookup-result-title">${displayName}</div>
+                    </div>
+                    <div class="lookup-grades">
+                        <div class="lookup-grade-item">
+                            <div class="label">Engine</div>
+                            <div class="value ${gradeColorClass(rating.engine)}">${rating.engine || 'N/A'}</div>
+                        </div>
+                        <div class="lookup-grade-item">
+                            <div class="label">Transmission</div>
+                            <div class="value ${gradeColorClass(rating.transmission)}">${rating.transmission || 'N/A'}</div>
+                        </div>
+                        <div class="lookup-grade-item">
+                            <div class="label">Overall</div>
+                            <div class="value ${gradeColorClass(rating.overall)}">${rating.overall || 'N/A'}</div>
+                        </div>
+                    </div>
+                `;
+                resultBox.classList.add('show');
+
+                // Log the search if the user is logged in, then refresh dashboard stats/list
+                if (typeof window.saveVehicleSearch === 'function' && typeof window.getCurrentUser === 'function' && window.getCurrentUser()) {
+                    await window.saveVehicleSearch({
+                        make: toTitleCase(make),
+                        model: toTitleCase(model),
+                        year: year,
+                        grade: rating.overall || null
+                    });
+                    if (typeof window.refreshDashboardAfterSearch === 'function') {
+                        await window.refreshDashboardAfterSearch();
+                    }
+                }
+            });
+
+            populateMakes();
+        })();
     </script>
 
     <!-- Regular JavaScript (non-module) -->
