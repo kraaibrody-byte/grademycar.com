@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GradeMyCar Admin</title>
+<style>
+  :root{
+    --blue:#3b82f6;
+    --blue-dark:#1d4ed8;
+    --blue-deep:#1e40af;
+    --ink:#1e293b;
+    --ink-soft:#64748b;
+    --line:#e2e8f0;
+    --line-soft:#eef1f5;
+    --bg:#fafbfc;
+    --surface:#ffffff;
+    --good:#10b981;
+    --good-soft:#dcfce7;
+    --good-ink:#166534;
+    --warn:#f59e0b;
+    --warn-soft:#fef3c7;
+    --warn-ink:#92400e;
+    --bad:#dc2626;
+    --bad-soft:#fecaca;
+    --plum:#7c3aed;
+    --plum-soft:#f3e8ff;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 20px -10px rgba(15,23,42,0.10);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font); font-size:14px; line-height:1.5;
+  }
+  h1,h2,h3{margin:0; text-wrap:balance;}
+  .num{font-family:var(--mono); font-variant-numeric:tabular-nums;}
+  a{color:inherit;}
+  button{font-family:var(--font);}
+  ::selection{background:#dbeafe;}
+
+  /* ---------------- Login screen ---------------- */
+  #login-screen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); padding:20px;
+  }
+  .login-card{
+    background:var(--surface); border-radius:20px; border:1px solid var(--line);
+    box-shadow:0 25px 50px rgba(0,0,0,0.10); padding:2.25rem; max-width:400px; width:100%;
+  }
+  .login-logo{display:flex; align-items:center; gap:.6rem; justify-content:center; margin-bottom:1.5rem;}
+  .login-logo .mark{width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+    display:flex; align-items:center; justify-content:center;}
+  .login-logo .word{font-size:1.4rem; font-weight:700; color:var(--blue-deep);}
+  .login-card h2{text-align:center; font-size:1.3rem; font-weight:700; color:var(--ink); margin-bottom:.3rem;}
+  .login-sub{text-align:center; color:var(--ink-soft); font-size:.85rem; margin-bottom:1.5rem;}
+  .field{display:flex; flex-direction:column; gap:.4rem; margin-bottom:1rem;}
+  .field label{font-size:.82rem; font-weight:600; color:#374151;}
+  .field input{
+    padding:.7rem .9rem; border:2px solid var(--line); border-radius:10px; font-size:.95rem;
+    font-family:var(--font); outline:none; transition:border-color .2s;
+  }
+  .field input:focus{border-color:var(--blue); box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+  .btn-login{
+    width:100%; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:#fff; border:none;
+    padding:.8rem; border-radius:10px; font-weight:600; font-size:.95rem; cursor:pointer; margin-top:.4rem;
+  }
+  .btn-login:hover{box-shadow:0 10px 20px rgba(59,130,246,.28); transform:translateY(-1px);}
+  .btn-login:disabled{opacity:.6; cursor:not-allowed; transform:none; box-shadow:none;}
+  .login-error{
+    background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:.65rem .9rem;
+    border-radius:8px; font-size:.85rem; margin-bottom:1rem; display:none;
+  }
+  .login-note{margin-top:1.25rem; font-size:.78rem; color:var(--ink-soft); text-align:center; line-height:1.5;}
+
+  /* ---------------- App shell ---------------- */
+  #app{display:none; min-height:100vh;}
+  .shell{display:grid; grid-template-columns:216px 1fr; min-height:100vh;}
+
+  .sidebar{
+    background:var(--surface); border-right:1px solid var(--line);
+    padding:1.2rem .8rem; display:flex; flex-direction:column; gap:1.4rem;
+    position:sticky; top:0; height:100vh;
+  }
+  .brand{display:flex; align-items:center; gap:.5rem; padding:0 .3rem;}
+  .brand .mark{width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); flex:none;}
+  .brand .word{font-weight:700; font-size:1.05rem; color:var(--blue-deep);}
+  .navgroup-label{font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; color:#94a3b8; padding:0 .6rem; margin-bottom:.15rem;}
+  .navgroup{display:flex; flex-direction:column; gap:2px;}
+  .navitem{
+    display:flex; align-items:center; gap:.6rem; padding:.5rem .6rem; border-radius:8px;
+    font-size:.85rem; font-weight:500; color:var(--ink-soft); background:none; border:none; cursor:pointer; width:100%; text-align:left;
+  }
+  .navitem svg{flex:none; opacity:.8;}
+  .navitem:hover{background:var(--line-soft); color:var(--ink);}
+  .navitem.active{background:#eff6ff; color:var(--blue-deep);}
+  .sidebar-foot{margin-top:auto; border-top:1px solid var(--line); padding-top:.8rem;}
+  .admin-chip{font-size:.72rem; color:var(--ink-soft); word-break:break-all; line-height:1.5;}
+  .admin-chip b{color:var(--ink); display:block; font-size:.82rem;}
+  .btn-signout{
+    margin-top:.6rem; width:100%; padding:.45rem; border-radius:8px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); font-size:.78rem; cursor:pointer;
+  }
+  .btn-signout:hover{background:var(--line-soft);}
+
+  .main{padding:1.6rem 1.9rem 4rem; max-width:1180px;}
+  .topbar{display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:1.4rem; flex-wrap:wrap;}
+  .topbar h1{font-size:1.4rem; font-weight:800;}
+  .topbar-sub{color:var(--ink-soft); font-size:.83rem; margin-top:.2rem;}
+  .view{display:none;} .view.active{display:block;}
+
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:.9rem; margin-bottom:1.3rem;}
+  .kpi{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:1rem 1.1rem; box-shadow:var(--shadow);}
+  .kpi-label{font-size:.72rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.35rem;}
+  .kpi-value{font-family:var(--mono); font-size:1.5rem; font-weight:700; color:var(--ink);}
+  .kpi-sub{font-size:.72rem; color:var(--ink-soft); margin-top:.2rem;}
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); margin-bottom:1.1rem; overflow:hidden;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; gap:.8rem; padding:.9rem 1.1rem; border-bottom:1px solid var(--line-soft); flex-wrap:wrap;}
+  .panel-head h2{font-size:.95rem; font-weight:700;}
+  .panel-head .sub{font-size:.75rem; color:var(--ink-soft); font-weight:400; margin-top:.15rem;}
+  .panel-body{padding:1rem 1.1rem 1.2rem;}
+  .grid-2{display:grid; grid-template-columns:1.3fr 1fr; gap:1.1rem;}
+  @media (max-width:960px){.grid-2{grid-template-columns:1fr;} .kpi-row{grid-template-columns:repeat(2,1fr);} .shell{grid-template-columns:1fr;}}
+
+  .btn{font-size:.78rem; font-weight:600; padding:.4rem .75rem; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer;}
+  .btn:hover{border-color:#93c5fd;}
+  .btn.primary{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .btn.primary:hover{background:var(--blue-dark);}
+  .btn.danger{color:var(--bad); border-color:#fecaca;}
+  .btn.danger:hover{background:#fef2f2;}
+  .btn:disabled{opacity:.55; cursor:not-allowed;}
+
+  table{width:100%; border-collapse:collapse; font-size:.83rem;}
+  th{text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); font-weight:700; padding:0 .6rem .5rem; border-bottom:1px solid var(--line);}
+  td{padding:.55rem .6rem; border-bottom:1px solid var(--line-soft); vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .table-wrap{overflow-x:auto;}
+  td.num, th.num{text-align:right; font-family:var(--mono);}
+
+  .pill{display:inline-flex; align-items:center; gap:.3rem; padding:.15rem .55rem; border-radius:100px; font-size:.68rem; font-weight:700;}
+  .pill.good{background:var(--good-soft); color:var(--good-ink);}
+  .pill.warn{background:var(--warn-soft); color:var(--warn-ink);}
+  .pill.bad{background:var(--bad-soft); color:#7f1d1d;}
+  .pill.neutral{background:var(--line-soft); color:var(--ink-soft); border:1px solid var(--line);}
+  .pill.accent{background:#eff6ff; color:var(--blue-deep);}
+
+  .grade-chip{display:inline-flex; align-items:center; justify-content:center; min-width:26px; padding:.15rem .4rem; border-radius:6px; font-family:var(--mono); font-weight:700; font-size:.75rem; color:#fff;}
+  .g-a{background:var(--good);} .g-b{background:var(--blue);} .g-c{background:var(--warn);}
+  .g-d{background:var(--bad); color:#fff;} .g-f{background:var(--plum);} .g-u{background:#94a3b8;}
+
+  .searchbar{display:flex; align-items:center; gap:.5rem; border:1px solid var(--line); border-radius:8px; padding:.4rem .7rem; background:var(--bg); min-width:220px;}
+  .searchbar input{border:none; background:transparent; outline:none; font-size:.8rem; width:100%; font-family:var(--font);}
+
+  .user-cell{display:flex; align-items:center; gap:.55rem;}
+  .user-avatar{width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#1d4ed8); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.7rem; flex:none;}
+  .user-email{font-weight:600;}
+  .user-sub{font-size:.68rem; color:var(--ink-soft); font-family:var(--mono);}
+
+  .roadmap-row{display:flex; align-items:center; gap:.9rem; padding:.75rem .1rem; border-bottom:1px solid var(--line-soft);}
+  .roadmap-row:last-child{border-bottom:none;}
+  .roadmap-icon{width:32px; height:32px; border-radius:9px; background:#eff6ff; color:var(--blue-deep); display:flex; align-items:center; justify-content:center; font-size:14px; flex:none;}
+  .roadmap-title{font-weight:700; font-size:.82rem;}
+  .roadmap-desc{font-size:.72rem; color:var(--ink-soft); margin-top:1px;}
+  .roadmap-meta{margin-left:auto; display:flex; align-items:center; gap:.8rem;}
+  .toggle{position:relative; width:36px; height:20px; border-radius:100px; background:var(--line); border:none; cursor:pointer; flex:none; transition:background .15s;}
+  .toggle::after{content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s;}
+  .toggle.on{background:var(--good);} .toggle.on::after{transform:translateX(16px);}
+  .toggle:disabled{opacity:.5; cursor:wait;}
+
+  .bar-row{display:flex; align-items:center; gap:.6rem; margin-bottom:.6rem;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-label{width:120px; font-size:.75rem; color:var(--ink-soft); flex:none;}
+  .bar-track{flex:1; height:9px; border-radius:5px; background:var(--line-soft); overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px; background:var(--blue);}
+  .bar-value{width:56px; text-align:right; font-family:var(--mono); font-size:.75rem; flex:none;}
+
+  .feed-item{display:flex; gap:.6rem; padding:.55rem 0; border-bottom:1px solid var(--line-soft); font-size:.8rem;}
+  .feed-item:last-child{border-bottom:none;}
+  .feed-time{font-size:.68rem; color:var(--ink-soft);}
+
+  .empty-note{font-size:.78rem; color:var(--ink-soft); padding:.9rem 0; line-height:1.5;}
+  .banner{padding:.85rem 1rem; border-radius:10px; font-size:.78rem; line-height:1.55; margin-bottom:1rem;}
+  .banner.warn{background:var(--warn-soft); color:var(--warn-ink); border:1px solid #fde68a;}
+  .banner.info{background:#eff6ff; color:var(--blue-deep); border:1px solid #bfdbfe;}
+  .banner code{background:rgba(0,0,0,.06); padding:.05rem .3rem; border-radius:4px; font-family:var(--mono); font-size:.75rem;}
+  .code-block{
+    background:#0f172a; color:#e2e8f0; border-radius:10px; padding:.9rem 1rem; font-family:var(--mono);
+    font-size:.72rem; line-height:1.6; overflow-x:auto; white-space:pre;
+  }
+  .field-inline{display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;}
+  .field-inline input[type=text], .field-inline input[type=number]{
+    padding:.4rem .6rem; border:1px solid var(--line); border-radius:8px; font-size:.78rem; font-family:var(--font); width:120px;
+  }
+  .spinner{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .muted{color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-database-compat.min.js"></script>
+
+<!-- ================= LOGIN ================= -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="mark"></div>
+      <div class="word">GradeMyCar</div>
+    </div>
+    <h2>Admin sign in</h2>
+    <p class="login-sub">Sign in with your GradeMyCar Firebase account</p>
+    <div class="login-error" id="login-error"></div>
+    <div class="field">
+      <label for="li-email">Email</label>
+      <input type="email" id="li-email" placeholder="you@example.com" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="li-pass">Password</label>
+      <input type="password" id="li-pass" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="btn-login" id="li-submit">Sign in</button>
+    <p class="login-note">
+      This uses the same Firebase project as grademycar.com. Any account can sign in here, but the Users / Roadmap Flags data will only load once your Firebase Realtime Database rules grant your account read/write access — see the Setup panel after signing in.
+    </p>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="mark"></div><div class="word">GradeMyCar</div></div>
+
+      <div>
+        <div class="navgroup-label">Business</div>
+        <nav class="navgroup">
+          <button class="navitem active" data-view="overview">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 19h16M7 19V9m5 10V5m5 14v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            Overview
+          </button>
+          <button class="navitem" data-view="users">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.7-3 2.9-4.7 5.5-4.7s4.8 1.7 5.5 4.7M16 8.3a3 3 0 1 1 3.6 2.9M15 14.4c2.3.2 4.3 1.7 4.9 4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            Users
+          </button>
+        </nav>
+      </div>
+
+      <div>
+        <div class="navgroup-label">Product</div>
+        <nav class="navgroup">
+          <button class="navitem" data-view="activity">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2 7 4-14 2 7h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Search Activity
+          </button>
+          <button class="navitem" data-view="reliability">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            Reliability Data
+          </button>
+          <button class="navitem" data-view="roadmap">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20V6m0 3 4-2 4 2 4-2 4 2v8l-4-2-4 2-4-2-4 2" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            Roadmap Flags
+          </button>
+        </nav>
+      </div>
+
+      <div>
+        <div class="navgroup-label">Setup</div>
+        <nav class="navgroup">
+          <button class="navitem" data-view="setup">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14 3h-4l-.6 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9c.6.5 1.3.9 2 1.2L10 21h4l.6-2.6c.7-.3 1.4-.7 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2Z" stroke="currentColor" stroke-width="1.3"/></svg>
+            Setup &amp; rules
+          </button>
+        </nav>
+      </div>
+
+      <div class="sidebar-foot">
+        <div class="admin-chip"><b id="admin-email">—</b><span id="admin-uid" style="cursor:pointer;" title="Click to copy UID">uid: —</span></div>
+        <button class="btn-signout" id="signout-btn">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <!-- ============ OVERVIEW ============ -->
+      <section class="view active" id="view-overview">
+        <div class="topbar">
+          <div><h1>Overview</h1><div class="topbar-sub" id="overview-sub">Loading live data from Firebase…</div></div>
+          <button class="btn" id="refresh-all">↻ Refresh</button>
+        </div>
+
+        <div id="overview-banner"></div>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Total users</div><div class="kpi-value" id="kpi-users">—</div><div class="kpi-sub" id="kpi-users-sub">&nbsp;</div></div>
+          <div class="kpi"><div class="kpi-label">Lifetime revenue (recorded)</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub">sum of users/*/totalSpent</div></div>
+          <div class="kpi"><div class="kpi-label">Credits outstanding</div><div class="kpi-value" id="kpi-credits">—</div><div class="kpi-sub">sum of users/*/reportCredits</div></div>
+          <div class="kpi"><div class="kpi-label">Reports run (recorded)</div><div class="kpi-value" id="kpi-searches">—</div><div class="kpi-sub">sum of users/*/totalSearches</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div><h2>Recently created accounts</h2><div class="sub">Newest 8 by <span class="num">createdAt</span></div></div></div>
+          <div class="panel-body" id="recent-signups"><div class="empty-note">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- ============ USERS ============ -->
+      <section class="view" id="view-users">
+        <div class="topbar">
+          <div><h1>Users</h1><div class="topbar-sub" id="users-sub">Loading…</div></div>
+          <div class="searchbar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" id="user-search" placeholder="Filter by email…" />
+          </div>
+        </div>
+        <div id="users-banner"></div>
+        <div class="panel">
+          <div class="panel-body table-wrap">
+            <table>
+              <thead><tr><th>User</th><th class="num">Credits</th><th>Unlimited</th><th class="num">Searches</th><th class="num">Lifetime spend</th><th>Joined</th><th></th></tr></thead>
+              <tbody id="users-tbody"><tr><td colspan="7" class="empty-note">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="manage-panel" style="display:none;">
+          <div class="panel-head"><div><h2>Manage — <span id="manage-email">—</span></h2><div class="sub">Writes directly to <span class="num">users/&lt;uid&gt;</span> in Realtime Database</div></div></div>
+          <div class="panel-body">
+            <div class="field-inline" style="margin-bottom:.8rem;">
+              <button class="btn primary" data-grant="5">+5 credits</button>
+              <button class="btn primary" data-grant="15">+15 credits</button>
+              <input type="number" id="grant-custom" placeholder="custom amount" min="1" />
+              <button class="btn" id="grant-custom-btn">Add</button>
+            </div>
+            <div class="field-inline" style="margin-bottom:.4rem;">
+              <button class="btn" id="grant-unlimited-48">Grant 48h unlimited</button>
+              <button class="btn" id="grant-unlimited-336">Grant 14d unlimited</button>
+              <button class="btn danger" id="clear-unlimited">Clear unlimited</button>
+            </div>
+            <p class="empty-note" style="padding-top:0;">
+              Unlimited grants write to <span class="num">users/&lt;uid&gt;/unlimitedAccess/adminGrant</span> — confirmed against your actual <span class="num">checkReportAccess</span> Cloud Function source, which loops every entry under <span class="num">unlimitedAccess</span> looking for one with <span class="num">active: true</span> and a future <span class="num">expiresAt</span>. This is real now, not a guess.
+            </p>
+            <div id="manage-status" class="empty-note"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SEARCH ACTIVITY ============ -->
+      <section class="view" id="view-activity">
+        <div class="topbar">
+          <div><h1>Search activity</h1><div class="topbar-sub">From the <span class="num">vehicle_searches</span> collection</div></div>
+        </div>
+        <div id="activity-banner"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h2>Grade distribution</h2></div>
+            <div class="panel-body" id="grade-dist"><div class="empty-note">Loading…</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Most-searched makes</h2></div>
+            <div class="panel-body" id="top-makes"><div class="empty-note">Loading…</div></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Recent searches</h2></div>
+          <div class="panel-body" id="recent-searches"><div class="empty-note">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- ============ RELIABILITY DATA ============ -->
+      <section class="view" id="view-reliability">
+        <div class="topbar">
+          <div><h1>Reliability data coverage</h1><div class="topbar-sub">Live-fetched and counted from your published <span class="num">reliability-data.js</span></div></div>
+          <button class="btn" id="reliability-refresh">↻ Recount</button>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Source file</h2></div>
+          <div class="panel-body">
+            <div class="field-inline">
+              <span class="muted" style="font-size:.78rem;">github.com/</span>
+              <input type="text" id="gh-repo" value="kraaibrody-byte/grademycar.com" />
+              <span class="muted" style="font-size:.78rem;">branch</span>
+              <input type="text" id="gh-branch" value="main" style="width:70px;" />
+              <button class="btn" id="gh-fetch-btn">Fetch &amp; count</button>
+            </div>
+            <p class="empty-note">Guessed from the icon URL used in your <span class="num">index.html</span>. Adjust and re-fetch if this isn't your actual repo/branch.</p>
+          </div>
+        </div>
+        <div id="reliability-result"></div>
+      </section>
+
+      <!-- ============ ROADMAP FLAGS ============ -->
+      <section class="view" id="view-roadmap">
+        <div class="topbar">
+          <div><h1>Roadmap flags</h1><div class="topbar-sub">Read/write to <span class="num">featureFlags/*</span> in Realtime Database — live</div></div>
+        </div>
+        <div id="roadmap-banner"></div>
+        <div class="panel">
+          <div class="panel-body" id="roadmap-list">
+            <div class="empty-note">Loading…</div>
+          </div>
+        </div>
+        <p class="empty-note">
+          These toggles only change this admin page's own database node — they don't yet hide the "Coming Soon" badges on grademycar.com. To make that automatic, have <span class="num">index.html</span> read the same <span class="num">featureFlags/&lt;key&gt;</span> paths on load and swap the badge/section accordingly.
+        </p>
+      </section>
+
+      <!-- ============ SETUP ============ -->
+      <section class="view" id="view-setup">
+        <div class="topbar"><div><h1>Setup &amp; rules</h1><div class="topbar-sub">One-time Firebase configuration this page needs</div></div></div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>1. Your admin UID</h2></div>
+          <div class="panel-body">
+            <p class="empty-note" style="padding-top:0;">You're signed in as <b id="setup-email">—</b>, UID:</p>
+            <div class="code-block" id="setup-uid">—</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>2. Realtime Database rules</h2><div class="sub">Paste into Firebase console → Realtime Database → Rules, replacing the UID below with yours from step 1</div></div>
+          <div class="panel-body">
+            <div class="code-block" id="rules-block">Sign in first to generate this with your UID filled in.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>3. What's real vs. best-effort here</h2></div>
+          <div class="panel-body">
+            <p class="empty-note" style="padding-top:0;">
+              <b>Real, reads/writes your actual data:</b> Users list, credit balances, lifetime spend/searches (from the fields your own signup code and Cloud Functions already write), Roadmap Flags, and the Reliability Data count (fetched live from GitHub).<br><br>
+              <b>Real, confirmed against your source:</b> the "Grant unlimited" buttons write to <span class="num">unlimitedAccess/adminGrant</span> on the user record — verified directly against your deployed <span class="num">checkReportAccess</span> function, which scans every entry under <span class="num">unlimitedAccess</span> for one that's active and unexpired.<br><br>
+              <b>Not included:</b> per-bundle Stripe revenue breakdown and "which listing site" activity — neither is logged anywhere in your current code, so building them would mean adding logging first (e.g. having <span class="num">content.js</span> call <span class="num">window.saveVehicleSearch</span> with a <span class="num">site</span> field, or reading Stripe's API from a Cloud Function). Happy to wire those up if useful.
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCsVQCXfyRFt7fpcE-5Xvm_P3bULlGYMIU",
+  authDomain: "grademycar.firebaseapp.com",
+  databaseURL: "https://grademycar-default-rtdb.firebaseio.com",
+  projectId: "grademycar",
+  storageBucket: "grademycar.firebasestorage.app",
+  messagingSenderId: "724919836813",
+  appId: "1:724919836813:web:ca0ccd5bfe7ae3de3502c4"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+// Thin shims so the rest of this script can stay written against the
+// modular-style calls (ref/get/update/set) used throughout below.
+function ref(_db, path) { return _db.ref(path); }
+async function get(reference) { return await reference.once("value"); }
+async function update(reference, patch) { return await reference.update(patch); }
+async function set(reference, value) { return await reference.set(value); }
+function signInWithEmailAndPassword(_auth, email, pass) { return _auth.signInWithEmailAndPassword(email, pass); }
+function signOut(_auth) { return _auth.signOut(); }
+function onAuthStateChanged(_auth, cb) { return _auth.onAuthStateChanged(cb); }
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+const money = (n) => "$" + (Number(n)||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+let usersCache = {};   // uid -> user object
+let selectedUid = null;
+
+/* ---------------- Auth ---------------- */
+$("li-submit").addEventListener("click", async () => {
+  const email = $("li-email").value.trim();
+  const pass = $("li-pass").value;
+  const err = $("login-error");
+  err.style.display = "none";
+  if (!email || !pass) { err.textContent = "Enter your email and password."; err.style.display = "block"; return; }
+  $("li-submit").disabled = true; $("li-submit").textContent = "Signing in…";
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (e) {
+    err.textContent = "Sign-in failed: " + (e.code || e.message);
+    err.style.display = "block";
+  }
+  $("li-submit").disabled = false; $("li-submit").textContent = "Sign in";
+});
+
+$("signout-btn").addEventListener("click", () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    $("login-screen").style.display = "none";
+    $("app").style.display = "block";
+    $("admin-email").textContent = user.email || "(no email)";
+    $("admin-uid").textContent = "uid: " + user.uid;
+    $("admin-uid").onclick = () => navigator.clipboard?.writeText(user.uid);
+    $("setup-email").textContent = user.email || "(no email)";
+    $("setup-uid").textContent = user.uid;
+    $("rules-block").textContent = buildRules(user.uid);
+    loadEverything();
+  } else {
+    $("login-screen").style.display = "flex";
+    $("app").style.display = "none";
+  }
+});
+
+function buildRules(uid) {
+  return `{
+  "rules": {
+    "users": {
+      ".read": "auth.uid === '${uid}'",
+      ".write": "auth.uid === '${uid}'",
+      "$uid": {
+        ".read": "auth.uid === $uid || auth.uid === '${uid}'",
+        ".write": "auth.uid === $uid || auth.uid === '${uid}'"
+      }
+    },
+    "vehicle_searches": {
+      ".read": "auth.uid === '${uid}'",
+      ".write": "auth != null"
+    },
+    "featureFlags": {
+      ".read": true,
+      ".write": "auth.uid === '${uid}'"
+    }
+  }
+}`;
+}
+
+/* ---------------- Nav ---------------- */
+document.querySelectorAll(".navitem").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".navitem").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    btn.classList.add("active");
+    $("view-" + btn.dataset.view).classList.add("active");
+  });
+});
+
+$("refresh-all").addEventListener("click", loadEverything);
+
+function permissionBanner(target, err) {
+  const denied = String(err?.code || err?.message || err).toLowerCase().includes("permission");
+  target.innerHTML = denied
+    ? `<div class="banner warn">Permission denied reading this data. Your Firebase rules don't yet grant your account access — open <b>Setup &amp; rules</b> in the sidebar and add the rules snippet there.</div>`
+    : `<div class="banner warn">Couldn't load this data: ${esc(err?.message || err)}</div>`;
+}
+
+/* ---------------- Load everything ---------------- */
+async function loadEverything() {
+  await Promise.all([loadUsers(), loadSearches(), loadFlags()]);
+  loadReliability(); // fire and forget, has its own UI
+}
+
+async function loadUsers() {
+  $("overview-banner").innerHTML = "";
+  $("users-banner").innerHTML = "";
+  try {
+    const snap = await get(ref(db, "users"));
+    usersCache = snap.exists() ? snap.val() : {};
+    renderOverview();
+    renderUsers();
+  } catch (e) {
+    permissionBanner($("overview-banner"), e);
+    permissionBanner($("users-banner"), e);
+    $("kpi-users").textContent = "—";
+    $("users-tbody").innerHTML = `<tr><td colspan="7" class="empty-note">Couldn't load users — see banner above.</td></tr>`;
+  }
+}
+
+function renderOverview() {
+  const uids = Object.keys(usersCache);
+  const users = uids.map(uid => ({ uid, ...usersCache[uid] }));
+  const totalRevenue = users.reduce((s,u) => s + (Number(u.totalSpent)||0), 0);
+  const totalCredits = users.reduce((s,u) => s + (Number(u.reportCredits)||0), 0);
+  const totalSearches = users.reduce((s,u) => s + (Number(u.totalSearches)||0), 0);
+
+  $("kpi-users").textContent = uids.length.toLocaleString();
+  $("kpi-users-sub").textContent = uids.length ? "in users/ node" : "node is empty";
+  $("kpi-revenue").textContent = money(totalRevenue);
+  $("kpi-credits").textContent = totalCredits.toLocaleString();
+  $("kpi-searches").textContent = totalSearches.toLocaleString();
+  $("overview-sub").textContent = `Live from Firebase — ${uids.length} account${uids.length===1?"":"s"} loaded`;
+
+  const sorted = users.slice().sort((a,b) => (b.createdAt||0) - (a.createdAt||0)).slice(0,8);
+  $("recent-signups").innerHTML = sorted.length ? sorted.map(u => `
+    <div class="feed-item">
+      <div class="user-avatar" style="width:26px;height:26px;font-size:.62rem;">${esc((u.email||"??").slice(0,2).toUpperCase())}</div>
+      <div style="flex:1;">
+        <div class="user-email">${esc(u.email||"(no email)")}</div>
+        <div class="feed-time">${u.createdAt ? new Date(u.createdAt).toLocaleString() : "unknown date"} · ${Number(u.reportCredits)||0} credits · ${money(u.totalSpent||0)} lifetime</div>
+      </div>
+    </div>`).join("") : `<div class="empty-note">No users found in the database yet.</div>`;
+}
+
+function gradeChip(g) {
+  const cls = /^A/i.test(g) ? "g-a" : /^B/i.test(g) ? "g-b" : /^C/i.test(g) ? "g-c" : /^D/i.test(g) ? "g-d" : /^F/i.test(g) ? "g-f" : "g-u";
+  return `<span class="grade-chip ${cls}">${esc(g || "?")}</span>`;
+}
+
+// Mirrors the exact logic in your deployed checkReportAccess Cloud Function:
+// unlimitedAccess is a collection of grant objects (keyed by push-id or any
+// key), and any one of them being { active: true, expiresAt: <future> }
+// counts as unlimited access.
+function activeUnlimitedExpiry(u) {
+  const grants = u.unlimitedAccess || {};
+  const now = Date.now();
+  for (const g of Object.values(grants)) {
+    if (g && g.active && new Date(g.expiresAt) > now) {
+      return g.expiresAt;
+    }
+  }
+  return null;
+}
+
+function renderUsers(filter="") {
+  const uids = Object.keys(usersCache);
+  $("users-sub").textContent = `${uids.length} account${uids.length===1?"":"s"} — click Manage to grant credits or unlimited access`;
+  const rows = uids
+    .map(uid => ({ uid, ...usersCache[uid] }))
+    .filter(u => !filter || (u.email||"").toLowerCase().includes(filter.toLowerCase()))
+    .sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  if (!rows.length) {
+    $("users-tbody").innerHTML = `<tr><td colspan="7" class="empty-note">${uids.length ? "No users match that filter." : "No users found — either the node is empty or your rules block reading it (see Setup)."}</td></tr>`;
+    return;
+  }
+
+  $("users-tbody").innerHTML = rows.map(u => {
+    const activeExpiry = activeUnlimitedExpiry(u);
+    const unlLabel = activeExpiry
+      ? `<span class="pill accent">until ${new Date(activeExpiry).toLocaleString()}</span>`
+      : `<span class="pill neutral">—</span>`;
+    return `
+      <tr>
+        <td><div class="user-cell">
+          <div class="user-avatar">${esc((u.email||"??").slice(0,2).toUpperCase())}</div>
+          <div><div class="user-email">${esc(u.email||"(no email)")}</div><div class="user-sub">${esc(u.uid.slice(0,10))}…</div></div>
+        </div></td>
+        <td class="num">${Number(u.reportCredits)||0}</td>
+        <td>${unlLabel}</td>
+        <td class="num">${Number(u.totalSearches)||0}</td>
+        <td class="num">${money(u.totalSpent||0)}</td>
+        <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</td>
+        <td><button class="btn small manage-btn" data-uid="${esc(u.uid)}">Manage</button></td>
+      </tr>`;
+  }).join("");
+
+  document.querySelectorAll(".manage-btn").forEach(b => b.addEventListener("click", () => openManage(b.dataset.uid)));
+}
+
+$("user-search").addEventListener("input", (e) => renderUsers(e.target.value));
+
+function openManage(uid) {
+  selectedUid = uid;
+  const u = usersCache[uid] || {};
+  $("manage-panel").style.display = "block";
+  $("manage-email").textContent = u.email || uid;
+  $("manage-status").textContent = "";
+  $("manage-panel").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+async function writeUser(patch) {
+  if (!selectedUid) return;
+  $("manage-status").innerHTML = `<span class="spinner"></span> Saving…`;
+  try {
+    await update(ref(db, "users/" + selectedUid), patch);
+    Object.assign(usersCache[selectedUid], patch);
+    renderUsers($("user-search").value);
+    renderOverview();
+    $("manage-status").textContent = "Saved.";
+  } catch (e) {
+    $("manage-status").innerHTML = `<span style="color:var(--bad)">Failed: ${esc(e.message||e)}</span> — likely a rules issue, see Setup &amp; rules.`;
+  }
+}
+
+document.querySelectorAll("[data-grant]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const add = Number(btn.dataset.grant);
+    const current = Number(usersCache[selectedUid]?.reportCredits) || 0;
+    writeUser({ reportCredits: current + add });
+  });
+});
+$("grant-custom-btn").addEventListener("click", () => {
+  const add = Number($("grant-custom").value);
+  if (!add || add <= 0) return;
+  const current = Number(usersCache[selectedUid]?.reportCredits) || 0;
+  writeUser({ reportCredits: current + add });
+  $("grant-custom").value = "";
+});
+async function grantUnlimited(hours) {
+  if (!selectedUid) return;
+  $("manage-status").innerHTML = `<span class="spinner"></span> Saving…`;
+  try {
+    // Writes into users/<uid>/unlimitedAccess/adminGrant — matching the
+    // collection-of-grants shape checkReportAccess actually reads, using a
+    // fixed key so repeated admin grants overwrite instead of piling up.
+    await set(ref(db, "users/" + selectedUid + "/unlimitedAccess/adminGrant"), {
+      active: true,
+      expiresAt: Date.now() + hours * 3600 * 1000,
+      grantedBy: "admin",
+      grantedAt: Date.now()
+    });
+    if (!usersCache[selectedUid].unlimitedAccess) usersCache[selectedUid].unlimitedAccess = {};
+    usersCache[selectedUid].unlimitedAccess.adminGrant = {
+      active: true,
+      expiresAt: Date.now() + hours * 3600 * 1000
+    };
+    renderUsers($("user-search").value);
+    renderOverview();
+    $("manage-status").textContent = "Saved.";
+  } catch (e) {
+    $("manage-status").innerHTML = `<span style="color:var(--bad)">Failed: ${esc(e.message||e)}</span> — likely a rules issue, see Setup &amp; rules.`;
+  }
+}
+
+async function clearUnlimited() {
+  if (!selectedUid) return;
+  $("manage-status").innerHTML = `<span class="spinner"></span> Saving…`;
+  try {
+    await set(ref(db, "users/" + selectedUid + "/unlimitedAccess/adminGrant"), null);
+    if (usersCache[selectedUid].unlimitedAccess) delete usersCache[selectedUid].unlimitedAccess.adminGrant;
+    renderUsers($("user-search").value);
+    renderOverview();
+    $("manage-status").textContent = "Saved.";
+  } catch (e) {
+    $("manage-status").innerHTML = `<span style="color:var(--bad)">Failed: ${esc(e.message||e)}</span> — likely a rules issue, see Setup &amp; rules.`;
+  }
+}
+
+$("grant-unlimited-48").addEventListener("click", () => grantUnlimited(48));
+$("grant-unlimited-336").addEventListener("click", () => grantUnlimited(14*24));
+$("clear-unlimited").addEventListener("click", () => clearUnlimited());
+
+/* ---------------- Search activity ---------------- */
+async function loadSearches() {
+  $("activity-banner").innerHTML = "";
+  try {
+    const snap = await get(ref(db, "vehicle_searches"));
+    const raw = snap.exists() ? snap.val() : {};
+    const entries = Object.values(raw);
+    renderActivity(entries);
+  } catch (e) {
+    permissionBanner($("activity-banner"), e);
+    $("grade-dist").innerHTML = `<div class="empty-note">Couldn't load.</div>`;
+    $("top-makes").innerHTML = `<div class="empty-note">Couldn't load.</div>`;
+    $("recent-searches").innerHTML = `<div class="empty-note">Couldn't load.</div>`;
+  }
+}
+
+function renderActivity(entries) {
+  if (!entries.length) {
+    const msg = `<div class="empty-note">No entries in <span class="num">vehicle_searches</span> yet. Nothing in the reviewed extension code currently calls <span class="num">window.saveVehicleSearch</span>, so this collection may simply be unused right now — wire that call up from <span class="num">content.js</span> after a report is generated to start populating this.</div>`;
+    $("grade-dist").innerHTML = msg;
+    $("top-makes").innerHTML = msg;
+    $("recent-searches").innerHTML = msg;
+    return;
+  }
+
+  const gradeCounts = {};
+  const makeCounts = {};
+  entries.forEach(e => {
+    const g = (e.grade || "unknown").toString().toUpperCase();
+    gradeCounts[g] = (gradeCounts[g]||0) + 1;
+    const mk = (e.make || "unknown").toString();
+    makeCounts[mk] = (makeCounts[mk]||0) + 1;
+  });
+
+  const totalG = entries.length;
+  $("grade-dist").innerHTML = Object.entries(gradeCounts).sort((a,b)=>b[1]-a[1]).map(([g,c]) => `
+    <div class="bar-row">
+      <div class="bar-label">${gradeChip(g)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/totalG*100)}%"></div></div>
+      <div class="bar-value">${c}</div>
+    </div>`).join("");
+
+  const topMakes = Object.entries(makeCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxM = topMakes[0]?.[1] || 1;
+  $("top-makes").innerHTML = topMakes.map(([mk,c]) => `
+    <div class="bar-row">
+      <div class="bar-label" style="text-transform:capitalize;">${esc(mk)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxM*100)}%; background:var(--good);"></div></div>
+      <div class="bar-value">${c}</div>
+    </div>`).join("");
+
+  const recent = entries.slice().sort((a,b)=>(b.searchedAt||0)-(a.searchedAt||0)).slice(0,15);
+  $("recent-searches").innerHTML = recent.map(e => `
+    <div class="feed-item">
+      <div style="flex:1;">${esc(e.year||"")} ${esc(e.make||"")} ${esc(e.model||"")} ${gradeChip(e.grade)}</div>
+      <div class="feed-time">${e.searchedAt ? new Date(e.searchedAt).toLocaleString() : ""}</div>
+    </div>`).join("");
+}
+
+/* ---------------- Roadmap flags ---------------- */
+const FLAGS = [
+  { key: "dealScoring", icon: "🎯", title: "Deal Scoring Algorithm", desc: "Market-data pricing verdict: great deal, fair, or overpriced" },
+  { key: "lifespanCalculator", icon: "💙", title: "Lifespan Calculator", desc: "Estimated remaining years/miles from vehicle history" },
+  { key: "valuePerMile", icon: "⚖️", title: "Value Per Mile Analysis", desc: "True cost of ownership relative to mileage" },
+  { key: "marketComparison", icon: "📊", title: "Market Comparison", desc: "Stack a listing against similar ones, local & nationwide" },
+  { key: "maintenanceTimeline", icon: "📅", title: "Maintenance Timeline", desc: "Predicted milestones and estimated costs" },
+  { key: "safetyDataIntegration", icon: "💎", title: "Safety Data Integration", desc: "NHTSA safety ratings and recalls inline on the listing" }
+];
+let flagState = {};
+
+async function loadFlags() {
+  $("roadmap-banner").innerHTML = "";
+  try {
+    const snap = await get(ref(db, "featureFlags"));
+    flagState = snap.exists() ? snap.val() : {};
+    renderFlags();
+  } catch (e) {
+    permissionBanner($("roadmap-banner"), e);
+    $("roadmap-list").innerHTML = `<div class="empty-note">Couldn't load flags.</div>`;
+  }
+}
+
+function renderFlags() {
+  $("roadmap-list").innerHTML = FLAGS.map(f => {
+    const on = !!flagState[f.key];
+    return `
+    <div class="roadmap-row">
+      <div class="roadmap-icon">${f.icon}</div>
+      <div><div class="roadmap-title">${esc(f.title)}</div><div class="roadmap-desc">${esc(f.desc)}</div></div>
+      <div class="roadmap-meta">
+        <span class="pill ${on ? "good" : "neutral"}">${on ? "Live" : "Coming soon"}</span>
+        <button class="toggle ${on ? "on" : ""}" data-flag="${f.key}"></button>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.querySelectorAll("[data-flag]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const key = btn.dataset.flag;
+      const next = !flagState[key];
+      btn.disabled = true;
+      try {
+        await set(ref(db, "featureFlags/" + key), next);
+        flagState[key] = next;
+        renderFlags();
+      } catch (e) {
+        permissionBanner($("roadmap-banner"), e);
+      }
+      btn.disabled = false;
+    });
+  });
+}
+
+/* ---------------- Reliability data (live from GitHub) ---------------- */
+$("gh-fetch-btn").addEventListener("click", loadReliability);
+$("reliability-refresh").addEventListener("click", loadReliability);
+
+async function loadReliability() {
+  const out = $("reliability-result");
+  out.innerHTML = `<div class="panel"><div class="panel-body"><span class="spinner"></span> Fetching reliability-data.js…</div></div>`;
+  const repo = $("gh-repo").value.trim();
+  const branch = $("gh-branch").value.trim() || "main";
+  const candidates = [
+    `https://raw.githubusercontent.com/${repo}/${branch}/reliability-data.js`,
+    `https://raw.githubusercontent.com/${repo}/master/reliability-data.js`
+  ];
+  let text = null, usedUrl = null, lastErr = null;
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (res.ok) { text = await res.text(); usedUrl = url; break; }
+      lastErr = `HTTP ${res.status} at ${url}`;
+    } catch (e) { lastErr = e.message; }
+  }
+  if (!text) {
+    out.innerHTML = `<div class="banner warn">Couldn't fetch the file (${esc(lastErr||"unknown error")}). Check the repo/branch above — it needs to be publicly reachable at raw.githubusercontent.com, same as the icon URL your index.html already uses.</div>`;
+    return;
+  }
+  try {
+    const sandbox = {};
+    new Function("window", text)(sandbox);
+    const rel = sandbox.RELIABILITY_DATA || {};
+    const life = sandbox.LIFESPAN_DATA || {};
+    const makes = Object.keys(rel);
+    const modelCount = makes.reduce((s,m) => s + Object.keys(rel[m]).length, 0);
+    const lifeMakes = Object.keys(life).length;
+    const lifeModels = Object.values(life).reduce((s,m)=>s+Object.keys(m).length,0);
+
+    out.innerHTML = `
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Makes covered</div><div class="kpi-value">${makes.length}</div><div class="kpi-sub">in RELIABILITY_DATA</div></div>
+        <div class="kpi"><div class="kpi-label">Make/model grade entries</div><div class="kpi-value">${modelCount}</div><div class="kpi-sub">engine/transmission/overall grades</div></div>
+        <div class="kpi"><div class="kpi-label">Makes with lifespan data</div><div class="kpi-value">${lifeMakes}</div><div class="kpi-sub">in LIFESPAN_DATA</div></div>
+        <div class="kpi"><div class="kpi-label">Model lifespan entries</div><div class="kpi-value">${lifeModels}</div><div class="kpi-sub">avg/max miles + common issues</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Makes by model count</h2><div class="sub">Fetched from <span class="num">${esc(usedUrl)}</span> just now</div></div>
+        <div class="panel-body">
+          ${makes.sort((a,b)=>Object.keys(rel[b]).length-Object.keys(rel[a]).length).slice(0,20).map(m => {
+            const c = Object.keys(rel[m]).length;
+            const max = Object.keys(rel[makes[0]]).length || 1;
+            const widest = Math.max(...makes.map(mm=>Object.keys(rel[mm]).length));
+            return `<div class="bar-row"><div class="bar-label" style="text-transform:capitalize;">${esc(m)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/widest*100)}%"></div></div><div class="bar-value">${c}</div></div>`;
+          }).join("")}
+        </div>
+      </div>
+      <div class="empty-note">This is a real, live count re-derived from your published file every time you click Recount — no fake numbers. It doesn't know which specific vehicles buyers are actually searching for (that would need this admin page or your Cloud Functions to log misses somewhere), so it can tell you the database's breadth but not its real-world gaps yet.</div>
+    `;
+  } catch (e) {
+    out.innerHTML = `<div class="banner warn">Fetched the file but couldn't evaluate it: ${esc(e.message)}</div>`;
+  }
+}
+</script>
+</body>
+</html>
