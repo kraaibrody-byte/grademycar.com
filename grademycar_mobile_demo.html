@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GradeMyCar</title>
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="GradeMyCar">
+<style>
+:root{
+  --blue:#1D4ED8; --blue2:#2563EB; --navy:#0B1733; --ink:#172033;
+  --muted:#667085; --line:#E6EAF0; --bg:#F7F8FA; --card:#FFFFFF;
+  --green:#087443; --greenbg:#EAF8F0; --amber:#9A6700; --amberbg:#FFF7DF;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:var(--ink);min-height:100vh}
+button,input{font:inherit}
+.demo-wrap{min-height:100vh;display:flex;justify-content:center}
+.demo{width:100%;max-width:520px;position:relative}
+.iphone{background:transparent;border:0;border-radius:0;padding:0;box-shadow:none;overflow:hidden}
+.screen{height:100vh;min-height:100vh;background:var(--bg);border-radius:0;overflow:hidden;position:relative}
+.status{height:34px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:700}
+.island{display:none}
+.app{height:calc(100% - 34px);overflow:auto;padding-bottom:84px;scrollbar-width:none}.app::-webkit-scrollbar{display:none}
+.topbar{height:60px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--line)}
+.logo{font-size:20px;font-weight:800;letter-spacing:-.8px;color:var(--navy)}.logo span{color:var(--blue)}
+.iconbtn{width:38px;height:38px;border:0;background:#F0F3F8;border-radius:50%;display:grid;place-items:center;color:var(--navy);cursor:pointer}
+.page{padding:22px 18px}
+.eyebrow{font-size:12px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.08em}
+h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:var(--navy)}
+.sub{font-size:14px;line-height:1.5;color:var(--muted);margin:0 0 20px}
+.hero{background:linear-gradient(145deg,#102451,#183d82);color:white;border-radius:25px;padding:22px;position:relative;overflow:hidden;margin-bottom:18px}
+.hero:after{content:"";position:absolute;width:190px;height:190px;border:35px solid #ffffff10;border-radius:50%;right:-80px;bottom:-100px}
+.hero h2{font-size:21px;margin:0 0 6px}.hero p{color:#D9E5FF;font-size:13px;margin:0 0 18px}
+.primary{width:100%;border:0;background:var(--blue);color:#fff;height:50px;border-radius:15px;font-weight:750;cursor:pointer;box-shadow:0 8px 18px #1d4ed833}
+.hero .primary{background:#fff;color:var(--blue);box-shadow:none}
+.card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:16px;margin-bottom:14px;box-shadow:0 3px 12px #10245108}
+.cardhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.cardtitle{font-weight:750;font-size:15px}
+.link{font-size:12px;color:var(--blue);font-weight:700;cursor:pointer}
+.searchrow{display:flex;gap:10px}.searchrow input{flex:1;height:46px;border:1px solid var(--line);border-radius:13px;padding:0 13px;outline:none;background:#fff}
+.vehicle{display:flex;gap:12px;align-items:center;padding:11px 0;border-top:1px solid #EEF0F4;cursor:pointer}.vehicle:first-of-type{border-top:0}
+.carimg{width:58px;height:42px;border-radius:11px;background:linear-gradient(135deg,#dce5f3,#f8fafc);display:grid;place-items:center;font-size:22px}
+.vmain{flex:1}.vname{font-size:13px;font-weight:750}.vmeta{font-size:11px;color:var(--muted);margin-top:2px}.gradepill{min-width:38px;height:34px;border-radius:11px;background:var(--greenbg);color:var(--green);display:grid;place-items:center;font-size:13px;font-weight:800}
+.nav{position:absolute;bottom:0;left:0;right:0;height:74px;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding-top:9px;z-index:4}
+.navitem{border:0;background:none;color:#87909f;font-size:10px;font-weight:650;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}.navitem b{font-size:20px;line-height:20px}.navitem.active{color:var(--blue)}
+.form{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden}.field{padding:14px 16px;border-bottom:1px solid #EDF0F4;cursor:pointer}.field:last-child{border-bottom:0}.label{font-size:11px;color:var(--muted);margin-bottom:4px}.value{font-size:16px;font-weight:650;display:flex;justify-content:space-between;align-items:center}.value span{color:#A0A8B5}
+.section{margin-top:20px}.section h3{font-size:14px;margin:0 0 9px}
+.chips{display:flex;gap:8px;overflow:auto;padding-bottom:3px}.chip{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-size:12px;font-weight:650;cursor:pointer}.chip.active{background:#EAF0FF;border-color:#B9CBFF;color:var(--blue)}
+.cta{margin-top:18px}
+.helper{text-align:center;color:#8B94A3;font-size:10px;margin-top:10px}
+.back{border:0;background:none;font-size:25px;cursor:pointer;color:var(--navy)}
+.result-hero{background:#fff;border-bottom:1px solid var(--line);padding:17px 18px 18px}.result-top{display:flex;align-items:center;gap:11px}.result-top .back{margin-right:2px}.rtitle{font-size:17px;font-weight:800}.rsub{font-size:11px;color:var(--muted);margin-top:2px}
+.gradecard{margin:16px 18px;background:linear-gradient(145deg,#effbf4,#fff);border:1px solid #BDEBCF;border-radius:23px;padding:19px;display:flex;align-items:center;gap:17px}
+.biggrade{width:92px;height:92px;border-radius:50%;border:8px solid #8FE0AE;display:grid;place-items:center;font-size:37px;font-weight:850;color:var(--green);background:#fff}
+.gcopy{flex:1}.gcopy small{color:var(--green);font-weight:750}.gcopy h2{font-size:20px;margin:3px 0}.gcopy p{font-size:11px;color:var(--muted);line-height:1.4;margin:0}
+.deal{margin:0 18px 16px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px}.dealrow{display:flex;align-items:center;justify-content:space-between}.dealscore{font-size:28px;font-weight:850;color:var(--blue)}.good{font-size:11px;font-weight:750;background:#EAF8F0;color:var(--green);padding:6px 9px;border-radius:9px}.bar{height:8px;background:#EEF1F5;border-radius:10px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;width:82%;background:var(--blue);border-radius:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 18px}.metric{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px}.metric .ml{font-size:11px;color:var(--muted)}.metric .mv{font-size:22px;font-weight:800;margin-top:5px}.metric.green .mv{color:var(--green)}.metric.blue .mv{color:var(--blue)}
+.detail{margin:16px 18px}.detailrow{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-top:1px solid #EEF0F4;font-size:12px}.detailrow strong{font-size:12px}
+.segment{margin:14px 18px 0;background:#EDEFF3;border-radius:11px;padding:3px;display:flex}.segment button{flex:1;border:0;background:transparent;padding:8px;border-radius:9px;font-size:11px;font-weight:700;color:#6E7787;cursor:pointer}.segment button.active{background:#fff;color:var(--navy);box-shadow:0 1px 5px #0000000b}
+.hidden{display:none!important}
+.toast{position:absolute;top:47px;left:18px;right:18px;background:#172033;color:#fff;border-radius:14px;padding:11px 14px;font-size:12px;z-index:10;box-shadow:0 10px 25px #0004;transform:translateY(-80px);transition:.25s}.toast.show{transform:translateY(0)}
+@media(min-width:521px){body{background:#eef2f7}.demo{box-shadow:0 0 0 1px #dfe4ec}}
+@media(max-height:720px){.screen{height:100vh;min-height:100vh}}
+</style>
+</head>
+<body>
+<div class="demo-wrap">
+<div class="demo">
+  <div class="iphone">
+    <div class="screen">
+      <div class="status"><span id="clock">9:41</span><span>● ◔ ▰</span></div>
+      <div id="toast" class="toast">Demo only. Firebase connection comes next.</div>
+
+      <section id="home" class="app">
+        <div class="topbar"><div class="logo">GradeMy<span>Car</span></div><button class="iconbtn">●</button></div>
+        <div class="page">
+          <div class="eyebrow">Smarter car decisions</div>
+          <h1>Know before<br>you buy.</h1>
+          <p class="sub">Get a vehicle grade and see whether the asking price looks like a real deal.</p>
+          <div class="hero">
+            <h2>Grade any car in seconds.</h2>
+            <p>Use your GMC reliability data to turn a listing into a simple score.</p>
+            <button class="primary" onclick="show('search')">⌕ &nbsp; Grade a Car &nbsp; ›</button>
+          </div>
+          <div class="card">
+            <div class="cardhead"><span class="cardtitle">Recent searches</span><span class="link" onclick="show('saved')">View all</span></div>
+            <div class="vehicle" onclick="loadDemo('2021','Toyota','RAV4','78,432','$22,500','B+')"><div class="carimg">🚙</div><div class="vmain"><div class="vname">2021 Toyota RAV4</div><div class="vmeta">78,432 mi · $22,500</div></div><div class="gradepill">B+</div></div>
+            <div class="vehicle" onclick="loadDemo('2019','Honda','Accord','65,210','$18,900','A-')"><div class="carimg">🚘</div><div class="vmain"><div class="vname">2019 Honda Accord</div><div class="vmeta">65,210 mi · $18,900</div></div><div class="gradepill">A-</div></div>
+            <div class="vehicle" onclick="loadDemo('2018','Lexus','GS 350','92,000','$28,400','B')"><div class="carimg">🚗</div><div class="vmain"><div class="vname">2018 Lexus GS 350</div><div class="vmeta">92,000 mi · $28,400</div></div><div class="gradepill" style="background:#FFF7DF;color:#9A6700">B</div></div>
+          </div>
+        </div>
+        <nav class="nav"><button class="navitem active" onclick="show('home')"><b>⌂</b>Home</button><button class="navitem" onclick="show('search')"><b>⌕</b>Search</button><button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button><button class="navitem" onclick="toast()">☷<span>More</span></button></nav>
+      </section>
+
+      <section id="search" class="app hidden">
+        <div class="topbar"><button class="back" onclick="show('home')">‹</button><strong>Grade a Car</strong><button class="iconbtn" onclick="toast()">?</button></div>
+        <div class="page">
+          <div class="eyebrow">Vehicle details</div><h1 style="font-size:27px">What are you<br>looking at?</h1>
+          <p class="sub">Enter the basics from the listing. Price is optional.</p>
+          <div class="form">
+            <div class="field"><div class="label">Year</div><div class="value"><input id="year" value="2019" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" type="number"> <span>›</span></div></div>
+            <div class="field"><div class="label">Make</div><div class="value"><input id="make" value="Honda" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px"> <span>›</span></div></div>
+            <div class="field"><div class="label">Model</div><div class="value"><input id="model" value="Accord" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px"> <span>›</span></div></div>
+            <div class="field"><div class="label">Asking price <span style="color:#98A0AE">(optional)</span></div><div class="value"><input id="price" value="18900" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" type="number"> <span>›</span></div></div>
+            <div class="field"><div class="label">Mileage</div><div class="value"><input id="mileage" value="65000" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" type="number"> <span>›</span></div></div>
+          </div>
+          <div class="section"><h3>Quick examples</h3><div class="chips"><button class="chip active" onclick="fill('2019','Honda','Accord','18900','65000')">2019 Accord</button><button class="chip" onclick="fill('2021','Toyota','RAV4','22500','78432')">2021 RAV4</button><button class="chip" onclick="fill('2018','Lexus','GS 350','28400','92000')">2018 GS 350</button></div></div>
+          <div class="cta"><button class="primary" onclick="analyze()">Get My Grade &nbsp; ›</button><div class="helper">Your data is used only to calculate this demo.</div></div>
+        </div>
+        <nav class="nav"><button class="navitem" onclick="show('home')"><b>⌂</b>Home</button><button class="navitem active" onclick="show('search')"><b>⌕</b>Search</button><button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button><button class="navitem" onclick="toast()">☷<span>More</span></button></nav>
+      </section>
+
+      <section id="loading" class="app hidden">
+        <div class="page" style="height:100%;display:grid;place-items:center;text-align:center">
+          <div><div style="width:88px;height:88px;border-radius:50%;border:8px solid #DDE5F3;border-top-color:var(--blue);animation:spin 1s linear infinite;margin:0 auto 22px"></div><h2 style="margin:0;color:var(--navy)">Analyzing your car...</h2><p class="sub" style="margin-top:8px">Checking GMC data and calculating the deal score.</p></div>
+        </div>
+      </section>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+      <section id="results" class="app hidden">
+        <div class="result-hero"><div class="result-top"><button class="back" onclick="show('search')">‹</button><div><div class="rtitle" id="rname">2019 Honda Accord</div><div class="rsub" id="rsub">EX-L 2.0T · 65,000 miles · $18,900</div></div><button class="iconbtn" style="margin-left:auto" onclick="toast()">♡</button></div></div>
+        <div class="gradecard"><div class="biggrade" id="grade">A-</div><div class="gcopy"><small>OVERALL VEHICLE GRADE</small><h2>Very Good</h2><p>Reliable, efficient, and a strong value for the price.</p></div></div>
+        <div class="deal"><div class="dealrow"><div><div style="font-size:12px;color:var(--muted);font-weight:650">DEAL SCORE</div><div class="dealscore" id="deal">82 <span style="font-size:13px;color:var(--muted)">/ 100</span></div></div><span class="good">Good Deal</span></div><div class="bar"><i></i></div></div>
+        <div class="grid">
+          <div class="metric green"><div class="ml">Reliability</div><div class="mv">A-</div></div>
+          <div class="metric blue"><div class="ml">Mileage</div><div class="mv">B+</div></div>
+          <div class="metric green"><div class="ml">Value</div><div class="mv">A</div></div>
+          <div class="metric"><div class="ml">Age</div><div class="mv">B</div></div>
+        </div>
+        <div class="segment"><button class="active" onclick="tab(this,'overview')">Overview</button><button onclick="tab(this,'details')">Details</button><button onclick="tab(this,'ownership')">Ownership</button></div>
+        <div id="overview" class="detail">
+          <div class="card"><div class="cardhead"><span class="cardtitle">Why this score?</span><span class="link">How it works</span></div><p style="font-size:12px;line-height:1.55;color:var(--muted);margin:0">Strong reliability grade and reasonable mileage give this vehicle a solid starting point. The asking price pushes the deal score higher.</p></div>
+          <div class="card"><div class="cardhead"><span class="cardtitle">Key insights</span><span class="link">View all</span></div>
+            <div class="detailrow"><span>Reliability</span><strong style="color:var(--green)">A- · Very Good</strong></div>
+            <div class="detailrow"><span>Expected lifespan</span><strong>180,000 mi</strong></div>
+            <div class="detailrow"><span>NHTSA safety</span><strong>5 / 5 stars</strong></div>
+            <div class="detailrow"><span>Open recalls</span><strong style="color:var(--green)">None found</strong></div>
+          </div>
+        </div>
+        <div id="details" class="detail hidden"><div class="card"><div class="cardhead"><span class="cardtitle">Detailed breakdown</span></div><div class="detailrow"><span>Safety</span><strong style="color:var(--green)">A-</strong></div><div class="detailrow"><span>Reliability</span><strong style="color:var(--green)">A</strong></div><div class="detailrow"><span>Market value</span><strong style="color:var(--green)">A</strong></div><div class="detailrow"><span>Deal score</span><strong style="color:var(--blue)">82 / 100</strong></div></div></div>
+        <div id="ownership" class="detail hidden"><div class="card"><div class="cardhead"><span class="cardtitle">Ownership outlook</span></div><div class="detailrow"><span>Remaining miles</span><strong>115,000 mi</strong></div><div class="detailrow"><span>Estimated years</span><strong>9.6 yrs</strong></div><div class="detailrow"><span>Cost per remaining mile</span><strong>$0.16</strong></div></div></div>
+        <div style="padding:0 18px 20px"><button class="primary" onclick="show('search')">Grade Another Car</button></div>
+        <nav class="nav"><button class="navitem" onclick="show('home')"><b>⌂</b>Home</button><button class="navitem active" onclick="show('search')"><b>⌕</b>Search</button><button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button><button class="navitem" onclick="toast()">☷<span>More</span></button></nav>
+      </section>
+
+      <section id="saved" class="app hidden">
+        <div class="topbar"><strong style="font-size:19px">Saved</strong><button class="iconbtn" onclick="toast()">⌕</button></div>
+        <div class="segment" style="margin-top:14px"><button class="active">Saved Vehicles</button><button>Search History</button></div>
+        <div class="page" style="padding-top:14px">
+          <div class="vehicle card" onclick="loadDemo('2019','Honda','Accord','65,210','$18,900','A-')"><div class="carimg">🚘</div><div class="vmain"><div class="vname">2019 Honda Accord</div><div class="vmeta">65,210 miles · $18,900</div></div><div class="gradepill">A-</div></div>
+          <div class="vehicle card" onclick="loadDemo('2021','Toyota','RAV4','78,432','$22,500','B+')"><div class="carimg">🚙</div><div class="vmain"><div class="vname">2021 Toyota RAV4</div><div class="vmeta">78,432 miles · $22,500</div></div><div class="gradepill">B+</div></div>
+          <div class="vehicle card" onclick="loadDemo('2018','Lexus','GS 350','92,000','$28,400','B')"><div class="carimg">🚗</div><div class="vmain"><div class="vname">2018 Lexus GS 350</div><div class="vmeta">92,000 miles · $28,400</div></div><div class="gradepill" style="background:#FFF7DF;color:#9A6700">B</div></div>
+        </div>
+        <nav class="nav"><button class="navitem" onclick="show('home')"><b>⌂</b>Home</button><button class="navitem" onclick="show('search')"><b>⌕</b>Search</button><button class="navitem active"><b>♥</b>Saved</button><button class="navitem" onclick="toast()">☷<span>More</span></button></nav>
+      </section>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function updateClock(){
+  const d=new Date();
+  const s=d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+  const c=document.getElementById("clock");
+  if(c)c.textContent=s;
+}
+updateClock(); setInterval(updateClock,30000);
+const screens=['home','search','loading','results','saved'];
+function show(id){screens.forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));document.querySelectorAll('.app').forEach(x=>x.scrollTop=0)}
+function toast(){const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function fill(y,m,mo,p,mi){year.value=y;make.value=m;model.value=mo;price.value=p;mileage.value=mi}
+function analyze(){
+  const y=year.value,m=make.value,mo=model.value,mi=Number(mileage.value),p=price.value;
+  if(!y||!m||!mo||!mi){toast();return}
+  document.getElementById('rname').textContent=`${y} ${m} ${mo}`;
+  document.getElementById('rsub').textContent=`${mi.toLocaleString()} miles${p?` · $${Number(p).toLocaleString()}`:''}`;
+  show('loading');setTimeout(()=>show('results'),1000)
+}
+function loadDemo(y,m,mo,mi,p,g){fill(y,m,mo,p.replace('$','').replace(',',''),mi.replace(',',''));document.getElementById('grade').textContent=g;document.getElementById('rname').textContent=`${y} ${m} ${mo}`;document.getElementById('rsub').textContent=`${mi} miles · ${p}`;show('results')}
+function tab(btn,id){document.querySelectorAll('.segment button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');['overview','details','ownership'].forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id))}
+</script>
+</body>
+</html>
