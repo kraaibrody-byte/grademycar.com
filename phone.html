@@ -277,10 +277,11 @@ auth.onAuthStateChanged(user=>{
     // Listen to user doc for credits + unlimited flag
     userDocUnsub=db.collection('users').doc(user.uid).onSnapshot(doc=>{
       const data=doc.data()||{};
-      userCredits=typeof data.credits==='number'?data.credits:null;
-      hasUnlimited=!!(data.hasUnlimited||data.hasAccess);
+      // -1 means "no credits field on this doc" — treated as unlimited for now
+      userCredits=typeof data.credits==='number'?data.credits:-1;
+      hasUnlimited=!!(data.hasUnlimited||data.hasAccess||userCredits===-1);
       updateCreditsDisplay();
-    },()=>{});
+    },err=>{ console.warn('user doc error',err); userCredits=-1; hasUnlimited=true; updateCreditsDisplay(); });
     listenToHistory(user.uid);
     listenToSaved(user.uid);
   } else {
@@ -296,10 +297,13 @@ function updateCreditsDisplay(){
   const chip=document.getElementById('creditsChip');
   if(!currentUser){ chip.classList.add('hidden'); return; }
   chip.classList.remove('hidden');
-  if(hasUnlimited){
+  if(hasUnlimited && userCredits===-1){
+    // No credits field — don't show anything
+    chip.classList.add('hidden');
+  } else if(hasUnlimited){
     chip.textContent='∞ Unlimited';
     chip.className='credits-chip unlimited';
-  } else if(userCredits!==null){
+  } else if(userCredits!==null && userCredits>=0){
     chip.textContent=`${userCredits} credit${userCredits!==1?'s':''}`;
     chip.className='credits-chip'+(userCredits<=0?' empty':'');
   } else {
@@ -487,33 +491,42 @@ async function analyze(){
   const y=Number(year.value), m=make.value.trim(), mo=model.value.trim(), mi=Number(mileage.value), p=Number(price.value)||0;
   if(!y||!m||!mo||!mi){ toast('Fill in year, make, model, and mileage'); return; }
 
-  // Require login
-  if(!currentUser){ toast('Sign in to grade a car'); openAccount(); return; }
-
-  // Check credits (unlimited users always pass)
-  if(!hasUnlimited){
-    if(userCredits===null){ toast('Loading account…'); return; }
-    if(userCredits<=0){ document.getElementById('noCreditsModal').classList.remove('hidden'); return; }
+  // Check credits if user is logged in (not required to grade, but spent if present)
+  if(currentUser && !hasUnlimited && userCredits !== null && userCredits !== -1 && userCredits <= 0){
+    document.getElementById('noCreditsModal').classList.remove('hidden');
+    return;
   }
 
   show('loading');
+  let g;
   try{
-    const g=await fetchGrade(y,m,mo,mi,p);
+    g = await fetchGrade(y,m,mo,mi,p);
+    console.log('[GMC] fetchGrade result:', g);
+  }catch(err){
+    console.error('[GMC] fetchGrade threw:', err);
+    toast('Error fetching grade: ' + (err.message||err));
+    show('search');
+    return;
+  }
 
-    // Spend 1 credit (atomic decrement — server-side so it can't go negative client-side)
-    if(!hasUnlimited && userCredits!==null){
-      await db.collection('users').doc(currentUser.uid).update({
+  try{
+    const record={year:y,make:m,model:mo,mileage:mi,price:p,grade:g.reliability,dealScore:g.dealScore};
+
+    // Spend 1 credit only if user is logged in and has a real credits field
+    if(currentUser && !hasUnlimited && userCredits !== null && userCredits > 0){
+      db.collection('users').doc(currentUser.uid).update({
         credits: firebase.firestore.FieldValue.increment(-1)
-      });
+      }).catch(e=>console.warn('[GMC] credit decrement error:',e));
     }
 
-    const record={year:y,make:m,model:mo,mileage:mi,price:p,grade:g.reliability,dealScore:g.dealScore};
-    renderResults(record,g);
+    // Save search in background — never block the result display
     if(currentUser) saveSearch(record,g);
+
+    renderResults(record,g);
     show('results');
   }catch(err){
-    console.error(err);
-    toast('Could not fetch data. Check your connection.');
+    console.error('[GMC] renderResults threw:', err);
+    toast('Display error: ' + (err.message||err));
     show('search');
   }
 }
