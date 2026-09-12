@@ -1655,7 +1655,7 @@
             </div>
             
             <div class="footer-bottom">
-                <p>© 2026 GradeMyCar. All rights reserved.</p>
+                <p>© 2025 GradeMyCar. All rights reserved.</p>
             </div>
         </div>
     </footer>
@@ -2852,7 +2852,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         await buildPremiumReport({
                             make, model, year, mileage,
                             price: parseInt(priceInput.value, 10) || null,
-                            container: premiumReport
+                            container: premiumReport,
+                            overallGrade: rating.overall || null
                         });
                         const usageMsg = spendResult.unlimitedActive
                             ? 'Unlimited plan active — no credit used.'
@@ -2885,26 +2886,104 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            // Builds the premium report: lifespan estimate + NHTSA safety/recalls
-            async function buildPremiumReport({ make, model, year, mileage, price, container }) {
-                const lifespanData = (window.LIFESPAN_DATA && window.LIFESPAN_DATA[make] && window.LIFESPAN_DATA[make][model]) || null;
+            // ── Deal score helpers (mirrors content.js logic) ────────────────────────────
+            function gradeToScore(grade) {
+                const map = { 'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'D-':45,'F':30 };
+                return map[grade] || 50;
+            }
 
+            function calcDealScore({ overallGrade, avgLifespan, mileage, price, year }) {
+                if (!price || !mileage || !overallGrade) return null;
+                let score = 0;
+
+                // Factor 1: Reliability (35 pts)
+                score += (gradeToScore(overallGrade) / 100) * 35;
+
+                // Factor 2: Mileage condition (30 pts)
+                if (avgLifespan) {
+                    const ratio = mileage / avgLifespan;
+                    score += Math.max(0, 1 - ratio) * 30;
+                }
+
+                // Factor 3: Price value vs cost-per-remaining-mile (25 pts)
+                if (avgLifespan && mileage < avgLifespan) {
+                    const milesLeft = avgLifespan - mileage;
+                    if (milesLeft > 0) {
+                        const cprm = price / milesLeft;
+                        const benchmark = price < 5000 ? 0.05 : price < 15000 ? 0.08 : price < 30000 ? 0.12 : 0.20;
+                        const valueRatio = benchmark / cprm;
+                        score += Math.max(0, Math.min(25, (valueRatio - 0.5) * 25));
+                    }
+                }
+
+                // Factor 4: Age (10 pts)
+                if (year) {
+                    const age = new Date().getFullYear() - parseInt(year);
+                    score += age <= 3 ? 10 : age <= 7 ? 8 : age <= 12 ? 6 : age <= 18 ? 4 : 2;
+                }
+
+                const total = Math.min(100, Math.round(score));
+                const category = total >= 85 ? 'Excellent Deal' : total >= 70 ? 'Good Deal' : total >= 55 ? 'Fair Deal' : 'Poor Deal';
+                return { score: total, category };
+            }
+
+            // ── NHTSA star rating fetch ───────────────────────────────────────────────
+            async function fetchNhtsaStarRating(make, model, year) {
+                try {
+                    const url = `https://api.nhtsa.gov/SafetyRatings/modelyear/${encodeURIComponent(year)}/make/${encodeURIComponent(make)}/model/${encodeURIComponent(model)}?format=json`;
+                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+                    if (!res.ok) return null;
+                    const data = await res.json();
+                    const results = data?.Results;
+                    if (!results || results.length === 0) return null;
+                    // Fetch full rating for first variant
+                    const vehicleId = results[0]?.VehicleId;
+                    if (!vehicleId) return null;
+                    const res2 = await fetch(`https://api.nhtsa.gov/SafetyRatings/VehicleId/${vehicleId}?format=json`, { headers: { Accept: 'application/json' } });
+                    if (!res2.ok) return null;
+                    const data2 = await res2.json();
+                    const r = data2?.Results?.[0] || {};
+                    return r.OverallRating && r.OverallRating !== 'Not Rated' ? r.OverallRating : null;
+                } catch (e) { return null; }
+            }
+
+            // Builds the premium report: deal score + lifespan + cost-per-mile + NHTSA stars + recalls
+            async function buildPremiumReport({ make, model, year, mileage, price, container, overallGrade }) {
+                const lifespanData = (window.LIFESPAN_DATA && window.LIFESPAN_DATA[make] && window.LIFESPAN_DATA[make][model]) || null;
+                const avgLifespan = lifespanData?.avgLifespan || null;
+                const milesRemaining = avgLifespan ? Math.max(0, avgLifespan - mileage) : null;
+                const pctUsed = avgLifespan ? Math.min(100, Math.round((mileage / avgLifespan) * 100)) : null;
+                const costPerMile = (price && milesRemaining && milesRemaining > 0) ? (price / milesRemaining) : null;
+                const deal = calcDealScore({ overallGrade, avgLifespan, mileage, price, year });
+
+                // ── Deal Score card ──────────────────────────────────────────────────────
+                const dealScoreHtml = deal ? `
+                    <div class="premium-report-card" style="border-left:4px solid ${deal.score>=70?'#10b981':deal.score>=55?'#f59e0b':'#ef4444'}">
+                        <div class="label">Deal Score</div>
+                        <div class="value" style="font-size:2rem;font-weight:800">${deal.score}<span style="font-size:1rem;font-weight:400">/100</span></div>
+                        <div class="sub">${deal.category}</div>
+                    </div>
+                ` : '';
+
+                // ── Lifespan / mileage cards ─────────────────────────────────────────────
                 let lifespanHtml = '';
                 if (lifespanData) {
-                    const avgLifespan = lifespanData.avgLifespan || null;
-                    const milesRemaining = avgLifespan ? Math.max(0, avgLifespan - mileage) : null;
-                    const pctUsed = avgLifespan ? Math.min(100, Math.round((mileage / avgLifespan) * 100)) : null;
-
                     lifespanHtml = `
                         <div class="premium-report-grid">
+                            ${dealScoreHtml}
                             <div class="premium-report-card">
                                 <div class="label">Avg. Expected Lifespan</div>
                                 <div class="value">${avgLifespan ? avgLifespan.toLocaleString() + ' mi' : 'N/A'}</div>
                             </div>
                             <div class="premium-report-card">
-                                <div class="label">Estimated Miles Remaining</div>
+                                <div class="label">Miles Remaining</div>
                                 <div class="value">${milesRemaining !== null ? milesRemaining.toLocaleString() + ' mi' : 'N/A'}</div>
                                 <div class="sub">${pctUsed !== null ? pctUsed + '% of expected lifespan used' : ''}</div>
+                            </div>
+                            <div class="premium-report-card">
+                                <div class="label">Cost per Remaining Mile</div>
+                                <div class="value">${costPerMile !== null ? '$' + costPerMile.toFixed(3) : 'N/A'}</div>
+                                <div class="sub">${price ? 'Based on $' + price.toLocaleString() + ' asking price' : ''}</div>
                             </div>
                             <div class="premium-report-card">
                                 <div class="label">Max Reported Mileage</div>
@@ -2919,7 +2998,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                     `;
                 } else {
-                    lifespanHtml = `<p class="lookup-not-found">Lifespan data not available for this specific model yet.</p>`;
+                    lifespanHtml = `
+                        ${deal ? `<div class="premium-report-grid">${dealScoreHtml}</div>` : ''}
+                        <p class="lookup-not-found">Lifespan data not available for this specific model yet.</p>
+                    `;
                 }
 
                 container.innerHTML = lifespanHtml + '<div id="premium-safety-slot"><p class="premium-loading">Loading safety &amp; recall data…</p></div>';
@@ -2927,9 +3009,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const safetySlot = document.getElementById('premium-safety-slot');
 
                 try {
-                    const [recallData] = await Promise.all([
-                        fetchNhtsaRecalls(make, model, year)
+                    const [recallData, starRating] = await Promise.all([
+                        fetchNhtsaRecalls(make, model, year),
+                        fetchNhtsaStarRating(make, model, year)
                     ]);
+
+                    const starsHtml = starRating
+                        ? `<div style="margin-bottom:0.75rem;font-size:0.95rem">
+                               <strong>NHTSA Overall Safety Rating:</strong>
+                               ${'★'.repeat(parseInt(starRating))}${'☆'.repeat(5 - parseInt(starRating))}
+                               <span style="color:#6b7280">(${starRating}/5)</span>
+                           </div>`
+                        : '';
 
                     let recallsHtml = '';
                     if (recallData.totalRecalls === 0) {
@@ -2946,6 +3037,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     safetySlot.innerHTML = `
                         <div class="premium-issues">
                             <h5>Safety &amp; Recalls (NHTSA)</h5>
+                            ${starsHtml}
                             ${recallsHtml}
                         </div>
                     `;
@@ -2973,7 +3065,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 return { totalRecalls: recalls.length, recalls };
             }
 
-            populateMakes();
+            // Fetch reliability data from Firebase, then populate makes
+            window.LIFESPAN_DATA = window.LIFESPAN_DATA || {};
+            (async () => {
+                try {
+                    const resp = await fetch('https://grademycar-default-rtdb.firebaseio.com/reliability.json');
+                    if (resp.ok) {
+                        const json = await resp.json();
+                        if (json && typeof json === 'object') {
+                            for (const make of Object.keys(json)) {
+                                const makeData = json[make];
+                                if (makeData && typeof makeData === 'object') {
+                                    // Firebase structure: { grades: {...}, lifespan: {...} }
+                                    if (makeData.grades) {
+                                        data[make] = makeData.grades;
+                                    } else {
+                                        data[make] = makeData; // flat structure fallback
+                                    }
+                                    if (makeData.lifespan) {
+                                        window.LIFESPAN_DATA[make] = makeData.lifespan;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not load reliability data:', e);
+                }
+                populateMakes();
+            })();
         })();
     </script>
 
