@@ -212,11 +212,11 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 </div>
 </div>
 
-<!-- Firebase compat SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+<!-- Firebase compat SDK (cdnjs) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-firestore-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-analytics-compat.min.js"></script>
 <script>
 // ── 1. FIREBASE SETUP ────────────────────────────────────────────────────────
 const firebaseConfig = {
@@ -367,6 +367,7 @@ function toggleSave(){
 }
 
 // ── 4. MAKE / MODEL AUTOCOMPLETE ─────────────────────────────────────────────
+const DB_URL = 'https://grademycar-default-rtdb.firebaseio.com';
 (async function loadMakes(){
   try{
     const r = await fetch(`${DB_URL}/reliability.json?shallow=true`);
@@ -403,7 +404,6 @@ async function onMakeInput(){
 }
 
 // ── 5. GRADING LOGIC — real Firebase Realtime Database ───────────────────────
-const DB_URL = 'https://grademycar-default-rtdb.firebaseio.com';
 // Cache fetched make data so repeat searches for same make skip the network
 const makeCache = {};
 
@@ -520,7 +520,7 @@ async function fetchGrade(year,make,model,mileage,price){
 }
 
 // ── 6. UI WIRING ─────────────────────────────────────────────────────────────
-const screens=['home','search','loading','results','saved'];
+var screens=['home','search','loading','results','saved'];
 function show(id){ screens.forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id)); document.querySelectorAll('.app').forEach(x=>x.scrollTop=0); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
 function fill(y,m,mo,p,mi){ year.value=y; make.value=m; model.value=mo; price.value=p; mileage.value=mi; }
