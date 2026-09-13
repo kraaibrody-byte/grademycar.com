@@ -148,8 +148,10 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
           <p class="sub">Enter the basics from the listing. Price is optional.</p>
           <div class="form">
             <div class="field"><div class="label">Year</div><div class="value"><input id="year" value="2019" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" type="number"> <span>›</span></div></div>
-            <div class="field"><div class="label">Make</div><div class="value"><input id="make" value="Honda" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px"> <span>›</span></div></div>
-            <div class="field"><div class="label">Model</div><div class="value"><input id="model" value="Accord" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px"> <span>›</span></div></div>
+            <div class="field"><div class="label">Make</div><div class="value"><input id="make" value="Honda" list="makeList" autocomplete="off" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" oninput="onMakeInput()"> <span>›</span></div></div>
+            <datalist id="makeList"></datalist>
+            <div class="field"><div class="label">Model</div><div class="value"><input id="model" value="Accord" list="modelList" autocomplete="off" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px"> <span>›</span></div></div>
+            <datalist id="modelList"></datalist>
             <div class="field"><div class="label">Asking price <span style="color:#98A0AE">(optional)</span></div><div class="value"><input id="price" value="18900" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" type="number"> <span>›</span></div></div>
             <div class="field"><div class="label">Mileage</div><div class="value"><input id="mileage" value="65000" style="border:0;outline:0;width:100%;font-weight:650;font-size:16px" type="number"> <span>›</span></div></div>
           </div>
@@ -364,7 +366,43 @@ function toggleSave(){
   else { col.add({...currentResult,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); toast('Saved'); }
 }
 
-// ── 4. GRADING LOGIC — real Firebase Realtime Database ───────────────────────
+// ── 4. MAKE / MODEL AUTOCOMPLETE ─────────────────────────────────────────────
+(async function loadMakes(){
+  try{
+    const r = await fetch(`${DB_URL}/reliability.json?shallow=true`);
+    if(!r.ok) return;
+    const keys = await r.json(); // { Honda: true, Toyota: true, … }
+    if(!keys) return;
+    const dl = document.getElementById('makeList');
+    dl.innerHTML = Object.keys(keys).sort().map(k=>`<option value="${k}">`).join('');
+  }catch(e){ console.warn('[GMC] make list fetch failed',e); }
+})();
+
+let lastMakeLoaded = '';
+async function onMakeInput(){
+  const makeVal = document.getElementById('make').value.trim();
+  if(!makeVal || makeVal === lastMakeLoaded) return;
+  lastMakeLoaded = makeVal;
+  // Clear model list while loading new make
+  document.getElementById('modelList').innerHTML = '';
+  try{
+    // Try exact key first, then Title Case
+    const tries = [makeVal, makeVal.charAt(0).toUpperCase()+makeVal.slice(1).toLowerCase()];
+    for(const t of tries){
+      const r = await fetch(`${DB_URL}/reliability/${encodeURIComponent(t)}/grades.json?shallow=true`);
+      if(r.ok){
+        const models = await r.json();
+        if(models){
+          const dl = document.getElementById('modelList');
+          dl.innerHTML = Object.keys(models).sort().map(m=>`<option value="${m}">`).join('');
+          break;
+        }
+      }
+    }
+  }catch(e){ console.warn('[GMC] model list fetch failed',e); }
+}
+
+// ── 5. GRADING LOGIC — real Firebase Realtime Database ───────────────────────
 const DB_URL = 'https://grademycar-default-rtdb.firebaseio.com';
 // Cache fetched make data so repeat searches for same make skip the network
 const makeCache = {};
@@ -481,7 +519,7 @@ async function fetchGrade(year,make,model,mileage,price){
   };
 }
 
-// ── 5. UI WIRING ─────────────────────────────────────────────────────────────
+// ── 6. UI WIRING ─────────────────────────────────────────────────────────────
 const screens=['home','search','loading','results','saved'];
 function show(id){ screens.forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id)); document.querySelectorAll('.app').forEach(x=>x.scrollTop=0); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
