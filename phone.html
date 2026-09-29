@@ -534,7 +534,6 @@ button.credits-chip{border:0;cursor:pointer}
 <!-- Firebase compat SDK (cdnjs — required for preview CSP) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-firestore-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-database-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-functions-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-analytics-compat.min.js"></script>
@@ -552,7 +551,6 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();
 const rtdb = firebase.database();
 const functions = firebase.functions();
 let analytics=null;
@@ -665,6 +663,7 @@ auth.onAuthStateChanged(user=>{
   userCredits=null; hasUnlimited=false;
   updateCreditsDisplay();
   updateUnlimitedNote();
+  detachListeners();
   if(user){
     refreshCredits();
     listenToHistory(user.uid);
@@ -672,6 +671,7 @@ auth.onAuthStateChanged(user=>{
   } else {
     renderLocalSearches();
     document.getElementById('savedList').innerHTML='<div class="empty">Log in to save vehicles.</div>';
+    updateSaveBtn();
   }
 });
 
@@ -706,30 +706,49 @@ function updateUnlimitedNote(){
   if(typeof updateBuyBalance==='function') updateBuyBalance();
 }
 
-// ── 3. FIRESTORE: history + saved ───────────────────────────────────────────
+// ── 3. REALTIME DATABASE: history + saved ────────────────────────────────────
+// History uses vehicle_searches/{uid} (shared with index.html's dashboard);
+// saved vehicles use saved_vehicles/{uid}.
+let historyRef=null, savedRef=null, savedDocs=[];
+function detachListeners(){
+  if(historyRef){ historyRef.off(); historyRef=null; }
+  if(savedRef){ savedRef.off(); savedRef=null; }
+  savedDocs=[];
+}
+function snapToList(snap, timeField){
+  const docs=[];
+  snap.forEach(c=>{ docs.push({id:c.key,...c.val()}); });
+  return docs.sort((a,b)=>(b[timeField]||0)-(a[timeField]||0));
+}
 function listenToHistory(uid){
-  db.collection('users').doc(uid).collection('searches')
-    .orderBy('createdAt','desc').limit(10)
-    .onSnapshot(snap=>{
-      const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderVehicleList('recentList',docs.slice(0,3),false);
-      renderVehicleList('historyList',docs,false);
-    },err=>console.error('history listener',err));
+  historyRef=rtdb.ref(`vehicle_searches/${uid}`).orderByChild('searchedAt').limitToLast(30);
+  historyRef.on('value',snap=>{
+    // Newest first, one row per vehicle
+    const seen=new Set(), docs=[];
+    snapToList(snap,'searchedAt').forEach(d=>{
+      const k=`${d.year}|${String(d.make).toLowerCase()}|${String(d.model).toLowerCase()}`;
+      if(!seen.has(k)){ seen.add(k); docs.push(d); }
+    });
+    renderVehicleList('recentList',docs.slice(0,3),false);
+    renderVehicleList('historyList',docs.slice(0,10),false);
+  },err=>console.error('history listener',err));
 }
 function listenToSaved(uid){
-  db.collection('users').doc(uid).collection('saved')
-    .orderBy('createdAt','desc')
-    .onSnapshot(snap=>{
-      const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderVehicleList('savedList',docs,true);
-      if(currentResult){
-        const match=docs.find(d=>sameVehicle(d,currentResult));
-        currentSavedId=match?match.id:null;
-        document.getElementById('saveBtn').textContent=currentSavedId?'♥':'♡';
-      }
-    },err=>console.error('saved listener',err));
+  savedRef=rtdb.ref(`saved_vehicles/${uid}`);
+  savedRef.on('value',snap=>{
+    savedDocs=snapToList(snap,'createdAt');
+    renderVehicleList('savedList',savedDocs,true);
+    updateSaveBtn();
+  },err=>console.error('saved listener',err));
 }
-function sameVehicle(a,b){ return a.year==b.year&&a.make===b.make&&a.model===b.model; }
+function updateSaveBtn(){
+  const match=currentResult&&currentUser?savedDocs.find(d=>sameVehicle(d,currentResult)):null;
+  currentSavedId=match?match.id:null;
+  document.getElementById('saveBtn').textContent=currentSavedId?'♥':'♡';
+}
+function sameVehicle(a,b){
+  return a.year==b.year && String(a.make).toLowerCase()===String(b.make).toLowerCase() && String(a.model).toLowerCase()===String(b.model).toLowerCase();
+}
 
 function renderVehicleList(containerId,docs,isSavedTab){
   const el=document.getElementById(containerId);
@@ -755,9 +774,12 @@ async function replaySearch(v){
 function toggleSave(){
   if(!currentUser){ openAccount(); return; }
   if(!currentResult) return;
-  const col=db.collection('users').doc(currentUser.uid).collection('saved');
-  if(currentSavedId){ col.doc(currentSavedId).delete(); toast('Removed from saved'); }
-  else { col.add({...currentResult,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); toast('Saved!'); }
+  const col=rtdb.ref(`saved_vehicles/${currentUser.uid}`);
+  const {year,make,model,grade}=currentResult;
+  const op=currentSavedId
+    ? col.child(currentSavedId).remove().then(()=>toast('Removed from saved'))
+    : col.push({year:String(year),make,model,grade:grade||null,createdAt:Date.now()}).then(()=>{ toast('Saved!'); track('save_vehicle'); });
+  op.catch(e=>{ console.error('[GMC] save error',e); toast("Couldn't update saved cars. Try again."); });
 }
 function saveSearchLocal(record){
   try{
@@ -784,8 +806,10 @@ function renderLocalSearches(){
 function saveSearch(record){
   saveSearchLocal(record);
   if(!currentUser) return;
-  db.collection('users').doc(currentUser.uid).collection('searches').add({
-    ...record, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  // Same shape index.html writes, so both show up in each other's history
+  rtdb.ref(`vehicle_searches/${currentUser.uid}`).push({
+    userId:currentUser.uid, make:record.make, model:record.model, year:String(record.year),
+    grade:record.grade||null, searchedAt:Date.now()
   }).catch(e=>console.error('save search',e));
 }
 
@@ -978,7 +1002,7 @@ async function checkGrade(){
 
     // Render free grades
     document.getElementById('rname').textContent=vehicleName({year,make,model});
-    document.getElementById('saveBtn').textContent='♡';
+    updateSaveBtn();
     setGradeCircle('engineCircle',rating?.engine);
     setGradeCircle('transCircle',rating?.transmission);
     setGradeCircle('overallCircle',rating?.overall);
