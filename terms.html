@@ -118,6 +118,25 @@
       padding: 32px 16px 48px;
     }
 
+    .app-back {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 16px;
+      padding-top: calc(12px + env(safe-area-inset-top));
+    }
+    .app-back a {
+      font-size: 15px;
+      font-weight: 700;
+      color: #4F46E5;
+      text-decoration: none;
+    }
+    body.from-app .app-back { display: block; }
+    body.from-app header { display: none; }
+
     @media (max-width: 600px) {
       .container { margin: 16px; padding: 28px 22px; }
       header { padding: 18px 16px; }
@@ -126,6 +145,28 @@
 </head>
 <body>
 
+<div class="app-back"><a href="/phone.html" id="app-back-link">&lsaquo; Back to GradeMyCar</a></div>
+<script>
+  // Opened from the phone app (or its home-screen icon): show a way back, since
+  // home-screen apps have no browser back button.
+  (function () {
+    var fromApp = /[?&]from=app\b/.test(location.search) ||
+      window.navigator.standalone === true ||
+      (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+    if (!fromApp) return;
+    document.body.classList.add('from-app');
+    document.getElementById('app-back-link').addEventListener('click', function (e) {
+      if (document.referrer.indexOf('/phone.html') !== -1 && history.length > 1) {
+        e.preventDefault();
+        history.back();
+      }
+    });
+    // Keep the flag on links between the two legal pages
+    document.querySelectorAll('a[href="/terms.html"], a[href="/privacy.html"]').forEach(function (a) {
+      a.href = a.getAttribute('href') + '?from=app';
+    });
+  })();
+</script>
 <header>
   <a href="https://grademycar.com">
     <span class="logo-text">GradeMyCar</span>
