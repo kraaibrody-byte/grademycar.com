@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>GradeMyCar</title>
+<title>GradeMyCar – Grade Any Car in Seconds</title>
+<meta name="description" content="Free reliability grades for any used car, plus deal scores, lifespan estimates, and NHTSA safety & recall data.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GradeMyCar">
+<meta property="og:title" content="GradeMyCar – Grade Any Car in Seconds">
+<meta property="og:description" content="Free reliability grades for any used car, plus deal scores, lifespan estimates, and safety & recall data.">
+<meta property="og:url" content="https://grademycar.com/phone.html">
+<meta property="og:image" content="https://grademycar.com/icon128.png">
+<meta name="twitter:card" content="summary">
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -157,13 +165,27 @@ button.credits-chip{border:0;cursor:pointer}
 .balance b{font-size:16px}
 /* More sheet */
 .sheet-wrap{position:absolute;inset:0;background:#0B173366;z-index:20;display:flex;align-items:flex-end}
-.sheet{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom))}
+.sheet{background:#fff;width:100%;max-height:88%;overflow:auto;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom))}
 .sheet-grip{width:38px;height:5px;border-radius:5px;background:#D5DAE3;margin:0 auto 12px}
 .sheet-who{font-size:12px;color:var(--muted);padding:4px 2px 12px;border-bottom:1px solid #EEF0F4}
 .sheet-who b{display:block;font-size:15px;color:var(--navy);margin-bottom:2px}
 .sheet-item{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:15px 2px;border-bottom:1px solid #EEF0F4;font-size:15px;font-weight:650;color:var(--ink);text-align:left;cursor:pointer;text-decoration:none}
 .sheet-item span{width:22px;text-align:center}
 .sheet-item.danger{color:var(--red);border-bottom:0}
+.sheet-item.subtle{font-size:13px;color:var(--muted);font-weight:600;padding:12px 2px}
+.sheet-list{max-height:70vh;overflow:auto}
+.disclaimer{font-size:11px;color:#8B94A3;line-height:1.5;text-align:center;padding:0 6px}
+.disclaimer a,.legal a{color:#8B94A3}
+.legal{text-align:center;font-size:11px;color:#8B94A3;padding:4px 0 8px}
+.install-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #C7D2FE;border-radius:19px;padding:14px 16px;margin-bottom:14px;box-shadow:0 3px 12px #10245108}
+.install-card .ic{font-size:22px;line-height:1}
+.install-card b{font-size:13px;color:var(--navy);display:block;margin-bottom:3px}
+.install-card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
+.install-card .x{border:0;background:none;color:#98A0AE;font-size:16px;cursor:pointer;padding:0 0 0 4px}
+.forgot{display:block;text-align:right;font-size:12px;color:var(--blue);font-weight:600;margin:-4px 0 12px;cursor:pointer}
+.auth-legal{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
+.auth-legal a{color:var(--muted)}
+.modal .ok{color:var(--green);font-size:12px;margin:-4px 0 10px;display:none}
 .toast{top:calc(13px + env(safe-area-inset-top))}
 .modal .err{color:#B42318;font-size:12px;margin:-4px 0 10px;display:none}
 .modal .switch{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;cursor:pointer}
@@ -196,9 +218,12 @@ button.credits-chip{border:0;cursor:pointer}
           <p class="sub">Sign in to save searches and unlock premium reports.</p>
           <input id="authEmail" type="email" placeholder="Email" autocomplete="email" autocapitalize="off">
           <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()">
+          <a class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot password?</a>
           <div id="authError" class="err">Something went wrong. Try again.</div>
+          <div id="authOk" class="ok"></div>
           <button class="primary" id="authSubmit" onclick="submitAuth()">Sign in</button>
           <div class="switch" id="authSwitch" onclick="toggleAuthMode()">Don't have an account? <b>Sign up</b></div>
+          <div class="auth-legal">By continuing you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>.</div>
         </div>
       </div>
 
@@ -208,8 +233,11 @@ button.credits-chip{border:0;cursor:pointer}
           <div class="sheet-who" id="moreWho"></div>
           <button class="sheet-item" onclick="closeMore();openBuy()"><span>＋</span>Buy Credits</button>
           <button class="sheet-item" onclick="closeMore();show('saved')"><span>♡</span>Saved &amp; History</button>
+          <a class="sheet-item" href="mailto:support@grademycar.com?subject=GradeMyCar%20support"><span>✉</span>Contact Support</a>
+          <a class="sheet-item" href="/terms.html"><span>§</span>Terms &amp; Refunds</a>
           <a class="sheet-item" href="/privacy.html"><span>ⓘ</span>Privacy Policy</a>
           <button class="sheet-item" id="moreAuthBtn" onclick="moreAuth()"><span>⎋</span>Sign in</button>
+          <button class="sheet-item subtle hidden" id="deleteAcctBtn" onclick="requestDeleteAccount()"><span></span>Delete account</button>
         </div>
       </div>
 
@@ -226,6 +254,11 @@ button.credits-chip{border:0;cursor:pointer}
           <div class="eyebrow">Instant reliability analysis</div>
           <h1>Stop Guessing.<br><span style="color:var(--blue)">Grade Any Car.</span></h1>
           <p class="sub">Expert-level reliability grades and pricing insights for any vehicle, in seconds.</p>
+          <div class="install-card hidden" id="installCard">
+            <div class="ic">📲</div>
+            <div style="flex:1"><b>Add GradeMyCar to your Home Screen</b><p>Tap the Share button <span style="font-size:14px">⎙</span> in Safari, then <b style="display:inline;font-size:12px">Add to Home Screen</b>.</p></div>
+            <button class="x" onclick="dismissInstall()" aria-label="Dismiss">✕</button>
+          </div>
           <div class="hero">
             <h2>Grade any car in seconds.</h2>
             <p>Reliability grades, deal scores, lifespan data, safety ratings — all in one tap.</p>
@@ -235,6 +268,7 @@ button.credits-chip{border:0;cursor:pointer}
             <div class="cardhead"><span class="cardtitle">Recent searches</span><span class="link" onclick="show('saved')">View all</span></div>
             <div id="recentList"><div class="empty">No recent searches yet.</div></div>
           </div>
+          <div class="legal"><a href="/terms.html">Terms</a> · <a href="/privacy.html">Privacy</a> · <a href="mailto:support@grademycar.com">Support</a></div>
         </div>
         <nav class="nav">
           <button class="navitem active" onclick="show('home')"><b>⌂</b>Home</button>
@@ -425,6 +459,8 @@ button.credits-chip{border:0;cursor:pointer}
 
           </div><!-- /premiumResults -->
 
+          <div class="disclaimer">Grades and scores are estimates for this make and model, not the specific car. Always get a pre-purchase inspection and check open recalls by VIN. <a href="/terms.html">Learn more</a></div>
+
           <div style="padding-bottom:6px">
             <button class="primary" onclick="show('search')">Grade Another Car</button>
           </div>
@@ -519,7 +555,10 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const rtdb = firebase.database();
 const functions = firebase.functions();
-try { firebase.analytics(); } catch(e) {}
+let analytics=null;
+try { analytics=firebase.analytics(); } catch(e) {}
+// Funnel events (view in Firebase console → Analytics → Events)
+function track(name, params){ try{ if(analytics) analytics.logEvent(name, Object.assign({app:'phone'}, params||{})); }catch(e){} }
 
 let currentUser = null;
 let authMode = 'signin';
@@ -569,6 +608,22 @@ function toggleAuthMode(){
     ?"Don't have an account? <b>Sign up</b>"
     :"Already have an account? <b>Sign in</b>";
   document.getElementById('authError').style.display='none';
+  document.getElementById('authOk').style.display='none';
+  document.getElementById('forgotLink').classList.toggle('hidden',authMode!=='signin');
+  document.getElementById('authPassword').autocomplete=authMode==='signin'?'current-password':'new-password';
+}
+function forgotPassword(){
+  const email=document.getElementById('authEmail').value.trim();
+  const errEl=document.getElementById('authError'), okEl=document.getElementById('authOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!email){ errEl.textContent='Enter your email above, then tap "Forgot password?" again.'; errEl.style.display='block'; return; }
+  auth.sendPasswordResetEmail(email)
+    .then(()=>{ okEl.textContent=`If an account exists for ${email}, a reset link is on its way. Check your inbox and spam folder.`; okEl.style.display='block'; track('password_reset_requested'); })
+    .catch(err=>{
+      // Don't reveal whether an account exists
+      if(err&&err.code==='auth/user-not-found'){ okEl.textContent=`If an account exists for ${email}, a reset link is on its way.`; okEl.style.display='block'; return; }
+      errEl.textContent=friendlyAuthError(err); errEl.style.display='block';
+    });
 }
 function submitAuth(){
   const email=document.getElementById('authEmail').value.trim();
@@ -587,7 +642,7 @@ function submitAuth(){
           email, createdAt:firebase.database.ServerValue.TIMESTAMP,
           reportCredits:0, totalSearches:0, totalPurchases:0, totalSpent:0
         }).catch(e=>console.warn('[GMC] user record create failed',e)));
-  action.then(()=>{ closeAccount(); toast(mode==='signin'?'Signed in':'Account created'); })
+  action.then(()=>{ closeAccount(); toast(mode==='signin'?'Signed in':'Account created'); track(mode==='signin'?'login':'sign_up',{method:'email'}); })
         .catch(err=>{ errEl.textContent=friendlyAuthError(err); errEl.style.display='block'; })
         .finally(()=>{ btn.disabled=false; });
 }
@@ -941,6 +996,7 @@ async function checkGrade(){
 
     // Save to search history (local for guests, local + Firestore when signed in)
     saveSearch({year,make,model,grade:rating?.overall||null});
+    track('grade_car',{make,model,year:String(year),found:!!rating?.overall});
   }catch(err){
     console.error('[GMC] checkGrade error:',err);
     toast('Error fetching grades: '+(err.message||err));
@@ -979,7 +1035,7 @@ async function unlockPremium(){
     spend=res.data||{};
   }catch(err){
     console.error('[GMC] useReportCredit error:',err);
-    if(err.code==='functions/failed-precondition'){ document.getElementById('noCreditsModal').classList.remove('hidden'); }
+    if(err.code==='functions/failed-precondition'){ document.getElementById('noCreditsModal').classList.remove('hidden'); track('out_of_credits'); }
     else if(err.code==='functions/unauthenticated'){ toast('Please sign in again'); openAccount(); }
     else toast('Could not verify credits. Please try again.');
     return;
@@ -988,6 +1044,7 @@ async function unlockPremium(){
   }
   hasUnlimited=!!spend.unlimitedActive;
   if(typeof spend.creditsRemaining==='number') userCredits=spend.creditsRemaining;
+  track('unlock_report',{make,model,year:String(year),unlimited:hasUnlimited,has_price:price>0});
   updateCreditsDisplay();
   toast(hasUnlimited?'Unlimited plan: no credit used':`1 credit used, ${userCredits} left`);
 
@@ -1145,8 +1202,33 @@ function openMore(){
   }
   document.getElementById('moreAuthBtn').innerHTML=currentUser?'<span>⎋</span>Log out':'<span>→</span>Sign in / Create account';
   document.getElementById('moreAuthBtn').classList.toggle('danger',!!currentUser);
+  document.getElementById('deleteAcctBtn').classList.toggle('hidden',!currentUser);
   document.getElementById('moreSheet').classList.remove('hidden');
 }
+// Deletion is handled by support (privacy.html promises removal within 30 days),
+// because credits and payment records live server-side.
+function requestDeleteAccount(){
+  if(!currentUser) return;
+  if(!confirm('Request deletion of your GradeMyCar account and data? Any unused credits will be lost. This opens an email to support.')) return;
+  closeMore();
+  track('delete_account_requested');
+  const body=`Please delete my GradeMyCar account and personal data.\n\nAccount email: ${currentUser.email}\nAccount ID: ${currentUser.uid}`;
+  location.href='mailto:support@grademycar.com?subject='+encodeURIComponent('Delete my account')+'&body='+encodeURIComponent(body);
+}
+
+// ── 13. ADD-TO-HOME-SCREEN HINT (iPhone Safari only) ─────────────────────────
+function dismissInstall(){
+  document.getElementById('installCard').classList.add('hidden');
+  try{ localStorage.setItem('gmc_install_dismissed','1'); }catch(e){}
+}
+(function maybeShowInstall(){
+  const ua=navigator.userAgent;
+  const isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  const isSafari=/Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|FBAN|FBAV|Instagram/.test(ua);
+  const standalone=window.navigator.standalone===true || matchMedia('(display-mode: standalone)').matches;
+  let dismissed=false; try{ dismissed=localStorage.getItem('gmc_install_dismissed')==='1'; }catch(e){}
+  if(isIOS && isSafari && !standalone && !dismissed) document.getElementById('installCard').classList.remove('hidden');
+})();
 function closeMore(){ document.getElementById('moreSheet').classList.add('hidden'); }
 function moreAuth(){
   closeMore();
@@ -1181,6 +1263,7 @@ async function purchaseBundle(bundleType){
     if(!res.data||!res.data.url) throw new Error('No checkout URL');
     // success.html reads this to send the buyer back to the phone app
     try{ localStorage.setItem('gmc_return','phone:'+Date.now()); }catch(e){}
+    track('begin_checkout',{bundle:bundleType});
     location.href=res.data.url;
   }catch(err){
     console.error('[GMC] checkout error:',err);
@@ -1199,6 +1282,7 @@ async function purchaseBundle(bundleType){
     unsub();
     if(!u) return;
     toast('Purchase complete, updating your credits…');
+    track('purchase_returned');
     // Stripe webhook can take a few seconds to add the credits
     setTimeout(refreshCredits,2500); setTimeout(refreshCredits,7000);
   });
