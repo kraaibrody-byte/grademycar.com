@@ -122,6 +122,7 @@
 
     @media (max-width: 600px) {
       .container { margin: 16px; padding: 28px 22px; }
+      header { padding: 18px 16px; }
     }
   </style>
 </head>
@@ -135,11 +136,12 @@
 
 <div class="container">
   <h1>Privacy Policy</h1>
-  <p class="effective-date">Effective Date: July 21, 2026</p>
+  <p class="effective-date">Effective Date: September 29, 2026</p>
 
   <p class="intro">
-    GradeMyCar ("we," "our," or "us") operates the GradeMyCar Chrome extension and
-    the website at <a href="https://grademycar.com">grademycar.com</a>. This Privacy Policy
+    GradeMyCar ("we," "our," or "us") operates the GradeMyCar Chrome extension,
+    the website at <a href="https://grademycar.com">grademycar.com</a>, and the GradeMyCar
+    phone app at <a href="https://grademycar.com/phone.html">grademycar.com/phone.html</a>. This Privacy Policy
     explains what information we collect, how we use it, and your rights. By installing
     or using GradeMyCar, you agree to the practices described here.
   </p>
@@ -150,14 +152,16 @@
     <li><b>Account information</b> — Your email address, collected via Firebase Authentication (Google) when you create an account. Passwords are managed entirely by Firebase — we never see or store them.</li>
     <li><b>Payment information</b> — Payments are processed by Stripe. We never see or store your credit card number, billing address, or any other payment details.</li>
     <li><b>Credit balance</b> — The number of report credits remaining on your account, stored in our database.</li>
-    <li><b>Anonymized usage data</b> — Aggregate, non-identifiable statistics (e.g., total reports generated) used to improve the product.</li>
+    <li><b>Search history and saved vehicles (phone app)</b> — When you are signed in to the phone app, the year, make, model, and grade of vehicles you look up are saved to your account so you can see your history. Vehicles you save with the heart button are stored the same way. If you are not signed in, recent searches are stored only on your device.</li>
+    <li><b>Premium report details</b> — When you unlock a premium report, we record the vehicle's year, make, model, and the mileage you entered, along with the credit used, so we can keep an accurate record of your credits.</li>
+    <li><b>Usage analytics</b> — We use Google Analytics (via Firebase) to understand how the website and phone app are used, such as which pages are visited and which features are used. Google Analytics uses cookies and similar technologies and collects device and browser information. See <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">how Google uses this data</a>.</li>
   </ul>
 
   <p>We do <b>not</b> collect or store:</p>
   <ul class="not-collected">
-    <li>Vehicle listing data, VINs, or search queries</li>
+    <li>VINs or the listing pages you view</li>
     <li>Your browsing history or the URLs you visit</li>
-    <li>Any data from car listing websites — vehicle analysis happens entirely within your browser</li>
+    <li>Any data from car listing websites through the extension — vehicle analysis happens entirely within your browser</li>
   </ul>
 
   <h2>2. How We Use Your Information</h2>
@@ -165,7 +169,8 @@
     <li>To create and manage your account</li>
     <li>To process payments and track your credit balance</li>
     <li>To send transactional emails (receipts, account updates)</li>
-    <li>To improve and debug the extension</li>
+    <li>To show your search history and saved vehicles</li>
+    <li>To improve and debug the website, phone app, and extension</li>
     <li>To respond to support requests</li>
   </ul>
 
@@ -180,15 +185,19 @@
   <h2>4. Information Sharing</h2>
   <p>We do not sell, rent, or share your personal information for marketing purposes. We share data only as follows:</p>
   <ul>
-    <li><b>Firebase / Google</b> — Provides our authentication and database infrastructure.</li>
+    <li><b>Firebase / Google</b> — Provides our authentication, database, and analytics (Google Analytics) infrastructure.</li>
+    <li><b>NHTSA</b> — When you unlock a premium report, your device requests safety ratings and recalls for that year, make, and model directly from the U.S. National Highway Traffic Safety Administration's public website. No account information is sent.</li>
     <li><b>Stripe</b> — Processes payments on our behalf.</li>
     <li><b>Legal compliance</b> — We may disclose information if required by law or to protect the safety of our users.</li>
   </ul>
 
   <h2>5. Data Retention</h2>
   <p>
-    We retain your account data for as long as your account is active. If you delete your account,
-    we will remove your personal data within 30 days, except where retention is required by law.
+    We retain your account data for as long as your account is active. To delete your account,
+    use <b>More → Delete Account</b> in the phone app or email
+    <a href="mailto:support@grademycar.com">support@grademycar.com</a> from the email address on your
+    account. We will remove your personal data within 30 days, except where retention is required
+    by law (for example, payment records).
   </p>
 
   <h2>6. Security</h2>
@@ -234,7 +243,7 @@
 </div>
 
 <footer>
-  &copy; 2026 GradeMyCar &mdash; <a href="https://grademycar.com">grademycar.com</a>
+  &copy; 2026 GradeMyCar &mdash; <a href="https://grademycar.com">grademycar.com</a> &middot; <a href="/terms.html">Terms of Service</a>
 </footer>
 
 </body>
