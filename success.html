@@ -138,8 +138,20 @@
             </div>
         </div>
         
-        <a href="/" class="return-btn">Return to GradeMyCar</a>
+        <a href="/" class="return-btn" id="return-btn">Return to GradeMyCar</a>
     </div>
+
+    <script>
+        // Buyers who started checkout in the phone app (phone.html) go back there
+        try {
+            var r = localStorage.getItem('gmc_return') || '';
+            if (r.indexOf('phone:') === 0 && Date.now() - Number(r.slice(6)) < 3600000) {
+                document.getElementById('return-btn').href = '/phone.html?purchased=1';
+                document.getElementById('return-btn').textContent = 'Back to the App';
+            }
+            localStorage.removeItem('gmc_return');
+        } catch (e) {}
+    </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
