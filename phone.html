@@ -138,6 +138,32 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .modal p.sub{margin:0 0 16px}
 .modal input{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;padding:0 13px;margin-bottom:10px;outline:none;font-size:16px}
 .primary:disabled{opacity:.6;cursor:default}
+button.credits-chip{border:0;cursor:pointer}
+.buy-link{display:block;text-align:center;font-size:12px;color:var(--blue);font-weight:700;margin-top:10px;cursor:pointer;background:none;border:0;width:100%;padding:6px}
+/* Buy credits screen */
+.plan{position:relative;display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px;cursor:pointer;color:var(--ink)}
+.plan:active{transform:scale(.99)}
+.plan.best{border-color:var(--blue);box-shadow:0 6px 18px #4f46e522}
+.plan-tag{position:absolute;top:-9px;left:16px;background:var(--blue);color:#fff;font-size:10px;font-weight:800;letter-spacing:.04em;padding:3px 8px;border-radius:20px}
+.plan-main{flex:1}
+.plan-name{font-size:15px;font-weight:800;color:var(--navy)}
+.plan-desc{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+.plan-price{text-align:right}
+.plan-amt{font-size:20px;font-weight:850;color:var(--navy)}
+.plan-per{font-size:10px;color:var(--muted);margin-top:2px}
+.plan:disabled{opacity:.6}
+.buy-note{font-size:11px;color:var(--muted);text-align:center;line-height:1.5;margin-top:6px}
+.balance{display:flex;align-items:center;justify-content:space-between;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:16px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:#3730A3}
+.balance b{font-size:16px}
+/* More sheet */
+.sheet-wrap{position:absolute;inset:0;background:#0B173366;z-index:20;display:flex;align-items:flex-end}
+.sheet{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom))}
+.sheet-grip{width:38px;height:5px;border-radius:5px;background:#D5DAE3;margin:0 auto 12px}
+.sheet-who{font-size:12px;color:var(--muted);padding:4px 2px 12px;border-bottom:1px solid #EEF0F4}
+.sheet-who b{display:block;font-size:15px;color:var(--navy);margin-bottom:2px}
+.sheet-item{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;padding:15px 2px;border-bottom:1px solid #EEF0F4;font-size:15px;font-weight:650;color:var(--ink);text-align:left;cursor:pointer;text-decoration:none}
+.sheet-item span{width:22px;text-align:center}
+.sheet-item.danger{color:var(--red);border-bottom:0}
 .toast{top:calc(13px + env(safe-area-inset-top))}
 .modal .err{color:#B42318;font-size:12px;margin:-4px 0 10px;display:none}
 .modal .switch{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;cursor:pointer}
@@ -158,7 +184,7 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
         <div class="modal">
           <h2>Out of Credits</h2>
           <p class="sub">You've used all your premium credits. Buy more to keep unlocking premium reports.</p>
-          <button class="primary" onclick="location.href='/#pricing'">Buy Credits</button>
+          <button class="primary" onclick="document.getElementById('noCreditsModal').classList.add('hidden');openBuy()">Buy Credits</button>
           <div class="switch" onclick="document.getElementById('noCreditsModal').classList.add('hidden')">Not now</div>
         </div>
       </div>
@@ -176,13 +202,24 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
         </div>
       </div>
 
+      <div id="moreSheet" class="sheet-wrap hidden" onclick="if(event.target===this)closeMore()">
+        <div class="sheet">
+          <div class="sheet-grip"></div>
+          <div class="sheet-who" id="moreWho"></div>
+          <button class="sheet-item" onclick="closeMore();openBuy()"><span>＋</span>Buy Credits</button>
+          <button class="sheet-item" onclick="closeMore();show('saved')"><span>♡</span>Saved &amp; History</button>
+          <a class="sheet-item" href="/privacy.html"><span>ⓘ</span>Privacy Policy</a>
+          <button class="sheet-item" id="moreAuthBtn" onclick="moreAuth()"><span>⎋</span>Sign in</button>
+        </div>
+      </div>
+
       <!-- Home -->
       <section id="home" class="app">
         <div class="topbar">
           <div class="logo"><img src="data:image/png;base64,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" width="32" height="32" alt="GradeMyCar"><span class="logo-text">GradeMyCar</span></div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span id="creditsChip" class="credits-chip hidden"></span>
-            <button class="iconbtn" id="accountBtn" onclick="openAccount()">●</button>
+            <button id="creditsChip" class="credits-chip hidden" onclick="openBuy()" aria-label="Buy credits"></button>
+            <button class="iconbtn" id="accountBtn" onclick="openMore()" aria-label="Account">●</button>
           </div>
         </div>
         <div class="page">
@@ -203,13 +240,13 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
           <button class="navitem active" onclick="show('home')"><b>⌂</b>Home</button>
           <button class="navitem" onclick="show('search')"><b>⌕</b>Search</button>
           <button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button>
-          <button class="navitem" onclick="openAccount()"><b>☷</b>More</button>
+          <button class="navitem" onclick="openMore()"><b>☷</b>More</button>
         </nav>
       </section>
 
       <!-- Search -->
       <section id="search" class="app hidden">
-        <div class="topbar"><button class="back" onclick="show('home')">‹</button><strong>Grade a Car</strong><button class="iconbtn" onclick="openAccount()">☰</button></div>
+        <div class="topbar"><button class="back" onclick="show('home')">‹</button><strong>Grade a Car</strong><button class="iconbtn" onclick="openMore()" aria-label="Menu">☰</button></div>
         <div class="page">
           <div class="eyebrow">Vehicle lookup</div>
           <h1 style="font-size:27px">What car are<br>you looking at?</h1>
@@ -252,7 +289,7 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
           <button class="navitem" onclick="show('home')"><b>⌂</b>Home</button>
           <button class="navitem active" onclick="show('search')"><b>⌕</b>Search</button>
           <button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button>
-          <button class="navitem" onclick="openAccount()"><b>☷</b>More</button>
+          <button class="navitem" onclick="openMore()"><b>☷</b>More</button>
         </nav>
       </section>
 
@@ -319,6 +356,7 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
             </div>
             <button class="primary" id="unlockBtn" style="margin-top:14px" onclick="unlockPremium()">Unlock Report</button>
             <div id="unlimitedNote" class="hidden" style="text-align:center;font-size:11px;color:var(--green);margin-top:8px;font-weight:600">✓ Unlimited plan active — no credit used</div>
+            <button class="buy-link" id="unlockBuyLink" onclick="openBuy()">Need credits? Buy from $1.99 ›</button>
           </div>
 
           <!-- Premium loading -->
@@ -397,13 +435,13 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
           <button class="navitem" onclick="show('home')"><b>⌂</b>Home</button>
           <button class="navitem active" onclick="show('search')"><b>⌕</b>Search</button>
           <button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button>
-          <button class="navitem" onclick="openAccount()"><b>☷</b>More</button>
+          <button class="navitem" onclick="openMore()"><b>☷</b>More</button>
         </nav>
       </section>
 
       <!-- Saved / History -->
       <section id="saved" class="app hidden">
-        <div class="topbar"><strong style="font-size:19px">Saved</strong><button class="iconbtn" onclick="openAccount()">⌕</button></div>
+        <div class="topbar"><strong style="font-size:19px">Saved</strong><button class="iconbtn" onclick="show('search')" aria-label="Search">⌕</button></div>
         <div class="segment" style="margin-top:14px"><button class="active" onclick="tab(this,'savedTab')">Saved Vehicles</button><button onclick="tab(this,'historyTab')">Search History</button></div>
         <div class="page" style="padding-top:14px">
           <div id="savedTab"><div id="savedList"><div class="empty">Log in to save vehicles.</div></div></div>
@@ -413,7 +451,42 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
           <button class="navitem" onclick="show('home')"><b>⌂</b>Home</button>
           <button class="navitem" onclick="show('search')"><b>⌕</b>Search</button>
           <button class="navitem active"><b>♥</b>Saved</button>
-          <button class="navitem" onclick="openAccount()"><b>☷</b>More</button>
+          <button class="navitem" onclick="openMore()"><b>☷</b>More</button>
+        </nav>
+      </section>
+
+      <!-- Buy credits -->
+      <section id="buy" class="app hidden">
+        <div class="topbar"><button class="back" onclick="show(buyReturnTo)">‹</button><strong>Buy Credits</strong><span style="width:38px"></span></div>
+        <div class="page">
+          <div class="eyebrow">Premium reports</div>
+          <h1 style="font-size:27px">Know before<br>you buy.</h1>
+          <p class="sub">Each credit unlocks one full report: deal score, remaining lifespan, common issues, and NHTSA safety &amp; recalls.</p>
+          <div class="balance hidden" id="buyBalance"></div>
+          <button class="plan" data-bundle="starter" onclick="purchaseBundle('starter')">
+            <div class="plan-main"><div class="plan-name">5 Credits</div><div class="plan-desc">Check a few cars you're serious about.</div></div>
+            <div class="plan-price"><div class="plan-amt">$1.99</div><div class="plan-per">$0.40 / report</div></div>
+          </button>
+          <button class="plan best" data-bundle="value" onclick="purchaseBundle('value')">
+            <span class="plan-tag">BEST VALUE</span>
+            <div class="plan-main"><div class="plan-name">15 Credits</div><div class="plan-desc">Compare listings while you shop around.</div></div>
+            <div class="plan-price"><div class="plan-amt">$4.99</div><div class="plan-per">$0.33 / report</div></div>
+          </button>
+          <button class="plan" data-bundle="weekend" onclick="purchaseBundle('weekend')">
+            <div class="plan-main"><div class="plan-name">48-Hour Unlimited</div><div class="plan-desc">Unlimited reports for a weekend of car shopping.</div></div>
+            <div class="plan-price"><div class="plan-amt">$14.99</div><div class="plan-per">2 days</div></div>
+          </button>
+          <button class="plan" data-bundle="extended" onclick="purchaseBundle('extended')">
+            <div class="plan-main"><div class="plan-name">2-Week Unlimited</div><div class="plan-desc">Unlimited reports for a longer search.</div></div>
+            <div class="plan-price"><div class="plan-amt">$29.99</div><div class="plan-per">14 days</div></div>
+          </button>
+          <div class="buy-note">Secure checkout by Stripe. Credits never expire.<br>You'll come back here after paying.</div>
+        </div>
+        <nav class="nav">
+          <button class="navitem" onclick="show('home')"><b>⌂</b>Home</button>
+          <button class="navitem" onclick="show('search')"><b>⌕</b>Search</button>
+          <button class="navitem" onclick="show('saved')"><b>♡</b>Saved</button>
+          <button class="navitem active" onclick="openMore()"><b>☷</b>More</button>
         </nav>
       </section>
 
@@ -574,6 +647,8 @@ function updateUnlimitedNote(){
   const note=document.getElementById('unlimitedNote');
   if(currentUser && hasUnlimited){ note.classList.remove('hidden'); }
   else { note.classList.add('hidden'); }
+  document.getElementById('unlockBuyLink').classList.toggle('hidden',!!(currentUser&&hasUnlimited));
+  if(typeof updateBuyBalance==='function') updateBuyBalance();
 }
 
 // ── 3. FIRESTORE: history + saved ───────────────────────────────────────────
@@ -1051,11 +1126,83 @@ function renderPremiumResults({mileage,price,avgLifespan,maxReported,commonIssue
 }
 
 // ── 10. UI HELPERS ───────────────────────────────────────────────────────────
-var screens=['home','search','loading','results','saved'];
+var screens=['home','search','loading','results','saved','buy'];
+var currentScreen='home';
 function show(id){
   screens.forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));
   document.querySelectorAll('.app').forEach(x=>x.scrollTop=0);
+  currentScreen=id;
 }
+
+// ── 11. MORE MENU ────────────────────────────────────────────────────────────
+function openMore(){
+  const who=document.getElementById('moreWho');
+  if(currentUser){
+    const bal=hasUnlimited?'Unlimited plan active':userCredits!==null?`${userCredits} credit${userCredits!==1?'s':''}`:'';
+    who.innerHTML=`<b>${esc(currentUser.email||'Signed in')}</b>${esc(bal)}`;
+  } else {
+    who.innerHTML='<b>Not signed in</b>Sign in to save cars and unlock premium reports.';
+  }
+  document.getElementById('moreAuthBtn').innerHTML=currentUser?'<span>⎋</span>Log out':'<span>→</span>Sign in / Create account';
+  document.getElementById('moreAuthBtn').classList.toggle('danger',!!currentUser);
+  document.getElementById('moreSheet').classList.remove('hidden');
+}
+function closeMore(){ document.getElementById('moreSheet').classList.add('hidden'); }
+function moreAuth(){
+  closeMore();
+  if(currentUser){ if(confirm('Log out of GradeMyCar?')) auth.signOut().then(()=>toast('Logged out')); }
+  else openAccount();
+}
+
+// ── 12. BUY CREDITS ──────────────────────────────────────────────────────────
+var buyReturnTo='home';
+function openBuy(){
+  if(currentScreen!=='buy') buyReturnTo=currentScreen==='loading'?'home':currentScreen;
+  updateBuyBalance();
+  show('buy');
+  if(currentUser) refreshCredits();
+}
+function updateBuyBalance(){
+  const el=document.getElementById('buyBalance');
+  if(!currentUser){ el.innerHTML='<span>Sign in to buy credits</span><b style="cursor:pointer" onclick="openAccount()">Sign in ›</b>'; el.classList.remove('hidden'); return; }
+  if(hasUnlimited){ el.innerHTML='<span>Your plan</span><b>∞ Unlimited</b>'; el.classList.remove('hidden'); return; }
+  if(userCredits!==null){ el.innerHTML=`<span>Current balance</span><b>${userCredits} credit${userCredits!==1?'s':''}</b>`; el.classList.remove('hidden'); return; }
+  el.classList.add('hidden');
+}
+// Same createCheckoutSession Cloud Function and bundle ids as index.html.
+async function purchaseBundle(bundleType){
+  if(!currentUser){ toast('Sign in first to buy credits'); openAccount(); return; }
+  const btns=document.querySelectorAll('.plan');
+  btns.forEach(b=>b.disabled=true);
+  const btn=document.querySelector(`.plan[data-bundle="${bundleType}"] .plan-per`);
+  const orig=btn.textContent; btn.textContent='Opening checkout…';
+  try{
+    const res=await functions.httpsCallable('createCheckoutSession')({bundleType,sourceExtension:false});
+    if(!res.data||!res.data.url) throw new Error('No checkout URL');
+    // success.html reads this to send the buyer back to the phone app
+    try{ localStorage.setItem('gmc_return','phone:'+Date.now()); }catch(e){}
+    location.href=res.data.url;
+  }catch(err){
+    console.error('[GMC] checkout error:',err);
+    btns.forEach(b=>b.disabled=false); btn.textContent=orig;
+    if(err.code==='functions/unauthenticated'){ toast('Please sign in again'); openAccount(); }
+    else toast("Couldn't start checkout. Please try again.");
+  }
+}
+// Back from Stripe: success.html links phone buyers to phone.html?purchased=1
+(function handleReturn(){
+  const q=new URLSearchParams(location.search);
+  if(!q.has('purchased')) return;
+  history.replaceState(null,'',location.pathname);
+  try{ localStorage.removeItem('gmc_return'); }catch(e){}
+  const unsub=auth.onAuthStateChanged(u=>{
+    unsub();
+    if(!u) return;
+    toast('Purchase complete, updating your credits…');
+    // Stripe webhook can take a few seconds to add the credits
+    setTimeout(refreshCredits,2500); setTimeout(refreshCredits,7000);
+  });
+})();
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;
