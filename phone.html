@@ -1250,6 +1250,8 @@ function dismissInstall(){
   const isIOS=/iPhone|iPad|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
   const isSafari=/Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|FBAN|FBAV|Instagram/.test(ua);
   const standalone=window.navigator.standalone===true || matchMedia('(display-mode: standalone)').matches;
+  // Lets the GMC Ops Console count home-screen installs vs browser visits
+  track('app_open',{display:standalone?'home_screen':'browser'});
   let dismissed=false; try{ dismissed=localStorage.getItem('gmc_install_dismissed')==='1'; }catch(e){}
   if(isIOS && isSafari && !standalone && !dismissed) document.getElementById('installCard').classList.remove('hidden');
 })();
