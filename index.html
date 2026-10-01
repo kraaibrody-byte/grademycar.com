@@ -2298,15 +2298,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                         
-                        // Create user record in Realtime Database
+                        // Create user record in Realtime Database, with 1 free report credit.
+                        // Database rules only allow creating it once, so if the login handler
+                        // created it first this write is refused; that's fine, don't fail sign-up.
                         await set(ref(database, `users/${userCredential.user.uid}`), {
                             email: email,
                             createdAt: serverTimestamp(),
-                            reportCredits: 0,
+                            reportCredits: 1,
                             totalSearches: 0,
                             totalPurchases: 0,
                             totalSpent: 0
-                        });
+                        }).catch(e => console.warn('User record already exists:', e));
 
                         document.getElementById('email').value = '';
                         document.getElementById('password').value = '';
