@@ -177,6 +177,7 @@ button.credits-chip{border:0;cursor:pointer}
 .sheet-item.danger{color:var(--red);border-bottom:0}
 .sheet-item.subtle{font-size:13px;color:var(--muted);font-weight:600;padding:12px 2px}
 .sheet-list{max-height:70vh;overflow:auto}
+.app-version{text-align:center;font-size:10px;color:#A3ABB8;padding-top:10px}
 .disclaimer{font-size:11px;color:#8B94A3;line-height:1.5;text-align:center;padding:0 6px}
 .disclaimer a,.legal a{color:#8B94A3}
 .legal{text-align:center;font-size:11px;color:#8B94A3;padding:4px 0 8px}
@@ -259,6 +260,7 @@ button.credits-chip{border:0;cursor:pointer}
           <a class="sheet-item" href="/privacy.html?from=app"><span>ⓘ</span>Privacy Policy</a>
           <button class="sheet-item" id="moreAuthBtn" onclick="moreAuth()"><span>⎋</span>Sign in</button>
           <button class="sheet-item subtle hidden" id="deleteAcctBtn" onclick="requestDeleteAccount()"><span></span>Delete account</button>
+          <div class="app-version" id="appVersion"></div>
         </div>
       </div>
 
@@ -587,6 +589,8 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const rtdb = firebase.database();
 const functions = firebase.functions();
+// Bump on every release; shown at the bottom of the More menu and sent with app_open
+const APP_VERSION='2026.09.30-c';
 let analytics=null;
 try { analytics=firebase.analytics(); } catch(e) {}
 // Funnel events (view in Firebase console → Analytics → Events)
@@ -1430,7 +1434,8 @@ function dismissInstall(){
   const isSafari=/Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA|FBAN|FBAV|Instagram/.test(ua);
   const standalone=window.navigator.standalone===true || matchMedia('(display-mode: standalone)').matches;
   // Lets the GMC Ops Console count home-screen installs vs browser visits
-  track('app_open',{display:standalone?'home_screen':'browser'});
+  track('app_open',{display:standalone?'home_screen':'browser',version:APP_VERSION});
+  document.getElementById('appVersion').textContent=`Version ${APP_VERSION} · ${standalone?'Home Screen app':'Browser'}`;
   let dismissed=false; try{ dismissed=localStorage.getItem('gmc_install_dismissed')==='1'; }catch(e){}
   if(isIOS && isSafari && !standalone && !dismissed) document.getElementById('installCard').classList.remove('hidden');
 })();
