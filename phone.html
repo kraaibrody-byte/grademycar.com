@@ -182,6 +182,24 @@ button.credits-chip{border:0;cursor:pointer}
 .install-card b{font-size:13px;color:var(--navy);display:block;margin-bottom:3px}
 .install-card p{font-size:12px;color:var(--muted);margin:0;line-height:1.5}
 .install-card .x{border:0;background:none;color:#98A0AE;font-size:16px;cursor:pointer;padding:0 0 0 4px}
+.vin-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px 16px}
+.vin-card .label{display:block}
+.vin-row{display:flex;gap:8px;margin-top:4px}
+.vin-input{flex:1;min-width:0;height:44px;border:1.5px solid var(--line);border-radius:12px;padding:0 12px;font-size:16px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;outline:none;color:var(--ink);background:#fff;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.vin-input:focus{border-color:var(--blue)}
+.vin-btn{height:44px;border:0;border-radius:12px;background:var(--blue);color:#fff;font-weight:750;font-size:14px;padding:0 16px;cursor:pointer;white-space:nowrap}
+.vin-btn:disabled{opacity:.6}
+.vin-help{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.45}
+.vin-help.ok{color:var(--green);font-weight:650}
+.vin-help.err{color:var(--red);font-weight:650}
+.or-row{display:flex;align-items:center;gap:10px;margin:14px 2px;color:#98A0AE;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.or-row:before,.or-row:after{content:"";flex:1;height:1px;background:var(--line)}
+.rsub{font-size:11px;color:var(--muted);margin-top:2px}
+.free-note{background:var(--greenbg);color:#166534;font-size:12px;font-weight:650;border-radius:10px;padding:9px 12px;margin:-4px 0 12px}
+.recall-scope{font-size:11px;color:var(--muted);margin:-4px 0 10px;line-height:1.45}
+.vin-check{margin-top:12px;background:#EEF2FF;border:1px solid #C7D2FE;border-radius:13px;padding:12px 14px;font-size:12px;color:#3730A3;line-height:1.5}
+.vin-check:empty{display:none}
+.vin-check button{margin-top:8px;border:0;background:var(--blue);color:#fff;font-weight:700;font-size:12px;border-radius:9px;padding:8px 12px;cursor:pointer}
 .forgot{display:block;text-align:right;font-size:12px;color:var(--blue);font-weight:600;margin:-4px 0 12px;cursor:pointer}
 .auth-legal{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.5}
 .auth-legal a{color:var(--muted)}
@@ -261,7 +279,7 @@ button.credits-chip{border:0;cursor:pointer}
           </div>
           <div class="hero">
             <h2>Grade any car in seconds.</h2>
-            <p>Reliability grades, deal scores, lifespan data, safety ratings — all in one tap.</p>
+            <p>Reliability grades, deal scores, lifespan data, safety ratings — all in one tap. Your first premium report is free.</p>
             <button class="primary" onclick="show('search')">⌕ &nbsp; Grade a Car &nbsp; ›</button>
           </div>
           <div class="card">
@@ -284,7 +302,16 @@ button.credits-chip{border:0;cursor:pointer}
         <div class="page">
           <div class="eyebrow">Vehicle lookup</div>
           <h1 style="font-size:27px">What car are<br>you looking at?</h1>
-          <p class="sub">Select the make, model, and year to check reliability grades.</p>
+          <p class="sub">Paste the VIN, or pick the year, make, and model.</p>
+          <div class="vin-card">
+            <label class="label" for="vinInput">VIN <span style="color:#98A0AE">(optional, most accurate)</span></label>
+            <div class="vin-row">
+              <input id="vinInput" class="vin-input" type="text" maxlength="17" placeholder="17 characters" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="onVinInput()" onkeydown="if(event.key==='Enter')lookupVin()">
+              <button class="vin-btn" id="vinBtn" onclick="lookupVin()">Look up</button>
+            </div>
+            <div class="vin-help" id="vinHelp">Find it in the listing, at the bottom of the windshield, or on the driver's door frame.</div>
+          </div>
+          <div class="or-row"><span>or choose</span></div>
           <div class="form">
             <div class="field">
               <div class="label">Year</div>
@@ -344,6 +371,7 @@ button.credits-chip{border:0;cursor:pointer}
           <button class="back" onclick="show('search')">‹</button>
           <div style="flex:1">
             <div class="rtitle" id="rname">2018 Honda Accord</div>
+            <div class="rsub hidden" id="rsub"></div>
           </div>
           <button class="iconbtn" id="saveBtn" onclick="toggleSave()">♡</button>
         </div>
@@ -378,6 +406,7 @@ button.credits-chip{border:0;cursor:pointer}
               <span class="credit-badge">1 CREDIT</span>
             </div>
             <div class="prem-desc">Get estimated remaining lifespan, common issues for this model, and full NHTSA safety &amp; recall data.</div>
+            <div class="free-note hidden" id="freeNote">Your first report is free. Create an account and it's on us.</div>
             <div class="prem-inputs">
               <div>
                 <div class="prem-field-label">Current Mileage</div>
@@ -453,8 +482,10 @@ button.credits-chip{border:0;cursor:pointer}
                 <span class="stars" id="starDisplay"></span>
                 <span id="starFraction" style="color:var(--muted);font-size:12px"></span>
               </div>
+              <div class="recall-scope" id="recallScope"></div>
               <div id="recallsList"></div>
-              <div id="noRecalls" class="hidden" style="font-size:12px;color:var(--muted);padding:4px 0">No open recalls found for this vehicle.</div>
+              <div id="noRecalls" class="hidden" style="font-size:12px;color:var(--muted);padding:4px 0">No recalls on record for this model year.</div>
+              <div class="vin-check" id="vinCheck"></div>
             </div>
 
           </div><!-- /premiumResults -->
@@ -560,6 +591,7 @@ function track(name, params){ try{ if(analytics) analytics.logEvent(name, Object
 
 let currentUser = null;
 let authMode = 'signin';
+let signingUp = false;
 let currentResult = null;
 let currentVehicle = null;   // { year, make, model, makeData, rating }
 let currentSavedId = null;
@@ -593,14 +625,16 @@ function displayModel(model){
 function vehicleName(v){ return `${v.year} ${displayMake(v.make)} ${displayModel(v.model)}`; }
 
 // ── 2. AUTH ──────────────────────────────────────────────────────────────────
-function openAccount(){
+function openAccount(mode){
   if(currentUser){ if(confirm('Log out of GradeMyCar?')) auth.signOut(); return; }
+  if(mode && mode!==authMode) toggleAuthMode();
+  if(authMode==='signup') document.getElementById('authTitle').textContent='Get your first report free';
   document.getElementById('authModal').classList.remove('hidden');
 }
 function closeAccount(){ document.getElementById('authModal').classList.add('hidden'); }
 function toggleAuthMode(){
   authMode = authMode==='signin'?'signup':'signin';
-  document.getElementById('authTitle').textContent = authMode==='signin'?'Welcome back':'Create your account';
+  document.getElementById('authTitle').textContent = authMode==='signin'?'Welcome back':'Get your first report free';
   document.getElementById('authSubmit').textContent = authMode==='signin'?'Sign in':'Sign up';
   document.getElementById('authSwitch').innerHTML = authMode==='signin'
     ?"Don't have an account? <b>Sign up</b>"
@@ -632,16 +666,24 @@ function submitAuth(){
   const mode=authMode;
   const btn=document.getElementById('authSubmit');
   btn.disabled=true;
+  // Hold off the credit check until the new account's record (with its free credit) exists
+  signingUp=mode==='signup';
   const action=mode==='signin'
     ?auth.signInWithEmailAndPassword(email,password)
     :auth.createUserWithEmailAndPassword(email,password).then(cred=>
-        // Same user record index.html creates on signup
+        // Same user record index.html creates on signup, with 1 free credit
+        // (database rules allow a new record to start at 0 or 1 credits, never more)
         rtdb.ref(`users/${cred.user.uid}`).set({
           email, createdAt:firebase.database.ServerValue.TIMESTAMP,
-          reportCredits:0, totalSearches:0, totalPurchases:0, totalSpent:0
-        }).catch(e=>console.warn('[GMC] user record create failed',e)));
-  action.then(()=>{ closeAccount(); toast(mode==='signin'?'Signed in':'Account created'); track(mode==='signin'?'login':'sign_up',{method:'email'}); })
-        .catch(err=>{ errEl.textContent=friendlyAuthError(err); errEl.style.display='block'; })
+          reportCredits:1, totalSearches:0, totalPurchases:0, totalSpent:0
+        }).catch(e=>console.warn('[GMC] user record create failed',e))
+          .finally(()=>{ signingUp=false; refreshCredits(); }));
+  action.then(()=>{
+          closeAccount();
+          toast(mode==='signin'?'Signed in':'Account created. Your first report is free!');
+          track(mode==='signin'?'login':'sign_up',{method:'email'});
+        })
+        .catch(err=>{ signingUp=false; errEl.textContent=friendlyAuthError(err); errEl.style.display='block'; })
         .finally(()=>{ btn.disabled=false; });
 }
 function friendlyAuthError(err){
@@ -665,7 +707,7 @@ auth.onAuthStateChanged(user=>{
   updateUnlimitedNote();
   detachListeners();
   if(user){
-    refreshCredits();
+    if(!signingUp) refreshCredits();
     listenToHistory(user.uid);
     listenToSaved(user.uid);
   } else {
@@ -702,8 +744,13 @@ function updateUnlimitedNote(){
   const note=document.getElementById('unlimitedNote');
   if(currentUser && hasUnlimited){ note.classList.remove('hidden'); }
   else { note.classList.add('hidden'); }
-  document.getElementById('unlockBuyLink').classList.toggle('hidden',!!(currentUser&&hasUnlimited));
+  document.getElementById('unlockBuyLink').classList.toggle('hidden',!!(currentUser&&hasUnlimited) || !currentUser);
+  document.getElementById('freeNote').classList.toggle('hidden',!!currentUser);
+  setUnlockLabel();
   if(typeof updateBuyBalance==='function') updateBuyBalance();
+}
+function setUnlockLabel(){
+  document.getElementById('unlockBtn').textContent=currentUser?'Unlock Report':'Sign Up Free & Unlock';
 }
 
 // ── 3. REALTIME DATABASE: history + saved ────────────────────────────────────
@@ -884,6 +931,106 @@ async function fillSearch(make, model, year, chip){
   if(!selectValue(document.getElementById('model'),model)) toast(`No data for ${displayModel(model)} yet`);
 }
 
+// ── VIN LOOKUP ───────────────────────────────────────────────────────────────
+// Decoded on the phone with NHTSA's free vPIC service. The VIN never goes to our
+// servers or analytics (privacy.html says we don't collect VINs).
+let vinInfo=null;   // {vin, year, make, model, trim, engine, drive, checkOk}
+
+function vinHelp(text, tone){
+  const el=document.getElementById('vinHelp');
+  el.textContent=text;
+  el.className='vin-help'+(tone?' '+tone:'');
+}
+function onVinInput(){
+  const el=document.getElementById('vinInput');
+  const clean=el.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(clean!==el.value) el.value=clean;
+  if(vinInfo && clean!==vinInfo.vin){ vinInfo=null; vinHelp("Find it in the listing, at the bottom of the windshield, or on the driver's door frame."); }
+}
+function engineText(v){
+  const parts=[];
+  if(v.DisplacementL) parts.push((Math.round(Number(v.DisplacementL)*10)/10)+'L');
+  if(v.EngineCylinders) parts.push(v.EngineCylinders+'-cyl');
+  if(/yes/i.test(v.Turbo||'')) parts.push('turbo');
+  if(/electric/i.test(v.FuelTypePrimary||'') && !v.EngineCylinders) parts.push('electric');
+  return parts.join(' ');
+}
+function driveText(d){
+  d=String(d||'');
+  if(/4x2|front/i.test(d)) return /rear/i.test(d)?'RWD':'FWD';
+  if(/rear/i.test(d)) return 'RWD';
+  if(/awd|all/i.test(d)) return 'AWD';
+  if(/4wd|4x4/i.test(d)) return '4WD';
+  return '';
+}
+// Match NHTSA's model name to one of our model keys ("RX" → "rx", "F-150" → "f-150")
+function pickModelOption(sel, nhtsaModel, trim){
+  const want=String(nhtsaModel||'').toLowerCase().trim();
+  const wantFull=(want+' '+String(trim||'').toLowerCase()).trim();
+  const opts=[...sel.options].map(o=>o.value).filter(Boolean);
+  const norm=s=>s.replace(/[\s-]/g,'');
+  let hit=opts.find(o=>o===want)||opts.find(o=>norm(o)===norm(want))||opts.find(o=>o===wantFull);
+  if(!hit){
+    const cands=opts.filter(o=>want.startsWith(o)||o.startsWith(want)||wantFull.startsWith(o));
+    cands.sort((a,b)=>b.length-a.length);
+    hit=cands[0];
+  }
+  if(hit){ sel.value=hit; return true; }
+  return false;
+}
+async function lookupVin(){
+  const vin=document.getElementById('vinInput').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(vin.length!==17){ vinHelp(`A VIN has 17 characters. This one has ${vin.length}.`,'err'); return; }
+  if(/[IOQ]/.test(vin)){ vinHelp('VINs never contain the letters I, O, or Q. Check for a 1 or 0 instead.','err'); return; }
+  const btn=document.getElementById('vinBtn');
+  btn.disabled=true; btn.textContent='Looking up…';
+  vinHelp('Looking up this VIN…');
+  try{
+    const r=await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+    if(!r.ok) throw new Error('lookup failed');
+    const v=(await r.json()).Results?.[0]||{};
+    const codes=String(v.ErrorCode||'').split(',').map(s=>s.trim());
+    if(!v.Make||!v.Model||!v.ModelYear){ vinHelp("We couldn't decode that VIN. Double-check it, or pick the car below.",'err'); track('vin_lookup',{ok:false}); return; }
+    vinInfo={vin, year:String(v.ModelYear), make:String(v.Make).toLowerCase(), model:v.Model, trim:v.Trim||'',
+             engine:engineText(v), drive:driveText(v.DriveType), checkOk:!codes.includes('1')};
+    // Fill the dropdowns
+    selectValue(document.getElementById('year'),vinInfo.year);
+    await makesReady;
+    const makeOk=selectValue(document.getElementById('make'),vinInfo.make);
+    let modelOk=false;
+    if(makeOk){ lastMakeLoaded=''; await onMakeInput(); modelOk=pickModelOption(document.getElementById('model'),vinInfo.model,vinInfo.trim); }
+    const name=`${vinInfo.year} ${displayMake(vinInfo.make)} ${vinInfo.model}${vinInfo.trim?' '+vinInfo.trim:''}`;
+    const extra=[vinInfo.engine,vinInfo.drive].filter(Boolean).join(' · ');
+    if(!makeOk||!modelOk){
+      vinHelp(`${name}. We don't have grades for this model yet. Try picking the closest model below.`,'err');
+    } else {
+      vinHelp(`✓ ${name}${extra?' · '+extra:''}${vinInfo.checkOk?'':' (this VIN may have a typo, so double-check it)'}`,'ok');
+    }
+    track('vin_lookup',{ok:true,matched:makeOk&&modelOk});
+  }catch(e){
+    console.warn('[GMC] VIN lookup failed',e);
+    vinHelp("Couldn't reach the VIN service. Check your connection, or pick the car below.",'err');
+  }finally{
+    btn.disabled=false; btn.textContent='Look up';
+  }
+}
+// Picking a different car by hand means the VIN no longer applies
+['year','make','model'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{
+  if(!vinInfo) return;
+  vinInfo=null;
+  document.getElementById('vinInput').value='';
+  vinHelp("Find it in the listing, at the bottom of the windshield, or on the driver's door frame.");
+}));
+function copyVinAndCheck(){
+  const vin=currentVehicle?.vin?.vin;
+  const open=()=>window.open('https://www.nhtsa.gov/recalls','_blank','noopener');
+  if(!vin){ open(); return; }
+  track('vin_recall_check');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(vin).then(()=>{ toast('VIN copied. Paste it on the NHTSA page'); open(); },()=>open());
+  } else open();
+}
+
 // ── 5. GRADE DATA HELPERS ────────────────────────────────────────────────────
 const makeCache={};
 
@@ -996,12 +1143,19 @@ async function checkGrade(){
     const mKey=gradesSection?findModelKey(gradesSection,model):null;
     const rating=mKey?gradesSection[mKey]:null;
 
-    currentVehicle={year,make,model,makeData,rating};
+    // Keep the VIN only if it still describes the car being graded
+    const vin=(vinInfo && vinInfo.year==year && vinInfo.make===make.toLowerCase())?vinInfo:null;
+    currentVehicle={year,make,model,makeData,rating,vin};
     currentResult={year,make,model,grade:rating?.overall||null};
     currentSavedId=null;
 
     // Render free grades
     document.getElementById('rname').textContent=vehicleName({year,make,model});
+    const rsub=document.getElementById('rsub');
+    if(vin){
+      rsub.textContent=[vin.trim, vin.engine, vin.drive, 'VIN …'+vin.vin.slice(-6)].filter(Boolean).join(' · ');
+      rsub.classList.remove('hidden');
+    } else { rsub.textContent=''; rsub.classList.add('hidden'); }
     updateSaveBtn();
     setGradeCircle('engineCircle',rating?.engine);
     setGradeCircle('transCircle',rating?.transmission);
@@ -1045,7 +1199,7 @@ async function unlockPremium(){
   if(mileage>1000000){ toast('That mileage looks too high'); return; }
 
   // Premium requires an account; the credit is spent server-side (same as index.html)
-  if(!currentUser){ toast('Sign in to unlock premium reports'); openAccount(); return; }
+  if(!currentUser){ openAccount('signup'); return; }
 
   const {year,make,model,makeData,rating}=currentVehicle;
   const unlockBtn=document.getElementById('unlockBtn');
@@ -1064,7 +1218,7 @@ async function unlockPremium(){
     else toast('Could not verify credits. Please try again.');
     return;
   }finally{
-    unlockBtn.disabled=false; unlockBtn.textContent='Unlock Report';
+    unlockBtn.disabled=false; setUnlockLabel();
   }
   hasUnlimited=!!spend.unlimitedActive;
   if(typeof spend.creditsRemaining==='number') userCredits=spend.creditsRemaining;
@@ -1190,7 +1344,16 @@ function renderPremiumResults({mileage,price,avgLifespan,maxReported,commonIssue
     safetyRow.classList.add('hidden');
   }
 
-  // Recalls
+  // Recalls: NHTSA lists them per model year; whether a given car was fixed
+  // is only on nhtsa.gov, so point the buyer there with the VIN copied
+  const v=currentVehicle||{};
+  const modelLabel=`${v.year} ${displayMake(v.make)} ${displayModel(v.model)}`;
+  document.getElementById('recallScope').textContent=recalls&&recalls.length
+    ? `${recalls.length} recall${recalls.length!==1?'s':''} issued for the ${modelLabel}${recalls.length>6?' (showing 6)':''}.`
+    : '';
+  document.getElementById('vinCheck').innerHTML=v.vin
+    ? `<b>Were these fixed on this car?</b> NHTSA can tell you for this exact VIN. We'll copy it so you can paste it in.<br><button type="button" onclick="copyVinAndCheck()">Copy VIN &amp; check on NHTSA</button>`
+    : `<b>Want to know if this car's recalls were fixed?</b> Ask the seller for the VIN and check it free on NHTSA.<br><button type="button" onclick="copyVinAndCheck()">Open NHTSA recall check</button>`;
   const recallsList=document.getElementById('recallsList');
   const noRecalls=document.getElementById('noRecalls');
   if(recalls&&recalls.length>0){
