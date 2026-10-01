@@ -589,8 +589,26 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const rtdb = firebase.database();
 const functions = firebase.functions();
-// Bump on every release; shown at the bottom of the More menu and sent with app_open
-const APP_VERSION='2026.09.30-c';
+// Bump on every release, and set the same value in /version.json. Shown at the
+// bottom of the More menu and sent with app_open.
+const APP_VERSION='2026.09.30-d';
+
+// Home Screen apps on iPhone keep serving an old copy of this page. On each open,
+// compare with /version.json (never cached) and reload onto the new copy if behind.
+// The ?v= query makes it a URL the old cache has never seen; the check against it
+// stops a reload loop if the server is still serving the old file.
+(async function checkForUpdate(){
+  try{
+    const r=await fetch('/version.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return;
+    const latest=String((await r.json()).version||'');
+    if(!latest||latest===APP_VERSION) return;
+    const u=new URL(location.href);
+    if(u.searchParams.get('v')===latest) return;
+    u.searchParams.set('v',latest);
+    location.replace(u.toString());
+  }catch(e){}
+})();
 let analytics=null;
 try { analytics=firebase.analytics(); } catch(e) {}
 // Funnel events (view in Firebase console → Analytics → Events)
