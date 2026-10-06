@@ -212,6 +212,20 @@ button.credits-chip{border:0;cursor:pointer}
 .modal .err{color:#B42318;font-size:12px;margin:-4px 0 10px;display:none}
 .modal .switch{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;cursor:pointer}
 .modal .switch b{color:var(--blue)}
+/* Home: sample report + hero extras */
+.sample{background:#fff;border:1px solid var(--line);border-radius:19px;padding:14px 16px;margin-bottom:16px;box-shadow:0 3px 12px #10245108;cursor:pointer}
+.sample-top{display:flex;align-items:center;gap:8px}
+.sample-tag{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);background:#EEF2FF;padding:3px 8px;border-radius:20px}
+.sample-car{font-size:14px;font-weight:800;color:var(--navy)}
+.sample-meta{font-size:11px;color:var(--muted);margin:4px 0 12px}
+.sample-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.sample-stats>div{background:var(--bg);border-radius:13px;padding:10px 4px}
+.sample-grade{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;margin:0 auto;font-size:18px;font-weight:850;border:2px solid transparent}
+.sample-val{font-size:22px;font-weight:850;color:var(--navy);line-height:40px}.sample-val small{font-size:11px;color:var(--muted);font-weight:650}
+.sample-lbl{font-size:10px;color:var(--muted);font-weight:650;margin-top:4px}
+.sample-foot{font-size:11px;color:var(--muted);margin-top:10px;text-align:center}.sample-foot b{color:var(--blue)}
+.ghost{width:100%;margin-top:10px;height:44px;border:1.5px solid #ffffff55;background:transparent;color:#fff;border-radius:15px;font-weight:700;font-size:14px;cursor:pointer}
+.hero .hero-note{font-size:11px;color:#C7D2FE;margin:12px 0 0;line-height:1.45}
 @media(min-width:521px){body{background:#eef2f7}.demo{box-shadow:0 0 0 1px #dfe4ec}}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -276,18 +290,31 @@ button.credits-chip{border:0;cursor:pointer}
         <div class="page">
           <div class="eyebrow">Instant reliability analysis</div>
           <h1>Stop Guessing.<br><span style="color:var(--blue)">Grade Any Car.</span></h1>
-          <p class="sub">Expert-level reliability grades and pricing insights for any vehicle, in seconds.</p>
+          <p class="sub">Reliability grade, price check and safety recalls for any used car. Works right in your browser, nothing to install.</p>
+          <!-- Sample report: values are refreshed from the live DB by loadSample() -->
+          <div class="sample" id="sampleCard" onclick="tryExample('sample_card')">
+            <div class="sample-top"><span class="sample-tag">Sample report</span><span class="sample-car">2018 Honda Accord</span></div>
+            <div class="sample-meta">60,000 miles · $18,500 asking price</div>
+            <div class="sample-stats">
+              <div><div class="sample-grade gc-green" id="sampleGrade">A</div><div class="sample-lbl">Reliability</div></div>
+              <div><div class="sample-val"><span id="sampleDeal">86</span><small>/100</small></div><div class="sample-lbl" id="sampleDealLbl">Excellent deal</div></div>
+              <div><div class="sample-val" id="sampleLife">250k</div><div class="sample-lbl">mi avg. lifespan</div></div>
+            </div>
+            <div class="sample-foot"><b>See this example ›</b></div>
+          </div>
+          <div class="hero">
+            <h2>Grade any car in seconds.</h2>
+            <p>Get a reliability grade for any year, make and model. <b style="color:#fff">Free, no sign-in needed.</b></p>
+            <button class="primary" onclick="show('search')">⌕ &nbsp; Grade a car free &nbsp; ›</button>
+            <button class="ghost" onclick="tryExample('hero_button')">Try an example car</button>
+            <p class="hero-note">Your first full report (deal score, lifespan, recalls) is free too, with a free account.</p>
+          </div>
           <div class="install-card hidden" id="installCard">
             <div class="ic">📲</div>
             <div style="flex:1"><b>Add GradeMyCar to your Home Screen</b><p>Tap the Share button <span style="font-size:14px">⎙</span> in Safari, then <b style="display:inline;font-size:12px">Add to Home Screen</b>.</p></div>
             <button class="x" onclick="dismissInstall()" aria-label="Dismiss">✕</button>
           </div>
-          <div class="hero">
-            <h2>Grade any car in seconds.</h2>
-            <p>Reliability grades, deal scores, lifespan data, safety ratings — all in one tap. Your first premium report is free.</p>
-            <button class="primary" onclick="show('search')">⌕ &nbsp; Grade a Car &nbsp; ›</button>
-          </div>
-          <div class="card">
+          <div class="card hidden" id="recentCard">
             <div class="cardhead"><span class="cardtitle">Recent searches</span><span class="link" onclick="show('saved')">View all</span></div>
             <div id="recentList"><div class="empty">No recent searches yet.</div></div>
           </div>
@@ -307,16 +334,7 @@ button.credits-chip{border:0;cursor:pointer}
         <div class="page">
           <div class="eyebrow">Vehicle lookup</div>
           <h1 style="font-size:27px">What car are<br>you looking at?</h1>
-          <p class="sub">Paste the VIN, or pick the year, make, and model.</p>
-          <div class="vin-card">
-            <label class="label" for="vinInput">VIN <span style="color:#98A0AE">(optional, most accurate)</span></label>
-            <div class="vin-row">
-              <input id="vinInput" class="vin-input" type="text" maxlength="17" placeholder="17 characters" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="onVinInput()" onkeydown="if(event.key==='Enter')lookupVin()">
-              <button class="vin-btn" id="vinBtn" onclick="lookupVin()">Look up</button>
-            </div>
-            <div class="vin-help" id="vinHelp">Find it in the listing, at the bottom of the windshield, or on the driver's door frame.</div>
-          </div>
-          <div class="or-row"><span>or choose</span></div>
+          <p class="sub">Pick the year, make, and model. No VIN needed.</p>
           <div class="form">
             <div class="field">
               <div class="label">Year</div>
@@ -338,7 +356,7 @@ button.credits-chip{border:0;cursor:pointer}
             </div>
           </div>
           <div class="section">
-            <h3>Quick examples</h3>
+            <h3>Or try an example</h3>
             <div class="chips">
               <button class="chip" onclick="fillSearch('honda','accord','2018',this)">2018 Accord</button>
               <button class="chip" onclick="fillSearch('toyota','camry','2020',this)">2020 Camry</button>
@@ -348,7 +366,16 @@ button.credits-chip{border:0;cursor:pointer}
           </div>
           <div class="cta">
             <button class="primary" onclick="checkGrade()">Check Grade &nbsp; ›</button>
-            <div class="helper">Free reliability grades for any car, no listing required.</div>
+            <div class="helper">Free reliability grades for any car. No sign-in or listing required.</div>
+          </div>
+          <div class="or-row"><span>or paste a VIN</span></div>
+          <div class="vin-card">
+            <label class="label" for="vinInput">VIN <span style="color:#98A0AE">(optional, most accurate)</span></label>
+            <div class="vin-row">
+              <input id="vinInput" class="vin-input" type="text" maxlength="17" placeholder="17 characters" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="onVinInput()" onkeydown="if(event.key==='Enter')lookupVin()">
+              <button class="vin-btn" id="vinBtn" onclick="lookupVin()">Look up</button>
+            </div>
+            <div class="vin-help" id="vinHelp">Find it in the listing, at the bottom of the windshield, or on the driver's door frame.</div>
           </div>
         </div>
         <nav class="nav">
@@ -591,7 +618,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.09.30-d';
+const APP_VERSION='2026.10.05-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -824,6 +851,8 @@ function sameVehicle(a,b){
 
 function renderVehicleList(containerId,docs,isSavedTab){
   const el=document.getElementById(containerId);
+  // First-time visitors have no history, so the Recent card stays hidden until there is some
+  if(containerId==='recentList') document.getElementById('recentCard').classList.toggle('hidden',!docs.length);
   if(!docs.length){ el.innerHTML=`<div class="empty">${isSavedTab?'No saved vehicles yet.':'No searches yet.'}</div>`; return; }
   el.innerHTML=docs.map((d,i)=>`
     <div class="vehicle" data-i="${i}">
@@ -840,6 +869,7 @@ function renderVehicleList(containerId,docs,isSavedTab){
   });
 }
 async function replaySearch(v){
+  markLookupStart('history');
   await fillSearch(v.make,v.model,v.year);
   show('search');
 }
@@ -871,6 +901,7 @@ function renderLocalSearches(){
       renderVehicleList('historyList',searches,false);
     } else {
       document.getElementById('recentList').innerHTML='<div class="empty">No recent searches yet.</div>';
+      document.getElementById('recentCard').classList.add('hidden');
       document.getElementById('historyList').innerHTML='<div class="empty">No searches yet.</div>';
     }
   }catch(e){}
@@ -947,13 +978,41 @@ function selectValue(sel, val){
   return !!opt;
 }
 async function fillSearch(make, model, year, chip){
-  if(chip){ document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c===chip)); }
+  if(chip){ document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c===chip)); markLookupStart('chip'); }
   selectValue(document.getElementById('year'),year);
   await makesReady;
-  if(!selectValue(document.getElementById('make'),make)){ toast("Couldn't load that make. Check your connection."); return; }
+  if(!selectValue(document.getElementById('make'),make)){ toast("Couldn't load that make. Check your connection."); return false; }
   lastMakeLoaded=''; // force reload
   await onMakeInput();
-  if(!selectValue(document.getElementById('model'),model)) toast(`No data for ${displayModel(model)} yet`);
+  if(!selectValue(document.getElementById('model'),model)){ toast(`No data for ${displayModel(model)} yet`); return false; }
+  return true;
+}
+
+// ── LOOKUP FUNNEL ────────────────────────────────────────────────────────────
+// lookup_start fires once, on the first real interaction with the lookup
+// (not just opening the screen); grade_shown fires when results render. The gap
+// between app_open → lookup_start → grade_shown shows where people drop off.
+let lookupStarted=false, lookupMethod=null;
+function markLookupStart(method){
+  lookupMethod=method;
+  if(lookupStarted) return;
+  lookupStarted=true;
+  track('lookup_start',{method});
+}
+['year','make','model'].forEach(id=>document.getElementById(id).addEventListener('change',()=>markLookupStart('dropdown')));
+
+// Example car: same one as the sample card on Home
+const EXAMPLE={year:'2018',make:'honda',model:'accord',mileage:60000,price:18500};
+async function tryExample(source){
+  markLookupStart(source==='sample_card'?'sample_card':'example_button');
+  show('loading');
+  if(!await fillSearch(EXAMPLE.make,EXAMPLE.model,EXAMPLE.year)){ show('search'); return; }
+  await checkGrade();
+  // Pre-fill the premium form so the sample's deal score is one tap away
+  if(currentScreen==='results'){
+    document.getElementById('premMileage').value=EXAMPLE.mileage;
+    document.getElementById('premPrice').value=EXAMPLE.price;
+  }
 }
 
 // ── VIN LOOKUP ───────────────────────────────────────────────────────────────
@@ -968,6 +1027,7 @@ function vinHelp(text, tone){
 }
 function onVinInput(){
   const el=document.getElementById('vinInput');
+  markLookupStart('vin');
   const clean=el.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(clean!==el.value) el.value=clean;
   if(vinInfo && clean!==vinInfo.vin){ vinInfo=null; vinHelp("Find it in the listing, at the bottom of the windshield, or on the driver's door frame."); }
@@ -1043,6 +1103,8 @@ async function lookupVin(){
       vinHelp(`${name}. We don't have grades for this model yet. Try picking the closest model below.`,'err');
     } else {
       vinHelp(`✓ ${name}${extra?' · '+extra:''}${vinInfo.checkOk?'':' (this VIN may have a typo, so double-check it)'}`,'ok');
+      // Check Grade sits above the VIN box, so bring it back into view
+      document.querySelector('#search .cta').scrollIntoView({behavior:'smooth',block:'center'});
     }
     track('vin_lookup',{ok:true,matched:makeOk&&modelOk});
   }catch(e){
@@ -1172,6 +1234,8 @@ async function checkGrade(){
   const model=document.getElementById('model').value.trim();
   const year=document.getElementById('year').value;
   if(!make||!model||!year){ toast('Select make, model, and year'); return; }
+  // Covers re-checking the same car with no new interaction, so every grade_shown has a start
+  markLookupStart(lookupMethod||'resubmit');
 
   show('loading');
 
@@ -1213,6 +1277,8 @@ async function checkGrade(){
     // Save to search history (local for guests, local + Firestore when signed in)
     saveSearch({year,make,model,grade:rating?.overall||null});
     track('grade_car',{make,model,year:String(year),found:!!rating?.overall});
+    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||'none',has_vin:!!vin,signed_in:!!currentUser});
+    lookupStarted=false; lookupMethod=null; // the next lookup counts as a new start
   }catch(err){
     console.error('[GMC] checkGrade error:',err);
     toast('Error fetching grades: '+(err.message||err));
@@ -1457,6 +1523,26 @@ function dismissInstall(){
   let dismissed=false; try{ dismissed=localStorage.getItem('gmc_install_dismissed')==='1'; }catch(e){}
   if(isIOS && isSafari && !standalone && !dismissed) document.getElementById('installCard').classList.remove('hidden');
 })();
+// ── 14. SAMPLE REPORT ON HOME ────────────────────────────────────────────────
+// The card ships with values for EXAMPLE so it shows instantly; this refreshes
+// them from the live DB with the same deal-score math the real report uses.
+(async function loadSample(){
+  try{
+    const get=p=>fetch(`${DB_URL}/reliability/${EXAMPLE.make}/${p}/${EXAMPLE.model}.json`).then(r=>r.ok?r.json():null);
+    const [g,l]=await Promise.all([get('grades'),get('lifespan')]);
+    if(!g?.overall) return;
+    const deal=calcDealScore({overallGrade:g.overall,avgLifespan:l?.avgLifespan||null,maxLifespan:l?.maxReported||null,
+                              mileage:EXAMPLE.mileage,price:EXAMPLE.price,year:EXAMPLE.year});
+    const gEl=document.getElementById('sampleGrade');
+    const s=gradeToScore(g.overall);
+    gEl.textContent=g.overall;
+    gEl.className='sample-grade '+(s>=80?'gc-green':s>=65?'gc-amber':'gc-red');
+    document.getElementById('sampleDeal').textContent=deal.score;
+    document.getElementById('sampleDealLbl').textContent=deal.category.replace(' Deal',' deal');
+    if(l?.avgLifespan) document.getElementById('sampleLife').textContent=Math.round(l.avgLifespan/1000)+'k';
+  }catch(e){}
+})();
+
 function closeMore(){ document.getElementById('moreSheet').classList.add('hidden'); }
 function moreAuth(){
   closeMore();
