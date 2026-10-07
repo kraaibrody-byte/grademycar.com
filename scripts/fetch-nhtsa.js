@@ -10,6 +10,7 @@
 const fs = require('fs');
 const path = require('path');
 const { MODELS, FIRST_YEAR, LAST_YEAR } = require('./nhtsa-models');
+const { themeBits } = require('../issue-themes');
 
 const CACHE = path.resolve(process.argv[2] || path.join(__dirname, '..', '..', 'AI', 'nhtsa-cache'));
 const API = 'https://api.nhtsa.gov';
@@ -71,22 +72,32 @@ function modelNames(make, year) {
   });
 }
 
-// Complaints for one NHTSA make/model/year, as [[odiNumber, groupBits], ...].
+// Complaints for one NHTSA make/model/year, as [[odiNumber, groupBits, themeBits], ...]
+// (themeBits = problem types the owner describes, see issue-themes.js).
 // IDs are kept because makers file one complaint under several model names
 // (F-150 SUPER CREW / SUPERCAB / REGULAR CAB), and the grader must count it once.
 function complaintIds(make, model, year) {
-  const file = path.join(CACHE, 'complaints-v2', make, model.replace(/[\/\\]/g, '_'), `${year}.json`);
+  const file = path.join(CACHE, 'complaints-v3', make, model.replace(/[\/\\]/g, '_'), `${year}.json`);
   return cached(file, async () => {
     const j = await getJSON(`${API}/complaints/complaintsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`);
     return (j.results || []).map(c => {
       const comps = String(c.components || '').toUpperCase();
       let bits = 0;
       GROUP_NAMES.forEach((name, i) => { if (GROUPS[name].test(comps)) bits |= 1 << i; });
-      return [c.odiNumber, bits];
+      return [c.odiNumber, bits, themeBits(c.summary)];
     });
   });
 }
 
+
+// Recalls for one NHTSA make/model/year, as [[campaignNumber, themeBits], ...]
+function recallIds(make, model, year) {
+  const file = path.join(CACHE, 'recalls', make, model.replace(/[\/\\]/g, '_'), `${year}.json`);
+  return cached(file, async () => {
+    const j = await getJSON(`${API}/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`);
+    return (j.results || []).map(r => [r.NHTSACampaignNumber, themeBits(`${r.Component} ${r.Summary} ${r.Consequence}`)]);
+  });
+}
 
 module.exports = { GROUP_NAMES };
 if (require.main !== module) return;
@@ -120,6 +131,8 @@ if (require.main !== module) return;
 
   console.log(`Step 2: complaint counts for ${jobs.length} make/model/years`);
   await pool(jobs, ([mk, nm, y]) => complaintIds(mk, nm, y));
+  console.log(`Step 3: recalls for ${jobs.length} make/model/years`);
+  await pool(jobs, ([mk, nm, y]) => recallIds(mk, nm, y));
   console.log('Done');
 })().catch(e => { console.error(e); process.exit(1); });
 

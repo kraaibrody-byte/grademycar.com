@@ -84,6 +84,15 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .gc-label{font-size:12px;color:var(--muted);font-weight:600}
 .grade-source{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;line-height:1.45;color:var(--muted);text-align:center}
 .grade-source b{color:var(--ink)}
+.top-issue{margin-top:8px;font-size:12px;color:var(--ink);line-height:1.45}
+.recall-pill{display:inline-block;font-size:10px;font-weight:750;padding:2px 7px;border-radius:999px;background:#DBEAFE;color:#1D4ED8;margin-left:4px;vertical-align:1px;white-space:nowrap}
+.owner-reports{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}
+.owner-reports strong{font-size:13px;color:var(--navy)}
+.owner-reports .sub{font-size:11px;color:var(--muted);margin:2px 0 6px}
+.or-item{padding:10px 0;border-top:1px solid #EEF0F4}.or-item:first-of-type{border-top:0}
+.or-head{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:700;color:var(--ink)}
+.or-count{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
+.or-tip{font-size:12px;color:#475569;margin-top:3px;line-height:1.45}
 .gc{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;font-size:23px;font-weight:800;border:3px solid transparent}
 .gc-green{background:var(--greenbg);color:var(--green);border-color:#8FE0AE}
 .gc-amber{background:var(--amberbg);color:var(--amber);border-color:#FCD34D}
@@ -443,7 +452,7 @@ button.credits-chip{border:0;cursor:pointer}
               <strong style="font-size:14px">Unlock Premium Report</strong>
               <span class="credit-badge">1 CREDIT</span>
             </div>
-            <div class="prem-desc">Get estimated remaining lifespan, common issues for this model, and full NHTSA safety &amp; recall data.</div>
+            <div class="prem-desc">See every problem owners report for this model year and what to check before you buy, plus estimated miles remaining, a deal score, and full NHTSA safety &amp; recall data.</div>
             <div class="free-note hidden" id="freeNote">Your first report is free. Create an account and it's on us.</div>
             <div class="prem-inputs">
               <div>
@@ -505,6 +514,9 @@ button.credits-chip{border:0;cursor:pointer}
                 <div class="stat-val" id="statMaxMileage">—</div>
               </div>
             </div>
+
+            <!-- What owners of this model year report (NHTSA complaints) -->
+            <div class="owner-reports hidden" id="ownerReports"></div>
 
             <!-- Common issues -->
             <div class="issues-res hidden" id="issuesSection">
@@ -602,6 +614,7 @@ button.credits-chip{border:0;cursor:pointer}
 </div>
 
 <!-- Firebase compat SDK (cdnjs — required for preview CSP) -->
+<script src="/issue-themes.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-database-compat.min.js"></script>
@@ -625,7 +638,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.07-a';
+const APP_VERSION='2026.10.07-b';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1301,7 +1314,8 @@ async function checkGrade(){
 function yearRating(modelRating, y){
   if(!y?.o) return modelRating;
   return {engine:y.e, transmission:y.t, overall:y.o, ev:modelRating?.ev, source:'nhtsa',
-          yearGraded:true, complaints:y.n, limited:!!y.l};
+          yearGraded:true, complaints:y.n, limited:!!y.l,
+          issues:window.GMCIssues?GMCIssues.parseIssues(y.i):[]};
 }
 function renderGradeSource(rating, year){
   const el=document.getElementById('gradeSource');
@@ -1311,6 +1325,9 @@ function renderGradeSource(rating, year){
   if(rating?.yearGraded){
     html=`Graded for the <b>${esc(year)}</b> model year from <b>${Number(rating.complaints).toLocaleString()}</b> owner complaints filed with NHTSA, adjusted for how many were sold.`;
     if(rating.limited) html+=' Newer model year, so fewer complaints are in yet. This grade may change.';
+    // Free: the #1 problem behind the grade. The full breakdown is in the premium report.
+    const top=rating.issues?.[0];
+    if(top) html+=`<div class="top-issue">Most complaints: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}</div>`;
   } else if(rating?.source==='nhtsa'){
     const why=Number(year)<2005?`We grade model years from 2005 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
     html=`${why}, so this is the model's grade across the ${esc(rating.years||'recent')} model years, from NHTSA owner complaints.`;
@@ -1580,6 +1597,22 @@ function renderPremiumResults({mileage,price,avgLifespan,maxReported,commonIssue
 
   // Max reported mileage
   document.getElementById('statMaxMileage').textContent=maxReported?maxReported.toLocaleString()+' mi':'—';
+
+  // What owners of this exact model year report, with what to check before buying
+  const or=document.getElementById('ownerReports');
+  const yIssues=currentVehicle?.rating?.issues||[];
+  if(yIssues.length){
+    const v=currentVehicle;
+    or.innerHTML=`<strong>What ${esc(v.year)} ${esc(displayModel(v.model))} owners report</strong>
+      <div class="sub">Top problems in owner complaints filed with NHTSA, and what to check before you buy.</div>
+      ${yIssues.map(i=>`<div class="or-item">
+        <div class="or-head"><span>${esc(i.label)}${i.recall?'<span class="recall-pill">Recall issued</span>':''}</span><span class="or-count">${i.count.toLocaleString()} reports</span></div>
+        <div class="or-tip">${i.recall?'A recall covers this. Run the VIN to confirm the repair was done. ':''}${esc(i.tip)}</div>
+      </div>`).join('')}`;
+    or.classList.remove('hidden');
+  } else {
+    or.classList.add('hidden');
+  }
 
   // Common issues
   const issuesSec=document.getElementById('issuesSection');

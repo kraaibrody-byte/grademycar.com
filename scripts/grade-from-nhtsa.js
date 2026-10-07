@@ -22,6 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const { MODELS, FIRST_YEAR, LAST_YEAR, salesFor } = require('./nhtsa-models');
 const { GROUP_NAMES } = require('./fetch-nhtsa');
+const { KEYS: THEMES } = require('../issue-themes');
 
 const args = process.argv.slice(2);
 const CACHE = path.resolve(args.find(a => !a.startsWith('--')) || path.join(__dirname, '..', '..', 'AI', 'nhtsa-cache'));
@@ -40,22 +41,47 @@ const letter = p => CURVE.find(([cut]) => p < cut)[1];
 
 // Every complaint for this model/year across all its NHTSA names, each counted once
 // (makers file the same complaint under several names, e.g. F-150 cab styles)
-function readCounts(m, y) {
-  const seen = new Map();
+function cachedFiles(m, y, kind) {
+  const files = [];
   for (const [mk, re] of m.src) {
-    const dir = path.join(CACHE, 'complaints-v2', mk);
+    const dir = path.join(CACHE, kind, mk);
     if (!fs.existsSync(dir)) continue;
     for (const nm of fs.readdirSync(dir)) {
       if (!re.test(nm.replace(/_/g, '/'))) continue;
       const f = path.join(dir, nm, `${y}.json`);
-      if (!fs.existsSync(f)) continue;
-      for (const [id, bits] of JSON.parse(fs.readFileSync(f, 'utf8'))) seen.set(id, (seen.get(id) || 0) | bits);
+      if (fs.existsSync(f)) files.push(f);
+    }
+  }
+  return files;
+}
+
+function readCounts(m, y) {
+  const seen = new Map(); // odiNumber -> [groupBits, themeBits]
+  for (const f of cachedFiles(m, y, 'complaints-v3')) {
+    for (const [id, bits, themes] of JSON.parse(fs.readFileSync(f, 'utf8'))) {
+      const prev = seen.get(id) || [0, 0];
+      seen.set(id, [prev[0] | bits, prev[1] | themes]);
     }
   }
   if (!seen.size) return null;
-  const sum = { total: seen.size };
+  const sum = { total: seen.size, themes: {} };
   for (const name of GROUP_NAMES) sum[name] = 0;
-  for (const bits of seen.values()) GROUP_NAMES.forEach((name, i) => { if (bits & (1 << i)) sum[name]++; });
+  for (const [bits, themes] of seen.values()) {
+    GROUP_NAMES.forEach((name, i) => { if (bits & (1 << i)) sum[name]++; });
+    THEMES.forEach((k, i) => { if (themes & (1 << i)) sum.themes[k] = (sum.themes[k] || 0) + 1; });
+  }
+  // Problem types a recall covered for this model year
+  let recalled = 0;
+  const campaigns = new Set();
+  for (const f of cachedFiles(m, y, 'recalls')) {
+    for (const [id, themes] of JSON.parse(fs.readFileSync(f, 'utf8'))) { campaigns.add(id); recalled |= themes; }
+  }
+  sum.recalls = campaigns.size;
+  // Top problems: "stall:261:1,head:40:0" (key:complaints:recall issued)
+  sum.issues = Object.entries(sum.themes)
+    .filter(([, n]) => n >= 3)
+    .sort((a, b) => b[1] - a[1]).slice(0, 4)
+    .map(([k, n]) => `${k}:${n}:${recalled & (1 << THEMES.indexOf(k)) ? 1 : 0}`).join(',');
   return sum;
 }
 
@@ -112,6 +138,7 @@ for (const m of MODELS) {
     years[r.y] = {
       engine: letter(r.pe), transmission: letter(r.pt), overall: letter(r.ps),
       complaints: r.c.total, engineComplaints: m.ev ? r.c.evdrive : r.c.engine, transComplaints: r.c.powertrain,
+      issues: r.c.issues, recalls: r.c.recalls,
       ...(r.newish ? { limited: true } : {}),
     };
   }

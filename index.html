@@ -10,6 +10,7 @@
     <meta name="google-site-verification" content="PogbJo3Kk8-9e3H8X5Rx3tK9m2AVC1zV_iYLT_hU2Sg" />
     <meta name="description" content="Free engine, transmission and overall reliability grades for any used car, plus deal scores and lifespan estimates. Check a car before you buy.">
     <script src="reliability-data.js"></script>
+    <script src="/issue-themes.js"></script>
     <style>
         * {
             margin: 0;
@@ -1146,6 +1147,13 @@
             padding: 1.25rem;
             margin-bottom: 1rem;
         }
+
+        .owner-issue { padding: 0.65rem 0; border-top: 1px solid #f1f5f9; }
+        .owner-issue:first-of-type { border-top: 0; }
+        .owner-issue-head { display: flex; justify-content: space-between; gap: 0.5rem; font-weight: 700; color: #1e293b; font-size: 0.92rem; }
+        .owner-issue-count { color: #64748b; font-weight: 600; font-size: 0.8rem; white-space: nowrap; }
+        .owner-issue-tip { color: #475569; font-size: 0.85rem; margin-top: 0.2rem; }
+        .recall-pill { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.45rem; border-radius: 999px; background: #dbeafe; color: #1d4ed8; margin-left: 0.35rem; vertical-align: 1px; white-space: nowrap; }
 
         .premium-issues h5 {
             font-size: 0.9rem;
@@ -3200,8 +3208,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rating = yg?.o
                     ? { engine: yg.e, transmission: yg.t, overall: yg.o, ev: modelRating?.ev }
                     : modelRating;
+                const topIssue = window.GMCIssues ? GMCIssues.parseIssues(yg?.i)[0] : null;
                 const gradeNote = yg?.o
                     ? `Graded for the ${window.escapeHTML(String(year))} model year from ${Number(yg.n).toLocaleString()} owner complaints filed with NHTSA, adjusted for how many were sold.${yg.l ? ' Newer model year, so this grade may change.' : ''}`
+                      + (topIssue ? `<br><span style="color:#1e293b">Most complaints: <b>${window.escapeHTML(topIssue.label)}</b> (${topIssue.count.toLocaleString()})</span>${topIssue.recall ? '<span class="recall-pill">Recall issued</span>' : ''}` : '')
                     : modelRating?.source === 'nhtsa'
                         ? `Model grade across the ${window.escapeHTML(modelRating.years || 'recent')} model years, from NHTSA owner complaints.`
                         : '';
@@ -3255,7 +3265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="premium-tag">1 credit</span>
                         </div>
                         <p class="lookup-subtitle" style="margin-bottom: 1rem;">
-                            Get estimated remaining lifespan, common issues for this model, and full NHTSA safety &amp; recall data.
+                            See every problem owners report for this model year and what to check before you buy, plus estimated miles remaining, a deal score, and full NHTSA safety &amp; recall data.
                         </p>
                         <div class="premium-inputs">
                             <div class="lookup-field">
@@ -3484,7 +3494,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
 
-                container.innerHTML = lifespanHtml + '<div id="premium-safety-slot"><p class="premium-loading">Loading safety &amp; recall data…</p></div>';
+                // What owners of this exact model year report (NHTSA complaints), with what to check
+                const yIssues = window.GMCIssues ? GMCIssues.parseIssues(window.YEAR_GRADES[make]?.[model]?.[year]?.i) : [];
+                const ownerHtml = yIssues.length ? `
+                    <div class="premium-issues">
+                        <h5>What ${window.escapeHTML(String(year))} ${window.escapeHTML(window.formatModel(model))} owners report</h5>
+                        ${yIssues.map(i => `
+                            <div class="owner-issue">
+                                <div class="owner-issue-head"><span>${window.escapeHTML(i.label)}${i.recall ? '<span class="recall-pill">Recall issued</span>' : ''}</span><span class="owner-issue-count">${i.count.toLocaleString()} reports</span></div>
+                                <div class="owner-issue-tip">${i.recall ? 'A recall covers this. Run the VIN to confirm the repair was done. ' : ''}${window.escapeHTML(i.tip)}</div>
+                            </div>`).join('')}
+                    </div>` : '';
+                container.innerHTML = ownerHtml + lifespanHtml + '<div id="premium-safety-slot"><p class="premium-loading">Loading safety &amp; recall data…</p></div>';
 
                 const safetySlot = document.getElementById('premium-safety-slot');
 
