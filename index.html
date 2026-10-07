@@ -416,6 +416,7 @@
         .grade-a { background: #10b981; }
         .grade-b { background: #3b82f6; }
         .grade-c { background: #f59e0b; }
+        .grade-d { background: #dc2626; }
 
         /* Pricing Section */
         .pricing {
@@ -2807,12 +2808,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const gradeClass = grade.startsWith('A') ? 'grade-a'
                                     : grade.startsWith('B') ? 'grade-b'
                                     : grade.startsWith('C') ? 'grade-c'
-                                    : grade.startsWith('D') ? 'grade-d'
-                                    : 'grade-c';
-
-                    const gradeStyle = gradeClass === 'grade-d'
-                        ? 'background: #fecaca; color: #dc2626;'
-                        : '';
+                                    : 'grade-d'; // D and F
 
                     const row = document.createElement('div');
                     row.className = 'search-item';
@@ -2821,7 +2817,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="search-vehicle">${window.escapeHTML(vehicle || 'Unknown vehicle')}</div>
                             <div style="color: #64748b; font-size: 0.9rem;">${timeLabel}</div>
                         </div>
-                        <div class="search-grade ${gradeClass}" style="${gradeStyle}">${window.escapeHTML(grade)}</div>
+                        <div class="search-grade ${gradeClass}">${window.escapeHTML(grade)}</div>
                     `;
                     listEl.appendChild(row);
                 });
