@@ -969,6 +969,73 @@
             font-size: 0.95rem;
         }
 
+        /* VIN lookup (same NHTSA decoder as phone.html) */
+        .vin-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.25rem 0 1rem;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .vin-divider::before, .vin-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .vin-row {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .vin-input {
+            flex: 1;
+            min-width: 0;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fafbfc;
+            color: #1e293b;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .vin-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .vin-row .btn {
+            white-space: nowrap;
+        }
+        .vin-help {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        .vin-help.ok { color: #16a34a; font-weight: 600; }
+        .vin-help.err { color: #dc2626; font-weight: 600; }
+        .lookup-result-sub {
+            margin-top: 0.2rem;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        .vin-recall-btn {
+            border: 1px solid #c7d2fe;
+            background: #eef2ff;
+            color: #3730a3;
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            padding: 0.45rem 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
         .lookup-not-found {
             color: #64748b;
             font-size: 0.9rem;
@@ -995,6 +1062,8 @@
         }
 
         .premium-tag {
+            white-space: nowrap;
+            flex-shrink: 0;
             background: #6b7280;
             color: white;
             padding: 0.2rem 0.6rem;
@@ -1243,7 +1312,8 @@
             .lookup-grade-item { padding: 0.75rem 0.25rem; }
 
             /* 16px stops iPhone from zooming in when a field is tapped */
-            .lookup-field select, .premium-inputs .lookup-field input { font-size: 16px; }
+            .lookup-field select, .premium-inputs .lookup-field input, .vin-input { font-size: 16px; }
+            .lookup-result-header { flex-wrap: wrap; gap: 0.75rem; }
         }
 
         /* Phones: Log In / Dashboard becomes a round account icon so it doesn't
@@ -1869,6 +1939,16 @@
                     </div>
                     <button class="btn btn-primary lookup-submit" id="lookup-submit-btn" disabled>Check Grade</button>
                 </div>
+
+                <div class="vin-divider">or look up by VIN</div>
+                <label class="lookup-field" for="lookup-vin" style="display: block;">
+                    <span style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.4rem;">VIN <span style="color: #94a3b8; font-weight: 500;">(optional, most accurate)</span></span>
+                </label>
+                <div class="vin-row">
+                    <input id="lookup-vin" class="vin-input" type="text" maxlength="17" placeholder="17 characters" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false">
+                    <button class="btn btn-secondary" id="lookup-vin-btn">Look Up VIN</button>
+                </div>
+                <div class="vin-help" id="lookup-vin-help">Find it in the listing, at the bottom of the windshield, or on the driver's door frame.</div>
 
                 <div class="lookup-result" id="lookup-result"></div>
             </div>
@@ -2951,6 +3031,160 @@ document.addEventListener('DOMContentLoaded', function() {
 
             yearSelect.addEventListener('change', checkFormReady);
 
+            // ── VIN lookup (ported from phone.html) ─────────────────────────────
+            // Decoded in the browser with NHTSA's free vPIC service. The VIN never goes
+            // to our servers or analytics (privacy.html says we don't collect VINs).
+            const vinInput = document.getElementById('lookup-vin');
+            const vinBtn = document.getElementById('lookup-vin-btn');
+            const vinHelpEl = document.getElementById('lookup-vin-help');
+            const VIN_HELP_DEFAULT = "Find it in the listing, at the bottom of the windshield, or on the driver's door frame.";
+            let vinInfo = null;   // {vin, year, make, model, trim, engine, drive, checkOk}
+
+            function vinHelp(text, tone) {
+                vinHelpEl.textContent = text;
+                vinHelpEl.className = 'vin-help' + (tone ? ' ' + tone : '');
+            }
+
+            // NHTSA records sometimes mix fields from sibling trims that share a chassis code
+            // (a 2002 GS430 lists 4,292 cc and the 3UZ-FE V8, but also "3.0L in-line 6" from
+            // the GS300). The cc figure is the most reliable, so size comes from it, and the
+            // cylinder count is left out whenever the two sizes disagree rather than guessed.
+            function engineText(v) {
+                const parts = [];
+                const fromCC = Number(v.DisplacementCC) > 0 ? Number(v.DisplacementCC) / 1000 : null;
+                const fromL = Number(v.DisplacementL) > 0 ? Number(v.DisplacementL) : null;
+                const liters = fromCC ?? fromL;
+                const conflict = fromCC != null && fromL != null && Math.abs(fromCC - fromL) > 0.15;
+                if (liters) parts.push(liters.toFixed(1) + 'L');
+                if (!conflict && Number(v.EngineCylinders) > 0) {
+                    const n = Number(v.EngineCylinders);
+                    parts.push(/v-shaped/i.test(v.EngineConfiguration || '') ? 'V' + n : n + '-cyl');
+                }
+                if (conflict && v.EngineModel && String(v.EngineModel).length <= 12) parts.push('(' + v.EngineModel + ')');
+                if (/yes/i.test(v.Turbo || '')) parts.push('turbo');
+                if (/electric/i.test(v.FuelTypePrimary || '') && !liters) parts.push('electric');
+                return parts.join(' ');
+            }
+
+            // "4x2" only means two-wheel drive, not which end, so it shows nothing
+            function driveText(d) {
+                d = String(d || '');
+                if (/awd|all-wheel/i.test(d)) return 'AWD';
+                if (/4wd|4x4|4-wheel/i.test(d)) return '4WD';
+                if (/fwd|front/i.test(d)) return 'FWD';
+                if (/rwd|rear/i.test(d)) return 'RWD';
+                return '';
+            }
+
+            // Pick the option whose value matches case-insensitively
+            function selectValue(sel, val) {
+                const v = String(val ?? '').toLowerCase().trim();
+                const opt = [...sel.options].find(o => o.value.toLowerCase() === v);
+                sel.value = opt ? opt.value : '';
+                return !!opt;
+            }
+
+            // Match NHTSA's model name to one of our model keys ("RX" → "rx", "F-150" → "f-150")
+            function pickModelOption(sel, nhtsaModel, trim) {
+                const want = String(nhtsaModel || '').toLowerCase().trim();
+                const wantFull = (want + ' ' + String(trim || '').toLowerCase()).trim();
+                const opts = [...sel.options].map(o => o.value).filter(Boolean);
+                const norm = s => s.replace(/[\s-]/g, '');
+                let hit = opts.find(o => o === want) || opts.find(o => norm(o) === norm(want)) || opts.find(o => o === wantFull);
+                if (!hit) {
+                    const cands = opts.filter(o => want.startsWith(o) || o.startsWith(want) || wantFull.startsWith(o));
+                    cands.sort((a, b) => b.length - a.length);
+                    hit = cands[0];
+                }
+                if (hit) { sel.value = hit; return true; }
+                return false;
+            }
+
+            vinInput.addEventListener('input', () => {
+                const clean = vinInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (clean !== vinInput.value) vinInput.value = clean;
+                if (vinInfo && clean !== vinInfo.vin) { vinInfo = null; vinHelp(VIN_HELP_DEFAULT); }
+            });
+            vinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') lookupVin(); });
+            vinBtn.addEventListener('click', lookupVin);
+
+            async function lookupVin() {
+                const vin = vinInput.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                if (vin.length !== 17) { vinHelp(`A VIN has 17 characters. This one has ${vin.length}.`, 'err'); return; }
+                if (/[IOQ]/.test(vin)) { vinHelp('VINs never contain the letters I, O, or Q. Check for a 1 or 0 instead.', 'err'); return; }
+                vinBtn.disabled = true;
+                vinBtn.textContent = 'Looking up…';
+                vinHelp('Looking up this VIN…');
+                try {
+                    const r = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+                    if (!r.ok) throw new Error('lookup failed');
+                    const v = (await r.json()).Results?.[0] || {};
+                    const codes = String(v.ErrorCode || '').split(',').map(c => c.trim());
+                    if (!v.Make || !v.Model || !v.ModelYear) {
+                        vinHelp("We couldn't decode that VIN. Double-check it, or pick the car above.", 'err');
+                        return;
+                    }
+                    let make = String(v.Make).toLowerCase();
+                    let model = v.Model;
+                    // Ram trucks are their own make at NHTSA since 2011; our data files them under Dodge
+                    if (make === 'ram' && !data.ram) { make = 'dodge'; model = 'ram'; }
+
+                    vinInfo = {
+                        vin, year: String(v.ModelYear), make, model, trim: v.Trim || '',
+                        engine: engineText(v), drive: driveText(v.DriveType), checkOk: !codes.includes('1')
+                    };
+
+                    // Fill the dropdowns (make → model → year on this form)
+                    const makeOk = selectValue(makeSelect, make);
+                    let modelOk = false, yearOk = false;
+                    if (makeOk) {
+                        populateModels(makeSelect.value);
+                        modelOk = pickModelOption(modelSelect, model, vinInfo.trim);
+                    }
+                    if (modelOk) {
+                        populateYears();
+                        yearOk = selectValue(yearSelect, vinInfo.year);
+                    }
+                    checkFormReady();
+
+                    const name = `${vinInfo.year} ${window.formatMake(v.Make)} ${v.Model}${vinInfo.trim ? ' ' + vinInfo.trim : ''}`;
+                    const extra = [vinInfo.engine, vinInfo.drive].filter(Boolean).join(' · ');
+                    if (!makeOk || !modelOk || !yearOk) {
+                        vinHelp(`${name}. We don't have grades for this model yet. Try picking the closest model above.`, 'err');
+                    } else {
+                        vinHelp(`✓ ${name}${extra ? ' · ' + extra : ''}${vinInfo.checkOk ? '' : ' (this VIN may have a typo, so double-check it)'}`, 'ok');
+                        submitBtn.click();
+                    }
+                } catch (e) {
+                    console.warn('[GMC] VIN lookup failed', e);
+                    vinHelp("Couldn't reach the VIN service. Check your connection, or pick the car above.", 'err');
+                } finally {
+                    vinBtn.disabled = false;
+                    vinBtn.textContent = 'Look Up VIN';
+                }
+            }
+
+            // Picking a different car by hand means the VIN no longer applies
+            [makeSelect, modelSelect, yearSelect].forEach(sel => sel.addEventListener('change', () => {
+                if (!vinInfo) return;
+                vinInfo = null;
+                vinInput.value = '';
+                vinHelp(VIN_HELP_DEFAULT);
+            }));
+
+            // Recall fixes are only checkable per-VIN on nhtsa.gov, so copy the VIN and send them there
+            resultBox.addEventListener('click', (e) => {
+                const btn = e.target.closest('#vin-recall-btn');
+                if (!btn) return;
+                const vin = vinInfo && vinInfo.vin;
+                const open = () => window.open('https://www.nhtsa.gov/recalls', '_blank', 'noopener');
+                if (vin && navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(vin).then(() => { btn.textContent = 'VIN copied ✓'; open(); }, open);
+                } else {
+                    open();
+                }
+            });
+
             submitBtn.addEventListener('click', async () => {
                 const make = makeSelect.value;
                 const model = modelSelect.value;
@@ -2958,11 +3192,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rating = data[make] && data[make][model];
 
                 const displayName = `${year} ${window.formatMake(make)} ${window.formatModel(model)}`;
+                // Keep the VIN only if it still describes the car being graded
+                const vin = (vinInfo && vinInfo.year === String(year) && vinInfo.make === make) ? vinInfo : null;
+                const vinSub = vin
+                    ? `<div class="lookup-result-sub">${window.escapeHTML([vin.trim, vin.engine, vin.drive, 'VIN …' + vin.vin.slice(-6)].filter(Boolean).join(' · '))}</div>`
+                    : '';
+                const vinRecallBtn = vin
+                    ? `<button type="button" class="vin-recall-btn" id="vin-recall-btn">Copy VIN &amp; check recalls</button>`
+                    : '';
 
                 if (!rating) {
                     resultBox.innerHTML = `
                         <div class="lookup-result-header">
-                            <div class="lookup-result-title">${displayName}</div>
+                            <div><div class="lookup-result-title">${displayName}</div>${vinSub}</div>
+                            ${vinRecallBtn}
                         </div>
                         <p class="lookup-not-found">No reliability data available for this vehicle yet.</p>
                     `;
@@ -2972,7 +3215,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 resultBox.innerHTML = `
                     <div class="lookup-result-header">
-                        <div class="lookup-result-title">${displayName}</div>
+                        <div><div class="lookup-result-title">${displayName}</div>${vinSub}</div>
+                        ${vinRecallBtn}
                     </div>
                     <div class="lookup-grades">
                         <div class="lookup-grade-item">
