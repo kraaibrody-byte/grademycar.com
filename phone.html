@@ -82,6 +82,8 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .grade-circles-row{display:flex;justify-content:space-around;padding:6px 0}
 .grade-circle-col{display:flex;flex-direction:column;align-items:center;gap:10px}
 .gc-label{font-size:12px;color:var(--muted);font-weight:600}
+.grade-source{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;line-height:1.45;color:var(--muted);text-align:center}
+.grade-source b{color:var(--ink)}
 .gc{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;font-size:23px;font-weight:800;border:3px solid transparent}
 .gc-green{background:var(--greenbg);color:var(--green);border-color:#8FE0AE}
 .gc-amber{background:var(--amberbg);color:var(--amber);border-color:#FCD34D}
@@ -417,11 +419,11 @@ button.credits-chip{border:0;cursor:pointer}
           <div class="res-card">
             <div class="grade-circles-row">
               <div class="grade-circle-col">
-                <div class="gc-label">Engine</div>
+                <div class="gc-label" id="engineLabel">Engine</div>
                 <div class="gc gc-gray" id="engineCircle">—</div>
               </div>
               <div class="grade-circle-col">
-                <div class="gc-label">Transmission</div>
+                <div class="gc-label" id="transLabel">Transmission</div>
                 <div class="gc gc-gray" id="transCircle">—</div>
               </div>
               <div class="grade-circle-col">
@@ -429,6 +431,7 @@ button.credits-chip{border:0;cursor:pointer}
                 <div class="gc gc-gray" id="overallCircle">—</div>
               </div>
             </div>
+            <div class="grade-source hidden" id="gradeSource"></div>
           </div>
 
           <!-- Not found notice -->
@@ -622,7 +625,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.06-a';
+const APP_VERSION='2026.10.07-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1247,7 +1250,8 @@ async function checkGrade(){
     const makeData=await fetchMakeData(make);
     const gradesSection=makeData?.grades||makeData||null;
     const mKey=gradesSection?findModelKey(gradesSection,model):null;
-    const rating=mKey?gradesSection[mKey]:null;
+    const modelRating=mKey?gradesSection[mKey]:null;
+    const rating=yearRating(modelRating, mKey?makeData?.years?.[mKey]?.[year]:null);
 
     // Keep the VIN only if it still describes the car being graded
     const vin=(vinInfo && vinInfo.year==year && vinInfo.make===make.toLowerCase())?vinInfo:null;
@@ -1266,6 +1270,7 @@ async function checkGrade(){
     setGradeCircle('engineCircle',rating?.engine);
     setGradeCircle('transCircle',rating?.transmission);
     setGradeCircle('overallCircle',rating?.overall);
+    renderGradeSource(rating,year);
     document.getElementById('notFoundCard').classList.toggle('hidden',!!(rating?.overall));
     document.getElementById('shareBtn').classList.toggle('hidden',!rating?.overall);
 
@@ -1289,6 +1294,31 @@ async function checkGrade(){
     toast('Error fetching grades: '+(err.message||err));
     show('search');
   }
+}
+
+// NHTSA-graded models have per-year grades in reliability/{make}/years/{model}/{year}
+// as {e,t,o: letters, n: complaints, l: 1 when the year is too new for full data}
+function yearRating(modelRating, y){
+  if(!y?.o) return modelRating;
+  return {engine:y.e, transmission:y.t, overall:y.o, ev:modelRating?.ev, source:'nhtsa',
+          yearGraded:true, complaints:y.n, limited:!!y.l};
+}
+function renderGradeSource(rating, year){
+  const el=document.getElementById('gradeSource');
+  document.getElementById('engineLabel').textContent=rating?.ev?'Motor & Battery':'Engine';
+  document.getElementById('transLabel').textContent=rating?.ev?'Drivetrain':'Transmission';
+  let html='';
+  if(rating?.yearGraded){
+    html=`Graded for the <b>${esc(year)}</b> model year from <b>${Number(rating.complaints).toLocaleString()}</b> owner complaints filed with NHTSA, adjusted for how many were sold.`;
+    if(rating.limited) html+=' Newer model year, so fewer complaints are in yet. This grade may change.';
+  } else if(rating?.source==='nhtsa'){
+    const why=Number(year)<2005?`We grade model years from 2005 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
+    html=`${why}, so this is the model's grade across the ${esc(rating.years||'recent')} model years, from NHTSA owner complaints.`;
+  } else if(rating?.overall){
+    html='Model-level estimate across model years.';
+  }
+  el.innerHTML=html;
+  el.classList.toggle('hidden',!html);
 }
 
 function setGradeCircle(id, grade){
@@ -1353,7 +1383,8 @@ function drawShareCard(){
   ctx.fillText(t.word,W/2,cy+305);
 
   // Engine + transmission tiles
-  const tiles=[['Engine',rating.engine],['Transmission',rating.transmission]];
+  const tiles=rating.ev?[['Motor & Battery',rating.engine],['Drivetrain',rating.transmission]]
+                       :[['Engine',rating.engine],['Transmission',rating.transmission]];
   const tw=440,th=150,ty=930,gap=40,tx0=(W-(tw*2+gap))/2;
   tiles.forEach(([label,grade],i)=>{
     const x=tx0+i*(tw+gap), tone=grade?gradeTone(grade):{fg:'#64748B',bg:'#F1F5F9'};

@@ -3198,7 +3198,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const make = makeSelect.value;
                 const model = modelSelect.value;
                 const year = yearSelect.value;
-                const rating = data[make] && data[make][model];
+                const modelRating = data[make] && data[make][model];
+                // Prefer the grade for this exact model year when we have one
+                const yg = window.YEAR_GRADES[make]?.[model]?.[year];
+                const rating = yg?.o
+                    ? { engine: yg.e, transmission: yg.t, overall: yg.o, ev: modelRating?.ev }
+                    : modelRating;
+                const gradeNote = yg?.o
+                    ? `Graded for the ${window.escapeHTML(String(year))} model year from ${Number(yg.n).toLocaleString()} owner complaints filed with NHTSA, adjusted for how many were sold.${yg.l ? ' Newer model year, so this grade may change.' : ''}`
+                    : modelRating?.source === 'nhtsa'
+                        ? `Model grade across the ${window.escapeHTML(modelRating.years || 'recent')} model years, from NHTSA owner complaints.`
+                        : '';
 
                 const displayName = `${year} ${window.formatMake(make)} ${window.formatModel(model)}`;
                 // Keep the VIN only if it still describes the car being graded
@@ -3229,11 +3239,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="lookup-grades">
                         <div class="lookup-grade-item">
-                            <div class="label">Engine</div>
+                            <div class="label">${rating.ev ? 'Motor &amp; Battery' : 'Engine'}</div>
                             <div class="value ${gradeColorClass(rating.engine)}">${rating.engine || 'N/A'}</div>
                         </div>
                         <div class="lookup-grade-item">
-                            <div class="label">Transmission</div>
+                            <div class="label">${rating.ev ? 'Drivetrain' : 'Transmission'}</div>
                             <div class="value ${gradeColorClass(rating.transmission)}">${rating.transmission || 'N/A'}</div>
                         </div>
                         <div class="lookup-grade-item">
@@ -3241,6 +3251,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="value ${gradeColorClass(rating.overall)}">${rating.overall || 'N/A'}</div>
                         </div>
                     </div>
+                    ${gradeNote ? `<p class="lookup-subtitle" style="font-size: 0.8rem; margin: -0.25rem 0 1rem;">${gradeNote}</p>` : ''}
 
                     <div class="premium-unlock">
                         <div class="premium-unlock-header">
@@ -3540,6 +3551,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Fetch reliability data from Firebase, then populate makes
             window.LIFESPAN_DATA = window.LIFESPAN_DATA || {};
+            window.YEAR_GRADES = {};
             (async () => {
                 try {
                     const resp = await fetch('https://grademycar-default-rtdb.firebaseio.com/reliability.json');
@@ -3557,6 +3569,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                     }
                                     if (makeData.lifespan) {
                                         window.LIFESPAN_DATA[make] = makeData.lifespan;
+                                    }
+                                    // Per-model-year grades from NHTSA complaints: years[model][year] = {e,t,o,n,l}
+                                    if (makeData.years) {
+                                        window.YEAR_GRADES[make] = makeData.years;
                                     }
                                 }
                             }

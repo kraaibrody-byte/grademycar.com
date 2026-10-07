@@ -27,7 +27,8 @@ const SEGMENTS = [
     ['kia', 'forte', 'Kia', 'Forte'], ['mazda', 'mazda3', 'Mazda', 'Mazda3'],
     ['volkswagen', 'jetta', 'Volkswagen', 'Jetta'], ['subaru', 'impreza', 'Subaru', 'Impreza'],
     ['nissan', 'versa', 'Nissan', 'Versa'], ['volkswagen', 'golf', 'Volkswagen', 'Golf'],
-    ['toyota', 'prius', 'Toyota', 'Prius'],
+    ['toyota', 'prius', 'Toyota', 'Prius'], ['ford', 'focus', 'Ford', 'Focus'],
+    ['ford', 'fiesta', 'Ford', 'Fiesta'], ['chevrolet', 'cruze', 'Chevrolet', 'Cruze'],
   ]},
   { id: 'midsize-cars', name: 'Midsize Car', plural: 'midsize cars', cars: [
     ['toyota', 'camry', 'Toyota', 'Camry'], ['honda', 'accord', 'Honda', 'Accord'],
@@ -35,6 +36,7 @@ const SEGMENTS = [
     ['chevrolet', 'malibu', 'Chevrolet', 'Malibu'], ['kia', 'optima', 'Kia', 'Optima'],
     ['mazda', 'mazda6', 'Mazda', 'Mazda6'], ['ford', 'fusion', 'Ford', 'Fusion'],
     ['volkswagen', 'passat', 'Volkswagen', 'Passat'], ['nissan', 'maxima', 'Nissan', 'Maxima'],
+    ['chrysler', '200', 'Chrysler', '200'],
   ]},
   { id: 'small-suvs', name: 'Subcompact SUV', plural: 'subcompact SUVs', cars: [
     ['honda', 'hr-v', 'Honda', 'HR-V'], ['nissan', 'kicks', 'Nissan', 'Kicks'],
@@ -64,6 +66,7 @@ const SEGMENTS = [
     ['honda', 'passport', 'Honda', 'Passport'], ['chevrolet', 'blazer', 'Chevrolet', 'Blazer'],
     ['dodge', 'durango', 'Dodge', 'Durango'], ['gmc', 'acadia', 'GMC', 'Acadia'],
     ['toyota', '4runner', 'Toyota', '4Runner'], ['buick', 'enclave', 'Buick', 'Enclave'],
+    ['dodge', 'journey', 'Dodge', 'Journey'],
   ]},
   { id: 'full-size-suvs', name: 'Full-Size SUV', plural: 'full-size SUVs', cars: [
     ['chevrolet', 'tahoe', 'Chevrolet', 'Tahoe'], ['chevrolet', 'suburban', 'Chevrolet', 'Suburban'],
@@ -87,6 +90,7 @@ const SEGMENTS = [
   { id: 'minivans', name: 'Minivan', plural: 'minivans', cars: [
     ['toyota', 'sienna', 'Toyota', 'Sienna'], ['honda', 'odyssey', 'Honda', 'Odyssey'],
     ['dodge', 'grand caravan', 'Dodge', 'Grand Caravan'], ['kia', 'carnival', 'Kia', 'Carnival'],
+    ['chrysler', 'pacifica', 'Chrysler', 'Pacifica'],
   ]},
   { id: 'sports-cars', name: 'Sports Car', plural: 'sports cars', cars: [
     ['ford', 'mustang', 'Ford', 'Mustang'], ['chevrolet', 'camaro', 'Chevrolet', 'Camaro'],
@@ -122,7 +126,8 @@ function verdict(g) {
   if (s >= 88) return 'Excellent reliability';
   if (s >= 78) return 'Above-average reliability';
   if (s >= 68) return 'Average reliability';
-  return 'Below-average reliability';
+  if (s >= 55) return 'Below-average reliability';
+  return 'Poor reliability';
 }
 
 async function loadData() {
@@ -144,7 +149,8 @@ function collectCars(data) {
           make, model, makeName, modelName,
           name: `${makeName} ${modelName}`,
           slug: slugify(`${makeName} ${modelName}`),
-          rating, life: data[make]?.lifespan?.[model] || null, segments: [],
+          rating, life: data[make]?.lifespan?.[model] || null,
+          years: data[make]?.years?.[model] || null, segments: [],
         });
       }
       cars.get(key).segments.push(seg);
@@ -200,8 +206,14 @@ const FOOT = `<footer class="foot"><div class="wrap">
 
 function yearPicker(car, src) {
   const now = new Date().getFullYear();
+  // Only offer years the model was sold, when we know them (Focus ended in 2018)
+  const graded = Object.keys(car.years || {}).map(Number);
+  const first = graded.length ? Math.min(2000, ...graded) : 2000;
+  const lastGraded = graded.length ? Math.max(...graded) : now + 1;
+  const last = lastGraded >= now - 3 ? now + 1 : lastGraded;
+  const pick = Math.min(now - 4, last);
   const years = [];
-  for (let y = now + 1; y >= 2000; y--) years.push(`<option value="${y}"${y === now - 4 ? ' selected' : ''}>${y}</option>`);
+  for (let y = last; y >= first; y--) years.push(`<option value="${y}"${y === pick ? ' selected' : ''}>${y}</option>`);
   return `<form class="picker" action="/phone.html" method="get">
     <input type="hidden" name="make" value="${esc(car.make)}">
     <input type="hidden" name="model" value="${esc(car.model)}">
@@ -217,16 +229,33 @@ function carPage(car, cars) {
   const { rank, total, sorted } = rankIn(seg, car, cars);
   const eng = rating.engine, trn = rating.transmission, ovr = rating.overall;
   const v = verdict(ovr);
+  const ev = !!rating.ev;
+  const ENG = ev ? 'motor and battery' : 'engine', TRN = ev ? 'drivetrain' : 'transmission';
 
   let weak = '';
-  if (eng && trn && score(eng) - score(trn) >= 10) weak = `The transmission (${trn}) is the weaker of its two major components, so ask for transmission service records and pay close attention to shifting on a test drive.`;
-  else if (eng && trn && score(trn) - score(eng) >= 10) weak = `The engine (${eng}) is the weaker of its two major components, so ask for oil-change records and have a mechanic check for leaks and oil consumption.`;
-  else if (eng && trn) weak = `Its engine (${eng}) and transmission (${trn}) grade about the same, so neither stands out as a weak point.`;
+  if (eng && trn && score(eng) - score(trn) >= 10) weak = ev
+    ? `The drivetrain (${trn}) is its weaker area, so listen for clunks and whine on a test drive.`
+    : `The transmission (${trn}) is the weaker of its two major components, so ask for transmission service records and pay close attention to shifting on a test drive.`;
+  else if (eng && trn && score(trn) - score(eng) >= 10) weak = ev
+    ? `The motor and battery (${eng}) are its weaker area, so check battery health and charging history before buying.`
+    : `The engine (${eng}) is the weaker of its two major components, so ask for oil-change records and have a mechanic check for leaks and oil consumption.`;
+  else if (eng && trn && score(eng) < 68 && score(trn) < 68) weak = `Both its ${ENG} (${eng}) and ${TRN} (${trn}) grade poorly, so a pre-purchase inspection by a mechanic is a must.`;
+  else if (eng && trn) weak = `Its ${ENG} (${eng}) and ${TRN} (${trn}) grade about the same, so neither stands out as a weak point.`;
+
+  // Per-year grades (NHTSA-graded models only)
+  const yearList = Object.entries(car.years || {}).map(([y, g]) => ({ y: +y, ...g })).sort((a, b) => a.y - b.y);
+  const solid = yearList.filter(x => !x.l);
+  const best = solid.filter(x => score(x.o) >= 88).map(x => x.y);
+  const avoid = solid.filter(x => score(x.o) < 58).sort((a, b) => score(a.o) - score(b.o));
+  const yearsList = ys => ys.length > 1 ? `${ys.slice(0, -1).join(', ')} and ${ys[ys.length - 1]}` : String(ys[0]);
+  const source = rating.source === 'nhtsa'
+    ? `Grades are based on ${rating.complaints ? miles(rating.complaints) + ' ' : ''}owner complaints filed with NHTSA for the ${rating.years} model years, adjusted for how many were sold.`
+    : '';
 
   const rankLine = total > 1
     ? `It ranks ${ordinal(rank)} of ${total} ${seg.plural} we grade.`
     : '';
-  const summary = `The ${name} earns ${article(ovr)} ${ovr} overall reliability grade from GradeMyCar, with ${article(eng)} ${eng} for its engine and ${article(trn)} ${trn} for its transmission. ${rankLine} ${weak}`.replace(/\s+/g, ' ').trim();
+  const summary = `The ${name} earns ${article(ovr)} ${ovr} overall reliability grade from GradeMyCar, with ${article(eng)} ${eng} for its ${ENG} and ${article(trn)} ${trn} for its ${TRN}. ${rankLine} ${weak} ${source}`.replace(/\s+/g, ' ').trim();
 
   const lifeAnswer = life?.avgLifespan
     ? `A well-maintained ${name} typically lasts around ${miles(life.avgLifespan)} miles${life.maxReported ? `, and owners have reported examples reaching ${miles(life.maxReported)} miles` : ''}.${life.percentReach250k ? ` About ${life.percentReach250k}% reach 250,000 miles.` : ''}`
@@ -234,9 +263,18 @@ function carPage(car, cars) {
 
   const faqs = [
     [`Is the ${name} reliable?`, `${v}. ${summary}`],
-    [`Is the ${name} transmission reliable?`, `GradeMyCar grades the ${name} transmission ${article(trn)} ${trn} (${verdict(trn).toLowerCase()}). Reliability varies by model year, so grade the specific year you're looking at.`],
-    [`Is the ${name} engine reliable?`, `GradeMyCar grades the ${name} engine ${article(eng)} ${eng} (${verdict(eng).toLowerCase()}).`],
+    [`Is the ${name} ${TRN} reliable?`, `GradeMyCar grades the ${name} ${TRN} ${article(trn)} ${trn} (${verdict(trn).toLowerCase()}). Reliability varies by model year, so grade the specific year you're looking at.`],
+    [`Is the ${name} ${ENG} reliable?`, `GradeMyCar grades the ${name} ${ENG} ${article(eng)} ${eng} (${verdict(eng).toLowerCase()}).`],
   ];
+  if (yearList.length) {
+    faqs.splice(1, 0,
+      [`What are the best years for the ${name}?`, best.length
+        ? `Based on NHTSA owner complaints, the most reliable ${name} model years are ${yearsList(best)}.`
+        : `No ${name} model year stands out as exceptionally reliable in NHTSA owner complaints. The best-graded years are ${yearsList([...solid].sort((a, b) => score(b.o) - score(a.o)).slice(0, 3).map(x => x.y).sort())}.`],
+      [`What ${name} years should I avoid?`, avoid.length
+        ? `Based on NHTSA owner complaints, the ${name} years to be most careful with are ${yearsList(avoid.map(x => x.y).sort())}. ${avoid.slice(0, 2).map(x => `The ${x.y} grades ${article(x.o)} ${x.o} overall (${ENG} ${x.e}, ${TRN} ${x.t}).`).join(' ')}`
+        : `No ${name} model year stands out as a problem year in NHTSA owner complaints.`]);
+  }
   if (lifeAnswer) faqs.splice(1, 0, [`How many miles will a ${name} last?`, lifeAnswer]);
 
   const issues = life?.commonIssues || [];
@@ -247,6 +285,14 @@ function carPage(car, cars) {
          <p>We track ${issues.length} known problem area${issues.length > 1 ? 's' : ''} for the ${esc(name)}, including which model years they affect. They're in the full report, along with miles remaining and a deal score for the car you're looking at.</p>
          <a class="btn" href="/phone.html?year=${new Date().getFullYear() - 4}&make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&src=seo_issues">See ${esc(car.modelName)} problems</a></section>`
     : '';
+
+  const yearBlock = yearList.length ? `<section class="card years"><h2>${esc(name)} reliability by year</h2>
+    <p>Overall grade for each model year, from owner complaints filed with NHTSA. Tap a year to see its full grade.</p>
+    <div class="ygrid">${yearList.map(x => `<a class="yr ${tone(x.o)}${x.l ? ' lim' : ''}" href="/phone.html?year=${x.y}&make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&src=seo_year"><span>${x.y}</span><b>${esc(x.o)}</b></a>`).join('')}</div>
+    ${best.length ? `<p class="yl"><b class="good-t">Best years:</b> ${yearsList(best)}</p>` : ''}
+    ${avoid.length ? `<p class="yl"><b class="bad-t">Years to avoid:</b> ${yearsList(avoid.map(x => x.y).sort())}</p>` : ''}
+    ${yearList.some(x => x.l) ? '<p class="note">Faded years are recent, so fewer complaints have come in. Their grades may change.</p>' : ''}
+  </section>` : '';
 
   const lifeBlock = life?.avgLifespan ? `<section class="card"><h2>How long does the ${esc(name)} last?</h2>
     <div class="stats">
@@ -268,8 +314,10 @@ function carPage(car, cars) {
   }).join('\n');
 
   const canonical = `${SITE}/reliability/${car.slug}/`;
-  const title = `${name} Reliability: ${ovr} Grade, Engine ${eng}, Transmission ${trn} | GradeMyCar`;
-  const description = `Is the ${name} reliable? It gets ${article(ovr)} ${ovr} overall: ${eng} engine, ${trn} transmission${life?.avgLifespan ? `, about ${miles(life.avgLifespan)}-mile lifespan` : ''}. Compare it to other ${seg.plural} and grade any model year free.`;
+  const title = yearList.length
+    ? `${name} Reliability by Year: Best & Worst Years | GradeMyCar`
+    : `${name} Reliability: ${ovr} Grade, Engine ${eng}, Transmission ${trn} | GradeMyCar`;
+  const description = `Is the ${name} reliable? It gets ${article(ovr)} ${ovr} overall: ${eng} ${ENG}, ${trn} ${TRN}${avoid.length ? `. Years to avoid: ${yearsList(avoid.map(x => x.y).sort())}` : ''}${life?.avgLifespan ? `, about ${miles(life.avgLifespan)}-mile lifespan` : ''}. Compare it to other ${seg.plural} and grade any model year free.`;
   const jsonld = [
     { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Reliability Grades', item: `${SITE}/reliability/` },
@@ -287,8 +335,8 @@ function carPage(car, cars) {
     <div class="side">
       <p class="verdict ${tone(ovr)}">${esc(v)}</p>
       <div class="pair">
-        <div><span>Engine</span><b class="g ${tone(eng)}">${esc(eng)}</b></div>
-        <div><span>Transmission</span><b class="g ${tone(trn)}">${esc(trn)}</b></div>
+        <div><span>${ev ? 'Motor &amp; Battery' : 'Engine'}</span><b class="g ${tone(eng)}">${esc(eng)}</b></div>
+        <div><span>${ev ? 'Drivetrain' : 'Transmission'}</span><b class="g ${tone(trn)}">${esc(trn)}</b></div>
       </div>
     </div>
   </section>
@@ -299,6 +347,7 @@ function carPage(car, cars) {
   </section>
   </div>
   <p class="lede">${esc(summary)}</p>
+  ${yearBlock}
 
   <div class="row">${lifeBlock}${issuesBlock}</div>
   <div class="row">

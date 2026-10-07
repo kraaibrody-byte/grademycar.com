@@ -45,6 +45,13 @@ h3{font-size:16px;margin:18px 0 4px}
 .jump{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
 .jump a{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:600;text-decoration:none;color:var(--ink)}
 .faq p{color:#334155}
+.ygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:4px 0 14px}
+.yr{display:flex;flex-direction:column;align-items:center;padding:8px 4px;border-radius:12px;text-decoration:none;border:1px solid transparent}
+.yr span{font-size:12px;font-weight:600;color:var(--muted)}.yr b{font-size:18px;font-weight:850}
+.yr.good{background:var(--goodbg);color:var(--good)}.yr.ok{background:var(--okbg);color:var(--ok)}.yr.bad{background:var(--badbg);color:var(--bad)}
+.yr:hover{border-color:currentColor}.yr.lim{opacity:.55}
+.yl{margin:0 0 6px!important}.good-t{color:var(--good)}.bad-t{color:var(--bad)}
+.note{font-size:13px;color:var(--muted);margin-top:8px!important}
 .foot{border-top:1px solid var(--line);margin-top:30px;padding:20px 0 40px;font-size:13px;color:var(--muted)}
 .foot a{color:var(--muted)}
 .lede{max-width:760px}
