@@ -1832,9 +1832,9 @@
                 </div>
                 
                 <div class="dashboard-card">
-                    <h3>Money Saved</h3>
-                    <div class="stat-number" id="stat-money">$0</div>
-                    <p style="color: #64748b; font-size: 0.9rem;">From avoiding bad deals</p>
+                    <h3>Report Credits</h3>
+                    <div class="stat-number" id="stat-credits">0</div>
+                    <p style="color: #64748b; font-size: 0.9rem;" id="stat-credits-note">Available for premium reports</p>
                 </div>
                 
                 <div class="dashboard-card upgrade-card">
@@ -1889,6 +1889,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Vehicle name formatting (shared by the lookup tool and recent searches) -->
+    <script>
+        (function () {
+            const MAKE_NAMES = {
+                'bmw': 'BMW', 'gmc': 'GMC', 'mini': 'MINI', 'mclaren': 'McLaren',
+                'mercedes-benz': 'Mercedes-Benz', 'rolls-royce': 'Rolls-Royce'
+            };
+
+            // Official stylings that don't follow the general rules below
+            const MODEL_NAMES = {
+                '4runner': '4Runner', 'mazda2': 'Mazda2', 'mazda3': 'Mazda3', 'mazda5': 'Mazda5', 'mazda6': 'Mazda6',
+                'gtc4lusso': 'GTC4Lusso', 'e-tron': 'e-tron', 'id.4': 'ID.4', 'id4': 'ID.4',
+                'i3': 'i3', 'i8': 'i8', 'xa': 'xA', 'xb': 'xB', 'xd': 'xD', 'tc': 'tC', 'iq': 'iQ', 'im': 'iM'
+            };
+
+            // Short real words that should NOT be read as acronyms
+            const SHORT_WORDS = new Set(['fit', 'sky', 'rio', 'eos', 'ram', 'vue', 'one', 'max', 'del', 'sol', 'and', 'new', 'car', 'am', 'fe']);
+
+            function formatSegment(seg) {
+                if (!seg) return seg;
+                const lower = seg.toLowerCase();
+                if (SHORT_WORDS.has(lower)) return lower[0].toUpperCase() + lower.slice(1);
+                if (/^[ivx]+$/.test(lower) && lower.length > 3) return lower.toUpperCase(); // Mark VIII
+                // Codes with digits (RAV4, F-150, XC90, 570S) or short letter codes (CR-V, MDX, GTI) go uppercase
+                if (/\d/.test(lower) || lower.length <= 3) return lower.toUpperCase();
+                return lower[0].toUpperCase() + lower.slice(1);
+            }
+
+            function formatWords(str) {
+                // Split on spaces and hyphens, keeping the separators
+                return str.split(/([\s-]+)/).map((part, i) => (i % 2 ? part : formatSegment(part))).join('');
+            }
+
+            window.formatMake = function (make) {
+                if (!make) return '';
+                const key = String(make).trim().toLowerCase();
+                // Multi-word makes ("land rover", "alfa romeo") are plain title case
+                return MAKE_NAMES[key] || key.replace(/\b[a-z]/g, c => c.toUpperCase());
+            };
+
+            window.formatModel = function (model) {
+                if (!model) return '';
+                const key = String(model).trim().toLowerCase();
+                if (MODEL_NAMES[key]) return MODEL_NAMES[key];
+                return formatWords(key);
+            };
+
+            window.escapeHTML = function (str) {
+                return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            };
+        })();
+    </script>
 
     <script type="module">
         // Import Firebase modules
@@ -2088,6 +2141,17 @@
         };
 
        function updateCreditDisplay(status) {
+    const statCredits = document.getElementById('stat-credits');
+    const statCreditsNote = document.getElementById('stat-credits-note');
+    if (statCredits) {
+        statCredits.textContent = status.unlimitedActive ? '∞' : (status.credits || 0);
+        if (statCreditsNote) {
+            statCreditsNote.textContent = status.unlimitedActive && status.unlimitedExpiry
+                ? `Unlimited until ${new Date(status.unlimitedExpiry).toLocaleDateString()}`
+                : 'Available for premium reports';
+        }
+    }
+
     const creditElements = document.querySelectorAll('.credit-display, .credits-remaining');
     
     creditElements.forEach(element => {
@@ -2485,6 +2549,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 purchaseButtons.forEach(btn => {
                     btn.disabled = false;
                     btn.style.opacity = '1';
+                    if (btn.dataset.label) btn.textContent = btn.dataset.label;
                 });
                 
                 updateDashboardData(user);
@@ -2500,9 +2565,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (loginPrompt) loginPrompt.style.display = 'block';
                 
                 purchaseButtons.forEach(btn => {
+                    if (!btn.dataset.label) btn.dataset.label = btn.textContent.trim();
                     btn.disabled = true;
                     btn.style.opacity = '0.6';
-                    btn.innerHTML = 'Login Required';
+                    btn.textContent = 'Login Required';
                 });
                 
                 if (userDashboard) userDashboard.style.display = 'none';
@@ -2561,9 +2627,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (snapshot.exists()) {
                     const userData = snapshot.val();
                     
-                    document.getElementById('stat-searches').textContent = userData.totalSearches || 0;
-                    document.getElementById('stat-grade').textContent = userData.averageGrade || 'N/A';
-                    document.getElementById('stat-money').textContent = `$${Number(userData.moneySaved || 0).toLocaleString()}`;
+                    await loadSearchStats(user);
                     await loadRecentSearches(user);
                     
                 } else {
@@ -2582,7 +2646,37 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        
+        const GRADE_SCORES = { 'A':95,'A-':90,'B+':85,'B':80,'B-':75,'C+':70,'C':65,'C-':60,'D+':55,'D':50,'D-':45,'F':30 };
+
+        // Searches this month + average grade, computed from vehicle_searches/{uid}
+        async function loadSearchStats(user) {
+            const searchesEl = document.getElementById('stat-searches');
+            const gradeEl = document.getElementById('stat-grade');
+            try {
+                const snap = await get(ref(database, `vehicle_searches/${user.uid}`));
+                const searches = snap.exists() ? Object.values(snap.val()) : [];
+
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+                searchesEl.textContent = searches.filter(s => Number(s.searchedAt) >= monthStart).length;
+
+                const scores = searches
+                    .map(s => GRADE_SCORES[String(s.grade || '').toUpperCase()])
+                    .filter(score => score !== undefined);
+                if (!scores.length) {
+                    gradeEl.textContent = 'N/A';
+                    return;
+                }
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                // Closest letter grade to the average score
+                const [letter] = Object.entries(GRADE_SCORES)
+                    .reduce((best, entry) => Math.abs(entry[1] - avg) < Math.abs(best[1] - avg) ? entry : best);
+                gradeEl.textContent = letter;
+            } catch (e) {
+                console.error('Error loading search stats:', e);
+            }
+        }
+
         // Load recent searches into the dashboard
         async function loadRecentSearches(user) {
             const listEl = document.getElementById('recent-searches-list');
@@ -2607,7 +2701,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 items.sort((a, b) => (b.searchedAt || 0) - (a.searchedAt || 0));
 
                 items.forEach((s) => {
-                    const vehicle = [s.year, s.make, s.model].filter(Boolean).join(' ');
+                    const vehicle = [s.year, window.formatMake(s.make), window.formatModel(s.model)].filter(Boolean).join(' ');
                     const grade = (s.grade || '—').toString().toUpperCase();
 
                     const timeLabel = (() => {
@@ -2635,10 +2729,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.className = 'search-item';
                     row.innerHTML = `
                         <div>
-                            <div class="search-vehicle">${vehicle || 'Unknown vehicle'}</div>
+                            <div class="search-vehicle">${window.escapeHTML(vehicle || 'Unknown vehicle')}</div>
                             <div style="color: #64748b; font-size: 0.9rem;">${timeLabel}</div>
                         </div>
-                        <div class="search-grade ${gradeClass}" style="${gradeStyle}">${grade}</div>
+                        <div class="search-grade ${gradeClass}" style="${gradeStyle}">${window.escapeHTML(grade)}</div>
                     `;
                     listEl.appendChild(row);
                 });
@@ -2788,7 +2882,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 makes.forEach(make => {
                     const opt = document.createElement('option');
                     opt.value = make;
-                    opt.textContent = toTitleCase(make);
+                    opt.textContent = window.formatMake(make);
                     makeSelect.appendChild(opt);
                 });
             }
@@ -2799,11 +2893,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     modelSelect.disabled = true;
                     return;
                 }
-                const models = Object.keys(data[make]).sort();
+                // The dataset includes squashed alias keys for listing matching (f150, fjcruiser);
+                // only show the canonical spelling in the dropdown
+                const allModels = Object.keys(data[make]);
+                const squash = m => m.replace(/[\s.\-&]+/g, '').replace('and', '');
+                // Prefer "&" spellings, then the key with the most separators (f-150 over f150)
+                const rank = m => (m.includes('&') ? 100 : 0) + (m.match(/[\s.\-]/g) || []).length;
+                const canonical = {};
+                allModels.forEach(m => {
+                    const k = squash(m);
+                    if (!canonical[k] || rank(m) > rank(canonical[k])) canonical[k] = m;
+                });
+                const models = Object.values(canonical).sort();
                 models.forEach(model => {
                     const opt = document.createElement('option');
                     opt.value = model;
-                    opt.textContent = toTitleCase(model);
+                    opt.textContent = window.formatModel(model);
                     modelSelect.appendChild(opt);
                 });
                 modelSelect.disabled = false;
@@ -2852,7 +2957,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const year = yearSelect.value;
                 const rating = data[make] && data[make][model];
 
-                const displayName = `${year} ${toTitleCase(make)} ${toTitleCase(model)}`;
+                const displayName = `${year} ${window.formatMake(make)} ${window.formatModel(model)}`;
 
                 if (!rating) {
                     resultBox.innerHTML = `
@@ -2936,8 +3041,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     premiumStatus.innerHTML = '<p class="premium-loading">Checking credits…</p>';
 
                     const spendResult = await window.spendOneCredit({
-                        make: toTitleCase(make),
-                        model: toTitleCase(model),
+                        make: window.formatMake(make),
+                        model: window.formatModel(model),
                         year: year,
                         mileage: mileage
                     });
@@ -2945,7 +3050,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!spendResult.success) {
                         premiumBtn.disabled = false;
                         if (spendResult.reason === 'insufficient-credits') {
-                            premiumStatus.innerHTML = '<p class="premium-need-credits">You\'re out of credits. <a href="#pricing">Buy more credits</a> to unlock this report.</p>';
+                            premiumStatus.innerHTML = '<p class="premium-need-credits">You\'re out of credits. <a href="#pricing" onclick="document.getElementById(\'user-dashboard\').style.display=\'none\'">Buy more credits</a> to unlock this report.</p>';
                         } else {
                             premiumStatus.innerHTML = '<p class="premium-error">Something went wrong. Please try again.</p>';
                         }
@@ -2981,8 +3086,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Log the search if the user is logged in, then refresh dashboard stats/list
                 if (typeof window.saveVehicleSearch === 'function' && typeof window.getCurrentUser === 'function' && window.getCurrentUser()) {
                     await window.saveVehicleSearch({
-                        make: toTitleCase(make),
-                        model: toTitleCase(model),
+                        make: window.formatMake(make),
+                        model: window.formatModel(model),
                         year: year,
                         grade: rating.overall || null
                     });
