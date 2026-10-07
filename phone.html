@@ -615,6 +615,7 @@ button.credits-chip{border:0;cursor:pointer}
 
 <!-- Firebase compat SDK (cdnjs — required for preview CSP) -->
 <script src="/issue-themes.js"></script>
+<script src="/share-card.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-database-compat.min.js"></script>
@@ -638,7 +639,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.07-b';
+const APP_VERSION='2026.10.07-c';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1347,121 +1348,20 @@ function setGradeCircle(id, grade){
 }
 
 // ── SHARE CARD ───────────────────────────────────────────────────────────────
-// Draws a 1080×1350 report card (fits Instagram feed, TikTok photo posts and
-// texts) and hands it to the native share sheet, or downloads it on desktop.
-const SHARE_FONT='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
-function gradeTone(grade){
-  const s=gradeToScore(grade);
-  if(s>=80) return {fg:'#15803D',bg:'#DCFCE7',ring:'#86EFAC',word:'Very Good'};
-  if(s>=65) return {fg:'#B45309',bg:'#FEF3C7',ring:'#FCD34D',word:'Good'};
-  if(s>=50) return {fg:'#C2410C',bg:'#FFEDD5',ring:'#FDBA74',word:'Fair'};
-  return {fg:'#B91C1C',bg:'#FEE2E2',ring:'#FCA5A5',word:'Needs Caution'};
-}
-function shareLink(v){
-  const q=new URLSearchParams({year:v.year,make:v.make,model:v.model,src:'share'});
-  return `https://www.grademycar.com/phone.html?${q}`;
-}
-function fitText(ctx,text,maxW,size,weight){
-  do{ ctx.font=`${weight} ${size}px ${SHARE_FONT}`; size-=2; }while(ctx.measureText(text).width>maxW && size>24);
-}
-function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.roundRect(x,y,w,h,r); }
-function drawShareCard(){
-  const {year,make,model,rating}=currentVehicle;
-  const W=1080,H=1350,c=document.createElement('canvas');
-  c.width=W; c.height=H;
-  const ctx=c.getContext('2d');
-  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-
-  ctx.fillStyle='#F8FAFC'; ctx.fillRect(0,0,W,H);
-
-  // Header band
-  const g=ctx.createLinearGradient(0,0,W,330);
-  g.addColorStop(0,'#0F172A'); g.addColorStop(1,'#4338CA');
-  ctx.fillStyle=g; ctx.fillRect(0,0,W,330);
-  ctx.fillStyle='#fff'; ctx.font=`800 44px ${SHARE_FONT}`;
-  ctx.fillText('GradeMyCar',W/2,96);
-  ctx.fillStyle='#C7D2FE'; ctx.font=`700 26px ${SHARE_FONT}`;
-  ctx.fillText('RELIABILITY REPORT CARD',W/2,140);
-  ctx.fillStyle='#fff';
-  const name=vehicleName({year,make,model});
-  fitText(ctx,name,W-120,72,800);
-  ctx.fillText(name,W/2,250);
-
-  // Overall grade
-  const t=gradeTone(rating.overall), cy=560;
-  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(W/2,cy,185,0,Math.PI*2); ctx.fill();
-  ctx.lineWidth=30; ctx.strokeStyle=t.ring; ctx.beginPath(); ctx.arc(W/2,cy,170,0,Math.PI*2); ctx.stroke();
-  ctx.fillStyle=t.fg; ctx.font=`900 170px ${SHARE_FONT}`; ctx.textBaseline='middle';
-  ctx.fillText(rating.overall,W/2,cy+8);
-  ctx.textBaseline='alphabetic';
-  ctx.font=`700 26px ${SHARE_FONT}`; ctx.fillStyle='#64748B';
-  ctx.fillText('OVERALL GRADE',W/2,cy+240);
-  ctx.font=`800 52px ${SHARE_FONT}`; ctx.fillStyle=t.fg;
-  ctx.fillText(t.word,W/2,cy+305);
-
-  // Engine + transmission tiles
-  const tiles=rating.ev?[['Motor & Battery',rating.engine],['Drivetrain',rating.transmission]]
-                       :[['Engine',rating.engine],['Transmission',rating.transmission]];
-  const tw=440,th=150,ty=930,gap=40,tx0=(W-(tw*2+gap))/2;
-  tiles.forEach(([label,grade],i)=>{
-    const x=tx0+i*(tw+gap), tone=grade?gradeTone(grade):{fg:'#64748B',bg:'#F1F5F9'};
-    ctx.fillStyle='#fff'; roundRect(ctx,x,ty,tw,th,28); ctx.fill();
-    ctx.lineWidth=3; ctx.strokeStyle='#E2E8F0'; ctx.stroke();
-    ctx.textAlign='left'; ctx.fillStyle='#475569'; ctx.font=`700 34px ${SHARE_FONT}`;
-    ctx.fillText(label,x+36,ty+th/2+12);
-    ctx.fillStyle=tone.bg; roundRect(ctx,x+tw-136,ty+28,104,94,22); ctx.fill();
-    ctx.textAlign='center'; ctx.fillStyle=tone.fg; ctx.font=`900 52px ${SHARE_FONT}`;
-    ctx.fillText(grade||'—',x+tw-84,ty+th/2+19);
-  });
-
+// Drawing and sharing live in /share-card.js (shared with index.html)
+function shareGrade(){
+  const v=currentVehicle;
+  if(!v?.rating?.overall){ toast('No grade to share for this car'); return; }
   // Deal score, only when the premium report is open
-  let y=1150;
+  let deal=null;
   const prem=document.getElementById('premiumResults');
   if(prem && !prem.classList.contains('hidden')){
-    const score=document.getElementById('dealNum').textContent;
-    const label=document.getElementById('dealCard').querySelector('.deal-lbl').textContent.replace(/\s*\(.*\)/,'');
-    const badge=document.getElementById('dealBadge').textContent;
-    ctx.font=`800 38px ${SHARE_FONT}`; ctx.fillStyle='#4338CA';
-    ctx.fillText(`${label}: ${score}/100 · ${badge}`,W/2,y);
-  } else {
-    ctx.font=`600 34px ${SHARE_FONT}`; ctx.fillStyle='#64748B';
-    ctx.fillText('Engine & transmission reliability, graded.',W/2,y);
+    deal={score:document.getElementById('dealNum').textContent,
+          label:document.getElementById('dealCard').querySelector('.deal-lbl').textContent.replace(/\s*\(.*\)/,''),
+          badge:document.getElementById('dealBadge').textContent};
   }
-
-  // Footer
-  ctx.fillStyle='#0F172A'; ctx.fillRect(0,H-120,W,120);
-  ctx.fillStyle='#fff'; ctx.font=`700 36px ${SHARE_FONT}`;
-  ctx.fillText('Grade any car free at grademycar.com',W/2,H-48);
-
-  return new Promise(res=>c.toBlob(res,'image/png'));
-}
-async function shareGrade(){
-  if(!currentVehicle?.rating?.overall){ toast('No grade to share for this car'); return; }
-  const v=currentVehicle, name=vehicleName(v);
-  const blob=await drawShareCard();
-  const fileName=`grademycar-${v.year}-${v.make}-${v.model}`.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.png';
-  const file=new File([blob],fileName,{type:'image/png'});
-  const url=shareLink(v);
-  const text=`The ${name} got a ${v.rating.overall} for reliability on GradeMyCar. Check any car here:`;
-  const base={make:v.make,model:v.model,grade:v.rating.overall};
-  try{
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file],title:`${name}: ${v.rating.overall}`,text:`${text} ${url}`});
-      track('share_grade',Object.assign({method:'native'},base));
-      return;
-    }
-  }catch(e){
-    if(e && e.name==='AbortError'){ track('share_cancel',base); return; }
-  }
-  // Desktop / no file sharing: save the image and copy the link
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=fileName;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
-  let copied=false;
-  try{ await navigator.clipboard.writeText(`${text} ${url}`); copied=true; }catch(e){}
-  toast(copied?'Image saved and link copied':'Image saved');
-  track('share_grade',Object.assign({method:'download'},base));
+  return GMCShare.share({year:v.year, make:v.make, model:v.model, name:vehicleName(v), rating:v.rating,
+                         deal, topIssue:v.rating.issues?.[0]||null}, {toast, track});
 }
 
 // ── 9. UNLOCK PREMIUM REPORT ─────────────────────────────────────────────────

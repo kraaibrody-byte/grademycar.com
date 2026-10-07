@@ -11,6 +11,7 @@
     <meta name="description" content="Free engine, transmission and overall reliability grades for any used car, plus deal scores and lifespan estimates. Check a car before you buy.">
     <script src="reliability-data.js"></script>
     <script src="/issue-themes.js"></script>
+    <script src="/share-card.js"></script>
     <style>
         * {
             margin: 0;
@@ -1148,6 +1149,11 @@
             margin-bottom: 1rem;
         }
 
+        .share-grade-btn { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 1.25rem; padding: 0.6rem 1.1rem; border-radius: 10px; border: 1.5px solid #667eea; background: white; color: #4f46e5; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
+        .share-grade-btn:hover { background: #eef2ff; }
+        .share-grade-btn:disabled { opacity: 0.6; cursor: default; }
+        .lookup-toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 80px); background: #1e293b; color: white; padding: 0.7rem 1.1rem; border-radius: 10px; font-size: 0.9rem; z-index: 10000; transition: transform 0.25s; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+        .lookup-toast.show { transform: translate(-50%, 0); }
         .owner-issue { padding: 0.65rem 0; border-top: 1px solid #f1f5f9; }
         .owner-issue:first-of-type { border-top: 0; }
         .owner-issue-head { display: flex; justify-content: space-between; gap: 0.5rem; font-weight: 700; color: #1e293b; font-size: 0.92rem; }
@@ -2046,7 +2052,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
         import { getDatabase, ref, set, get, push, update, serverTimestamp, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
 
@@ -2094,6 +2100,8 @@
         const database = getDatabase(app);
         const functions = getFunctions(app);
         const analytics = getAnalytics(app);
+        // Analytics events for non-module scripts (share button)
+        window.gmcTrack = (name, params) => { try { logEvent(analytics, name, Object.assign({ app: 'web' }, params || {})); } catch (e) {} };
 
         // Bundle configurations that match your Cloud Functions
         const BUNDLE_CONFIGS = {
@@ -2961,6 +2969,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 return String(str).replace(/\b\w/g, c => c.toUpperCase());
             }
 
+            // Small confirmation for the share button on desktop ("Image saved and link copied")
+            function showLookupToast(msg) {
+                let t = document.getElementById('lookup-toast');
+                if (!t) {
+                    t = document.createElement('div');
+                    t.id = 'lookup-toast';
+                    t.className = 'lookup-toast';
+                    document.body.appendChild(t);
+                }
+                t.textContent = msg;
+                t.classList.add('show');
+                clearTimeout(t._hide);
+                t._hide = setTimeout(() => t.classList.remove('show'), 2200);
+            }
+
             function gradeColorClass(grade) {
                 if (!grade) return 'grade-c';
                 const g = grade.toUpperCase();
@@ -3258,6 +3281,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     ${gradeNote ? `<p class="lookup-subtitle" style="font-size: 0.8rem; margin: -0.25rem 0 1rem;">${gradeNote}</p>` : ''}
+                    ${rating.overall ? '<button type="button" class="share-grade-btn" id="share-grade-btn"><span aria-hidden="true">↗</span> Share this grade</button>' : ''}
 
                     <div class="premium-unlock">
                         <div class="premium-unlock-header">
@@ -3283,6 +3307,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
                 resultBox.classList.add('show');
+
+                // Share card for this result (deal score is added once the premium report runs)
+                window.lastLookup = { year, make, model, name: displayName, rating, deal: null, topIssue };
+                const shareBtn = document.getElementById('share-grade-btn');
+                if (shareBtn) shareBtn.addEventListener('click', async () => {
+                    shareBtn.disabled = true;
+                    try { await GMCShare.share(window.lastLookup, { toast: showLookupToast, track: window.gmcTrack }); }
+                    finally { shareBtn.disabled = false; }
+                });
 
                 // Wire up the premium unlock button for this specific vehicle
                 const premiumBtn = document.getElementById('premium-unlock-btn');
@@ -3445,6 +3478,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const costPerMile = (price && milesRemaining && milesRemaining > 0) ? (price / milesRemaining) : null;
                 const maxLifespan = lifespanData?.maxMileage || null;
                 const deal = calcDealScore({ overallGrade, avgLifespan, maxLifespan, mileage, price, year });
+                const shown = window.lastLookup;
+                if (deal && shown && shown.make === make && shown.model === model && String(shown.year) === String(year)) {
+                    shown.deal = { label: price ? 'Deal Score' : 'Car Score', score: deal.score, badge: deal.category };
+                }
 
                 // ── Deal Score card ──────────────────────────────────────────────────────
                 const dealScoreHtml = deal ? `
