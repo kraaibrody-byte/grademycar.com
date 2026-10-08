@@ -544,8 +544,15 @@ document.querySelectorAll(".navitem").forEach(btn => {
     document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
     btn.classList.add("active");
     $("view-" + btn.dataset.view).classList.add("active");
+    history.replaceState(null, "", "#" + btn.dataset.view);
   });
 });
+// Deep links from GradeMyCar HQ, e.g. admin.html#users
+(function openFromHash() {
+  const view = location.hash.slice(1);
+  const btn = view && document.querySelector('.navitem[data-view="' + CSS.escape(view) + '"]');
+  if (btn) btn.click();
+})();
 
 $("refresh-all").addEventListener("click", loadEverything);
 
