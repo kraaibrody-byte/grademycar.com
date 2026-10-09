@@ -21,6 +21,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" id="ati-link">
 <link rel="manifest" id="manifest-link">
+<script src="/attribution.js"></script>
 <style>
 :root{
   --blue:#4F46E5;--blue2:#6366F1;--navy:#0F172A;--ink:#1E293B;
@@ -240,6 +241,24 @@ button.credits-chip{border:0;cursor:pointer}
 .sample-foot{font-size:11px;color:var(--muted);margin-top:10px;text-align:center}.sample-foot b{color:var(--blue)}
 .ghost{width:100%;margin-top:10px;height:44px;border:1.5px solid #ffffff55;background:transparent;color:#fff;border-radius:15px;font-weight:700;font-size:14px;cursor:pointer}
 .hero .hero-note{font-size:11px;color:#C7D2FE;margin:12px 0 0;line-height:1.45}
+/* Home: lookup above the fold */
+.home-h1{font-size:28px;line-height:1.1;margin:0 0 14px;letter-spacing:-1px}
+.quick{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:0 3px 12px #10245108}
+.quick .or-row{margin:12px 2px}
+.ymm-row{display:grid;grid-template-columns:.85fr 1fr 1.15fr;gap:8px}
+.ymm-row select{min-width:0;width:100%;height:44px;border:1.5px solid var(--line);border-radius:12px;padding:0 24px 0 10px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2364748B' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 9px center;font-size:16px;font-weight:650;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer;text-overflow:ellipsis}
+.ymm-row select:focus{border-color:var(--blue)}
+.quick .primary{margin-top:10px}
+.trust{display:flex;justify-content:center;gap:14px;font-size:12px;font-weight:650;color:#166534;margin:12px 0 4px}
+.sample-link{display:block;margin:6px auto 18px;border:0;background:none;color:var(--blue);font-weight:700;font-size:13px;cursor:pointer;padding:6px}
+/* Results: example label + post-grade signup prompt */
+.example-banner{background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;border-radius:13px;padding:10px 12px;font-size:12px;line-height:1.45}
+.example-banner b{text-transform:uppercase;letter-spacing:.06em;font-size:10px;margin-right:4px}
+.signup-prompt{position:relative;background:#fff;border:1.5px solid #C7D2FE;border-radius:19px;padding:14px 16px}
+.signup-prompt b{display:block;font-size:14px;color:var(--navy);margin:0 26px 3px 0}
+.signup-prompt p{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45}
+.signup-prompt .primary{height:44px;font-size:14px}
+.signup-prompt .x{position:absolute;top:10px;right:10px;border:0;background:none;color:#98A0AE;font-size:16px;cursor:pointer;padding:4px}
 @media(min-width:521px){body{background:#eef2f7}.demo{box-shadow:0 0 0 1px #dfe4ec}}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -302,9 +321,25 @@ button.credits-chip{border:0;cursor:pointer}
           </div>
         </div>
         <div class="page">
-          <div class="eyebrow">Instant reliability analysis</div>
-          <h1>Stop Guessing.<br><span style="color:var(--blue)">Grade Any Car.</span></h1>
-          <p class="sub">Reliability grade, price check and safety recalls for any used car. Works right in your browser, nothing to install.</p>
+          <h1 class="home-h1">Don't buy a lemon.<br><span style="color:var(--blue)">Grade it first.</span></h1>
+          <!-- Lookup on the first screen. These mirror the Search screen's fields and run the same lookup. -->
+          <div class="quick">
+            <label class="label" for="homeVin">Paste a VIN <span style="color:#98A0AE">(most accurate)</span></label>
+            <div class="vin-row">
+              <input id="homeVin" class="vin-input" type="text" maxlength="17" placeholder="17 characters" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="onHomeVinInput()" onkeydown="if(event.key==='Enter')homeGrade('vin')">
+              <button class="vin-btn" id="homeVinBtn" onclick="homeGrade('vin')">Grade</button>
+            </div>
+            <div class="vin-help hidden" id="homeVinHelp"></div>
+            <div class="or-row"><span>or pick the car</span></div>
+            <div class="ymm-row">
+              <select id="homeYear" aria-label="Year"><option value="">Year</option></select>
+              <select id="homeMake" aria-label="Make" onchange="onHomeMake()"><option value="">Make</option></select>
+              <select id="homeModel" aria-label="Model"><option value="">Model</option></select>
+            </div>
+            <button class="primary" onclick="homeGrade('ymm')">Grade it free &nbsp;›</button>
+          </div>
+          <div class="trust"><span>✓ Free to try</span><span>✓ No signup needed</span></div>
+          <button class="sample-link" onclick="tryExample('hero_link')">See a sample grade ›</button>
           <!-- Sample report: values are refreshed from the live DB by loadSample() -->
           <div class="sample" id="sampleCard" onclick="tryExample('sample_card')">
             <div class="sample-top"><span class="sample-tag">Sample report</span><span class="sample-car">2018 Honda Accord</span></div>
@@ -315,13 +350,6 @@ button.credits-chip{border:0;cursor:pointer}
               <div><div class="sample-val" id="sampleLife">250k</div><div class="sample-lbl">mi avg. lifespan</div></div>
             </div>
             <div class="sample-foot"><b>See this example ›</b></div>
-          </div>
-          <div class="hero">
-            <h2>Grade any car in seconds.</h2>
-            <p>Get a reliability grade for any year, make and model. <b style="color:#fff">Free, no sign-in needed.</b></p>
-            <button class="primary" onclick="show('search')">⌕ &nbsp; Grade a car free &nbsp; ›</button>
-            <button class="ghost" onclick="tryExample('hero_button')">Try an example car</button>
-            <p class="hero-note">Your first full report (deal score, lifespan, recalls) is free too, with a free account.</p>
           </div>
           <div class="install-card hidden" id="installCard">
             <div class="ic">📲</div>
@@ -424,6 +452,8 @@ button.credits-chip{border:0;cursor:pointer}
 
         <div class="res-body">
 
+          <div class="example-banner hidden" id="exampleBanner"><b>Example</b>This is a sample grade for a 2018 Honda Accord, using our real data for that car. Grade your own car anytime.</div>
+
           <!-- Free: 3 grade circles -->
           <div class="res-card">
             <div class="grade-circles-row">
@@ -441,6 +471,14 @@ button.credits-chip{border:0;cursor:pointer}
               </div>
             </div>
             <div class="grade-source hidden" id="gradeSource"></div>
+          </div>
+
+          <!-- Signed-out only, once per grade. Never covers or gates the grade above. -->
+          <div class="signup-prompt hidden" id="signupPrompt">
+            <button class="x" onclick="dismissSignupPrompt()" aria-label="Dismiss">✕</button>
+            <b id="signupPromptTitle">Save this grade and get a free full report</b>
+            <p>Make a free account to keep this car in your Saved list. Your grade stays here either way.</p>
+            <button class="primary" onclick="signupPromptClick()">Sign up free</button>
           </div>
 
           <!-- Not found notice -->
@@ -754,7 +792,8 @@ function submitAuth(){
   action.then(()=>{
           closeAccount();
           toast(mode==='signin'?'Signed in':'Account created. Your first report is free!');
-          track(mode==='signin'?'login':'sign_up',{method:'email'});
+          track(mode==='signin'?'login':'sign_up',
+                Object.assign({method:'email'},mode==='signup'&&window.GMCAttribution?GMCAttribution.params():{}));
         })
         .catch(err=>{ signingUp=false; errEl.textContent=friendlyAuthError(err); errEl.style.display='block'; })
         .finally(()=>{ btn.disabled=false; });
@@ -1024,17 +1063,109 @@ function markLookupStart(method){
 
 // Example car: same one as the sample card on Home
 const EXAMPLE={year:'2018',make:'honda',model:'accord',mileage:60000,price:18500};
+let showingExample=false;
 async function tryExample(source){
-  markLookupStart(source==='sample_card'?'sample_card':'example_button');
+  markLookupStart(source==='sample_card'?'sample_card':'sample_link');
+  showingExample=true;
   show('loading');
-  if(!await fillSearch(EXAMPLE.make,EXAMPLE.model,EXAMPLE.year)){ show('search'); return; }
+  if(!await fillSearch(EXAMPLE.make,EXAMPLE.model,EXAMPLE.year)){ showingExample=false; show('search'); return; }
   await checkGrade();
+  showingExample=false;
   // Pre-fill the premium form so the sample's deal score is one tap away
   if(currentScreen==='results'){
     document.getElementById('premMileage').value=EXAMPLE.mileage;
     document.getElementById('premPrice').value=EXAMPLE.price;
+    track('sample_report_view',{source});
   }
 }
+
+// ── HOME QUICK LOOKUP ────────────────────────────────────────────────────────
+// The Home fields mirror the Search screen's. Grading copies them across and runs
+// the same lookupVin / checkGrade, so both screens give identical results.
+function copyOptions(fromId, toId, placeholder){
+  document.getElementById(toId).innerHTML=`<option value="">${placeholder}</option>`+
+    [...document.getElementById(fromId).options].filter(o=>o.value).map(o=>o.outerHTML).join('');
+}
+copyOptions('year','homeYear','Year');
+makesReady.then(()=>copyOptions('make','homeMake','Make'));
+['homeYear','homeMake','homeModel'].forEach(id=>document.getElementById(id).addEventListener('change',()=>markLookupStart('dropdown')));
+async function onHomeMake(){
+  document.getElementById('make').value=document.getElementById('homeMake').value;
+  document.getElementById('homeModel').innerHTML='<option value="">Loading…</option>';
+  await onMakeInput();
+  copyOptions('model','homeModel','Model');
+}
+function homeVinHelp(text, tone){
+  const el=document.getElementById('homeVinHelp');
+  el.textContent=text;
+  el.className='vin-help'+(tone?' '+tone:'')+(text?'':' hidden');
+}
+function onHomeVinInput(){
+  const el=document.getElementById('homeVin');
+  markLookupStart('vin');
+  const clean=el.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(clean!==el.value) el.value=clean;
+  homeVinHelp('');
+}
+async function homeGrade(method){
+  track('hero_cta_click',{method});
+  if(method==='vin'){
+    const vin=document.getElementById('homeVin').value;
+    if(!vin){ homeVinHelp('Enter a VIN, or pick the year, make and model below.','err'); return; }
+    markLookupStart('vin');
+    document.getElementById('vinInput').value=vin;
+    const btn=document.getElementById('homeVinBtn');
+    btn.disabled=true; btn.textContent='…';
+    try{ await lookupVin(); }finally{ btn.disabled=false; btn.textContent='Grade'; }
+    const help=document.getElementById('vinHelp');
+    if(!help.classList.contains('ok')){ homeVinHelp(help.textContent,'err'); return; }
+    homeVinHelp('');
+    await checkGrade();
+    return;
+  }
+  const year=document.getElementById('homeYear').value, make=document.getElementById('homeMake').value, model=document.getElementById('homeModel').value;
+  if(!year||!make||!model){ toast('Pick the year, make and model'); return; }
+  vinInfo=null;
+  document.getElementById('year').value=year;
+  document.getElementById('make').value=make;
+  document.getElementById('model').value=model;
+  await checkGrade();
+}
+
+// ── POST-GRADE SIGNUP PROMPT ─────────────────────────────────────────────────
+// Signed-out users see one dismissible card under each new grade. It never hides
+// or gates the grade. Signing up from it saves that car to the new account.
+// Matches the reportCredits a new account starts with (see submitAuth).
+const FREE_SIGNUP_CREDITS=1;
+let saveAfterSignup=null;
+function gradeParams(){
+  const r=currentResult||{};
+  return {make:r.make||'',model:r.model||'',year:String(r.year||''),grade:r.grade||'none'};
+}
+function onGradeShown(found){
+  document.getElementById('exampleBanner').classList.toggle('hidden',!showingExample);
+  const offer=!currentUser && found && !showingExample;
+  document.getElementById('signupPrompt').classList.toggle('hidden',!offer);
+  if(!offer) return;
+  document.getElementById('signupPromptTitle').textContent=
+    `Save this grade and get ${FREE_SIGNUP_CREDITS} free full report${FREE_SIGNUP_CREDITS===1?'':'s'}`;
+  track('signup_prompt_shown',gradeParams());
+}
+function dismissSignupPrompt(){ document.getElementById('signupPrompt').classList.add('hidden'); }
+function signupPromptClick(){
+  track('signup_prompt_click',gradeParams());
+  saveAfterSignup=currentResult;
+  openAccount('signup');
+}
+auth.onAuthStateChanged(user=>{
+  if(!user) return;
+  dismissSignupPrompt();
+  const r=saveAfterSignup; saveAfterSignup=null;
+  if(r && authMode==='signup'){
+    rtdb.ref(`saved_vehicles/${user.uid}`).push({year:String(r.year),make:r.make,model:r.model,grade:r.grade||null,createdAt:Date.now()})
+      .catch(e=>console.warn('[GMC] save after signup failed',e));
+  }
+});
 
 // ── VIN LOOKUP ───────────────────────────────────────────────────────────────
 // Decoded on the phone with NHTSA's free vPIC service. The VIN never goes to our
@@ -1302,6 +1433,7 @@ async function checkGrade(){
     saveSearch({year,make,model,grade:rating?.overall||null});
     track('grade_car',{make,model,year:String(year),found:!!rating?.overall});
     track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||'none',has_vin:!!vin,signed_in:!!currentUser});
+    onGradeShown(!!rating?.overall);
     lookupStarted=false; lookupMethod=null; // the next lookup counts as a new start
   }catch(err){
     console.error('[GMC] checkGrade error:',err);
@@ -1693,7 +1825,8 @@ async function purchaseBundle(bundleType){
   const q=new URLSearchParams(location.search);
   const year=q.get('year'), make=q.get('make'), model=q.get('model');
   if(!year||!make||!model) return;
-  history.replaceState(null,'',location.pathname);
+  const utm=new URLSearchParams([...q].filter(([k])=>k.startsWith('utm_'))).toString();
+  history.replaceState(null,'',location.pathname+(utm?'?'+utm:''));
   track('car_link_open',{src:q.get('src')||'unknown',make,model});
   markLookupStart('car_link');
   show('loading');

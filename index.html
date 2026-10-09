@@ -17,6 +17,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="google-site-verification" content="PogbJo3Kk8-9e3H8X5Rx3tK9m2AVC1zV_iYLT_hU2Sg" />
     <meta name="description" content="Know if a used car is a lemon before you buy it. Free A–F reliability grades for every model year, built from 662,000+ owner complaints filed with NHTSA, plus the problems owners report most.">
+    <script src="/attribution.js"></script>
     <script src="reliability-data.js"></script>
     <script src="/issue-themes.js"></script>
     <script src="/share-card.js"></script>
@@ -2520,6 +2521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             totalPurchases: 0,
                             totalSpent: 0
                         }).catch(e => console.warn('User record already exists:', e));
+                        window.gmcTrack('sign_up', Object.assign({ method: 'email' }, window.GMCAttribution ? GMCAttribution.params() : {}));
 
                         document.getElementById('email').value = '';
                         document.getElementById('password').value = '';
