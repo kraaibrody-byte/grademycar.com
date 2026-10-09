@@ -769,6 +769,8 @@ function forgotPassword(){
     });
 }
 function submitAuth(){
+  // Enter in the password field bypasses the disabled button, so ignore repeats while a request is in flight
+  if(document.getElementById('authSubmit').disabled) return;
   const email=document.getElementById('authEmail').value.trim();
   const password=document.getElementById('authPassword').value;
   const errEl=document.getElementById('authError');
