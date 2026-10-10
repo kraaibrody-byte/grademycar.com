@@ -207,6 +207,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-auth-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-database-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-functions-compat.min.js"></script>
+<script src="/issue-themes.js"></script>
 
 <!-- ================= LOGIN ================= -->
 <div id="login-screen">
@@ -259,6 +261,10 @@
           <button class="navitem" data-view="activity">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 12h4l2 7 4-14 2 7h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Search Activity
+          </button>
+          <button class="navitem" data-view="owners">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+            Owner Reports
           </button>
           <button class="navitem" data-view="reliability">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
@@ -371,6 +377,23 @@
         <div class="panel">
           <div class="panel-head"><h2>Recent searches</h2></div>
           <div class="panel-body" id="recent-searches"><div class="empty-note">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- ============ OWNER REPORTS ============ -->
+      <section class="view" id="view-owners">
+        <div class="topbar">
+          <div><h1>Owner reports</h1><div class="topbar-sub" id="owners-sub">Cars owners rated in the app (<span class="num">owner_reports</span>). Public totals show on a model year once it has 20.</div></div>
+          <button class="btn" id="owners-refresh">↻ Refresh</button>
+        </div>
+        <div id="owners-banner"></div>
+        <div class="panel">
+          <div class="panel-body table-wrap">
+            <table>
+              <thead><tr><th>Car</th><th>Engine</th><th class="num">Miles</th><th class="num">Rating</th><th>Buy again</th><th>Problems</th><th>Owner</th><th>Updated</th><th></th></tr></thead>
+              <tbody id="owners-tbody"><tr><td colspan="9" class="empty-note">Loading…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -557,6 +580,48 @@ document.querySelectorAll(".navitem").forEach(btn => {
 })();
 
 $("refresh-all").addEventListener("click", loadEverything);
+$("owners-refresh").addEventListener("click", loadOwnerReports);
+
+/* ---------------- Owner reports ---------------- */
+// Written only by the submitOwnerReport Cloud Function. Removing goes through
+// removeOwnerReport so the public owner_stats totals stay in step.
+const COST_LABELS = { free: "free", lt500: "<$500", "500-2k": "$500–2k", "2k-5k": "$2–5k", gt5k: ">$5k", unknown: "" };
+async function loadOwnerReports() {
+  $("owners-banner").innerHTML = "";
+  try {
+    const snap = await get(ref(db, "owner_reports"));
+    const rows = [];
+    Object.entries(snap.val() || {}).forEach(([uid, cars]) =>
+      Object.entries(cars || {}).forEach(([key, r]) => rows.push({ uid, key, ...r })));
+    rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    $("owners-sub").innerHTML = `${rows.length} report${rows.length === 1 ? "" : "s"} from ${new Set(rows.map(r => r.uid)).size} owner${rows.length === 1 ? "" : "s"}. Public totals show on a model year once it has 20.`;
+    if (!rows.length) { $("owners-tbody").innerHTML = `<tr><td colspan="9" class="empty-note">No owner reports yet.</td></tr>`; return; }
+    const label = k => window.GMCIssues?.ISSUE_THEMES[k]?.label || k;
+    $("owners-tbody").innerHTML = rows.map((r, i) => `<tr>
+      <td><b>${esc(r.year)} ${esc(r.make)} ${esc(r.model)}</b></td>
+      <td>${esc(r.engine || "—")}${r.engineSrc === "vin" ? ' <span class="sub">(VIN)</span>' : ""}</td>
+      <td class="num">${Number(r.miles).toLocaleString()}</td>
+      <td class="num">${"★".repeat(r.rating)}</td>
+      <td>${r.buyAgain ? "Yes" : "No"}</td>
+      <td>${(r.problems || []).map(p => esc(label(p.k)) + (p.mi ? ` @ ${Number(p.mi).toLocaleString()} mi` : "") + (COST_LABELS[p.cost] ? ` (${COST_LABELS[p.cost]})` : "")).join("<br>") || "None"}</td>
+      <td>${esc(usersCache[r.uid]?.email || r.uid)}</td>
+      <td>${r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : "—"}</td>
+      <td><button class="btn" data-rm="${i}">Remove</button></td>
+    </tr>`).join("");
+    $("owners-tbody").querySelectorAll("[data-rm]").forEach(b => b.addEventListener("click", async () => {
+      const r = rows[b.dataset.rm];
+      if (!confirm(`Remove this ${r.year} ${r.make} ${r.model} report? It's also taken out of the public totals.`)) return;
+      b.disabled = true;
+      try {
+        await firebase.functions().httpsCallable("removeOwnerReport")({ uid: r.uid, key: r.key });
+        loadOwnerReports();
+      } catch (e) { alert("Couldn't remove: " + (e.message || e)); b.disabled = false; }
+    }));
+  } catch (e) {
+    permissionBanner($("owners-banner"), e);
+    $("owners-tbody").innerHTML = `<tr><td colspan="9" class="empty-note">Couldn't load.</td></tr>`;
+  }
+}
 
 function permissionBanner(target, err) {
   const denied = String(err?.code || err?.message || err).toLowerCase().includes("permission");
@@ -567,7 +632,7 @@ function permissionBanner(target, err) {
 
 /* ---------------- Load everything ---------------- */
 async function loadEverything() {
-  await Promise.all([loadUsers(), loadSearches(), loadFlags()]);
+  await Promise.all([loadUsers(), loadSearches(), loadFlags(), loadOwnerReports()]);
   loadReliability(); // fire and forget, has its own UI
 }
 

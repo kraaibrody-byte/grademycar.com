@@ -259,6 +259,37 @@ button.credits-chip{border:0;cursor:pointer}
 .signup-prompt p{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45}
 .signup-prompt .primary{height:44px;font-size:14px}
 .signup-prompt .x{position:absolute;top:10px;right:10px;border:0;background:none;color:#98A0AE;font-size:16px;cursor:pointer;padding:4px}
+/* Owner reports */
+.owner-card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:14px 16px}
+.owner-card .t{display:block;font-size:14px;font-weight:750;color:var(--navy);margin-bottom:3px}
+.owner-card p{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45}
+.owner-stats{display:flex;gap:8px;margin:6px 0 10px}
+.owner-stats div{flex:1;background:var(--bg);border-radius:12px;padding:8px 4px;text-align:center}
+.owner-stats b{display:block;font-size:17px;color:var(--navy)}
+.owner-stats span{font-size:10px;color:var(--muted)}
+.owner-probs{font-size:12px;color:var(--ink);margin:0 0 10px;line-height:1.6}
+.owner-btn{width:100%;height:44px;border:1.5px solid #C7D2FE;background:#EEF2FF;color:var(--blue);border-radius:13px;font-weight:750;font-size:14px;cursor:pointer}
+.rate-q{font-size:13px;font-weight:700;color:var(--navy);margin:18px 0 8px}
+.rate-q small{font-weight:500;color:var(--muted)}
+.rate-pick{display:flex;gap:6px}
+.rate-pick button{flex:1;height:46px;border:1.5px solid var(--line);background:#fff;border-radius:12px;font-size:20px;color:#CBD5E1;cursor:pointer}
+.rate-pick button.on{color:#F59E0B;border-color:#FCD34D;background:#FFFBEB}
+.rate-pick.yn button{font-size:14px;font-weight:700;color:var(--ink)}
+.rate-pick.yn button.on{color:var(--blue);border-color:var(--blue);background:#EEF2FF}
+.rate-hint{font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.45}
+select.prem-input{-webkit-appearance:none;appearance:none}
+.prob{border:1.5px solid var(--line);border-radius:12px;margin-bottom:6px;background:#fff}
+.prob label{display:flex;align-items:center;gap:10px;padding:11px 12px;font-size:13px;font-weight:650;cursor:pointer}
+.prob input[type=checkbox]{width:18px;height:18px;flex:none;accent-color:var(--blue)}
+.prob.on{border-color:#C7D2FE;background:#F8FAFF}
+.prob-more{display:none;gap:8px;padding:0 12px 12px}
+.prob.on .prob-more{display:flex}
+.prob-more input,.prob-more select{flex:1;min-width:0;height:40px;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;font-size:16px;background:#fff;color:var(--ink)}
+.prob.extra{display:none}
+#rateProblems.all .prob.extra{display:block}
+.prob-toggle{width:100%;border:0;background:none;color:var(--blue);font-weight:700;font-size:13px;padding:8px;cursor:pointer}
+#rateProblems.all .prob-toggle{display:none}
+.rate-err{color:var(--red);font-size:12px;font-weight:650;margin-top:10px;display:none}
 @media(min-width:521px){body{background:#eef2f7}.demo{box-shadow:0 0 0 1px #dfe4ec}}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -302,6 +333,7 @@ button.credits-chip{border:0;cursor:pointer}
           <div class="sheet-who" id="moreWho"></div>
           <button class="sheet-item" onclick="closeMore();openBuy()"><span>＋</span>Buy Credits</button>
           <button class="sheet-item" onclick="closeMore();show('saved')"><span>♡</span>Saved &amp; History</button>
+          <button class="sheet-item" onclick="closeMore();openRate(null,'menu')"><span>★</span>Rate your car</button>
           <a class="sheet-item" href="mailto:support@grademycar.com?subject=GradeMyCar%20support"><span>✉</span>Contact Support</a>
           <a class="sheet-item" href="/terms.html?from=app"><span>§</span>Terms &amp; Refunds</a>
           <a class="sheet-item" href="/privacy.html?from=app"><span>ⓘ</span>Privacy Policy</a>
@@ -481,6 +513,9 @@ button.credits-chip{border:0;cursor:pointer}
             <button class="primary" onclick="signupPromptClick()">Sign up free</button>
           </div>
 
+          <!-- Owner ratings for this model year, and the invite to add one (renderOwnerCard) -->
+          <div class="owner-card hidden" id="ownerCard"></div>
+
           <!-- Not found notice -->
           <div id="notFoundCard" class="info-card hidden">⚠ We don't have specific data for this make/model yet. Grades may be limited.</div>
 
@@ -611,6 +646,54 @@ button.credits-chip{border:0;cursor:pointer}
         </nav>
       </section>
 
+      <!-- Rate your car (owner report) -->
+      <section id="rate" class="app hidden">
+        <div class="topbar"><button class="back" onclick="show(rateReturnTo)">‹</button><strong>Rate Your Car</strong><span style="width:38px"></span></div>
+        <div class="page">
+          <div class="eyebrow">Owner report</div>
+          <h1 style="font-size:25px">How's your car<br>holding up?</h1>
+          <p class="sub" id="rateSub">Takes about a minute. It helps other buyers, and your first car earns a free full report.</p>
+
+          <div class="rate-q">Your car</div>
+          <div class="vin-row">
+            <input id="rateVin" class="vin-input" type="text" maxlength="17" placeholder="VIN (optional)" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+            <button class="vin-btn" id="rateVinBtn" onclick="rateVinLookup()">Fill in</button>
+          </div>
+          <div class="rate-hint" id="rateVinHelp">Fills in the car and exact engine. We don't save your VIN.</div>
+          <div class="ymm-row" style="margin-top:10px">
+            <select id="rateYear" aria-label="Year"><option value="">Year</option></select>
+            <select id="rateMake" aria-label="Make" onchange="onRateMake()"><option value="">Make</option></select>
+            <select id="rateModel" aria-label="Model"><option value="">Model</option></select>
+          </div>
+
+          <div class="rate-q">Engine <small>(if you know it)</small></div>
+          <select id="rateEngine" class="prem-input">
+            <option value="">Not sure</option>
+            <option>4-cylinder</option><option>4-cylinder turbo</option>
+            <option>6-cylinder</option><option>6-cylinder turbo</option>
+            <option>V8</option><option>Hybrid</option><option>Electric</option><option>Diesel</option>
+          </select>
+
+          <div class="rate-q">Current mileage</div>
+          <input id="rateMiles" class="prem-input" type="number" inputmode="numeric" placeholder="e.g. 85000">
+
+          <div class="rate-q">Overall, how reliable has it been?</div>
+          <div class="rate-pick" id="rateStars">
+            <button data-v="1" aria-label="1 star">★</button><button data-v="2" aria-label="2 stars">★</button><button data-v="3" aria-label="3 stars">★</button><button data-v="4" aria-label="4 stars">★</button><button data-v="5" aria-label="5 stars">★</button>
+          </div>
+
+          <div class="rate-q">Would you buy it again?</div>
+          <div class="rate-pick yn" id="rateAgain"><button data-v="yes">Yes</button><button data-v="no">No</button></div>
+
+          <div class="rate-q">Any of these problems? <small>(skip if none)</small></div>
+          <div id="rateProblems"></div>
+
+          <div class="rate-err" id="rateErr"></div>
+          <button class="primary" id="rateSubmit" style="margin-top:16px" onclick="submitRate()">Submit rating</button>
+          <div class="rate-hint" style="text-align:center;margin:10px 0 18px">We only ever show totals, never your name or email. Ratings appear once 20 owners of the same model year have rated it.</div>
+        </div>
+      </section>
+
       <!-- Buy credits -->
       <section id="buy" class="app hidden">
         <div class="topbar"><button class="back" onclick="show(buyReturnTo)">‹</button><strong>Buy Credits</strong><span style="width:38px"></span></div>
@@ -677,7 +760,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.09-c';
+const APP_VERSION='2026.10.09-d';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -790,7 +873,7 @@ function submitAuth(){
           email, createdAt:firebase.database.ServerValue.TIMESTAMP,
           reportCredits:1, totalSearches:0, totalPurchases:0, totalSpent:0
         }).catch(e=>console.warn('[GMC] user record create failed',e))
-          .finally(()=>{ signingUp=false; refreshCredits(); }));
+          .finally(()=>{ signingUp=false; refreshCredits(); runPendingRate(); }));
   action.then(()=>{
           closeAccount();
           toast(mode==='signin'?'Signed in':'Account created. Your first report is free!');
@@ -821,9 +904,10 @@ auth.onAuthStateChanged(user=>{
   updateUnlimitedNote();
   detachListeners();
   if(user){
-    if(!signingUp){ refreshCredits(); ensureUserRecord(user); }
+    if(!signingUp){ refreshCredits(); ensureUserRecord(user); runPendingRate(); }
     listenToHistory(user.uid);
     listenToSaved(user.uid);
+    listenToOwnerReports(user.uid);
   } else {
     renderLocalSearches();
     document.getElementById('savedList').innerHTML='<div class="empty">Log in to save vehicles.</div>';
@@ -888,6 +972,8 @@ function setUnlockLabel(){
 let historyRef=null, savedRef=null, savedDocs=[];
 function detachListeners(){
   if(historyRef){ historyRef.off(); historyRef=null; }
+  if(ownerRef){ ownerRef.off(); ownerRef=null; }
+  myOwnerReports={}; ownerCredited=false;
   if(savedRef){ savedRef.off(); savedRef=null; }
   savedDocs=[];
 }
@@ -1451,6 +1537,7 @@ async function checkGrade(){
     track('grade_car',{make,model,year:String(year),found:!!rating?.overall});
     track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||'none',has_vin:!!vin,signed_in:!!currentUser});
     onGradeShown(!!rating?.overall);
+    renderOwnerCard();
     lookupStarted=false; lookupMethod=null; // the next lookup counts as a new start
   }catch(err){
     console.error('[GMC] checkGrade error:',err);
@@ -1709,7 +1796,7 @@ function renderPremiumResults({mileage,price,avgLifespan,maxReported,commonIssue
 }
 
 // ── 10. UI HELPERS ───────────────────────────────────────────────────────────
-var screens=['home','search','loading','results','saved','buy'];
+var screens=['home','search','loading','results','saved','buy','rate'];
 var currentScreen='home';
 function show(id){
   screens.forEach(x=>document.getElementById(x).classList.toggle('hidden',x!==id));
@@ -1783,6 +1870,219 @@ function moreAuth(){
   closeMore();
   if(currentUser){ if(confirm('Log out of GradeMyCar?')) auth.signOut().then(()=>toast('Logged out')); }
   else openAccount();
+}
+
+// ── 11b. OWNER REPORTS ("Rate your car") ─────────────────────────────────────
+// Owners rate cars they own. The submitOwnerReport Cloud Function saves the report
+// to owner_reports/{uid} (private), updates the public totals in
+// owner_stats/{make}/{model}/{year}, and gives 1 credit for an account's first car.
+// Totals show under the grade once a model year has OWNER_MIN reports.
+const OWNER_MIN=20;
+const OWNER_COSTS=[['unknown','Cost?'],['free','Free (warranty/recall)'],['lt500','Under $500'],['500-2k','$500–2,000'],['2k-5k','$2,000–5,000'],['gt5k','Over $5,000']];
+let ownerRef=null, myOwnerReports={}, ownerCredited=false;
+let rateReturnTo='home', pendingRate=false, rateEngineSrc='pick';
+const ownerKey=(year,make,model)=>`${year}_${make}_${model}`.replace(/[.#$/[\]]/g,'-');
+
+function listenToOwnerReports(uid){
+  ownerRef=rtdb.ref(`owner_reports/${uid}`);
+  ownerRef.on('value',snap=>{ myOwnerReports=snap.val()||{}; if(currentScreen==='results') renderOwnerCard(); },
+              err=>console.warn('owner reports listener',err));
+  rtdb.ref(`users/${uid}/ownerReportCredit`).once('value').then(s=>{ ownerCredited=s.exists(); }).catch(()=>{});
+}
+
+let ownerCardToken=0;
+async function renderOwnerCard(){
+  const el=document.getElementById('ownerCard');
+  const v=currentVehicle;
+  if(!v||showingExample){ el.classList.add('hidden'); return; }
+  const token=++ownerCardToken;
+  let st=null;
+  try{
+    const r=await fetch(`${DB_URL}/owner_stats/${encodeURIComponent(v.make.toLowerCase())}/${encodeURIComponent(v.model.toLowerCase())}/${v.year}.json`);
+    if(r.ok) st=await r.json();
+  }catch(e){}
+  if(token!==ownerCardToken) return;
+  const n=st?.n||0;
+  const mine=myOwnerReports[ownerKey(v.year,v.make.toLowerCase(),v.model.toLowerCase())];
+  const btn=`<button class="owner-btn" onclick="openRate(currentVehicle,'results_card')">${mine?'Update your rating':'Own one? Rate it'}</button>`;
+  const reward=!currentUser||!ownerCredited?' and get a free full report':'';
+  if(n>=OWNER_MIN){
+    const pct=x=>Math.round(100*x/n)+'%';
+    const probs=Object.entries(st.p||{}).sort((a,b)=>b[1]-a[1]).slice(0,3)
+      .map(([k,c])=>`${esc(GMCIssues.ISSUE_THEMES[k]?.label||k)} <span style="color:var(--muted)">(${pct(c)})</span>`);
+    el.innerHTML=`<span class="t">What ${n.toLocaleString()} owners of the ${esc(v.year)} say</span>
+      <div class="owner-stats">
+        <div><b>${(st.ratingSum/n).toFixed(1)}★</b><span>avg rating</span></div>
+        <div><b>${pct(st.buyAgain)}</b><span>would buy again</span></div>
+        <div><b>${pct(st.noProblems)}</b><span>no problems</span></div>
+      </div>
+      ${probs.length?`<div class="owner-probs">Most reported: ${probs.join(', ')}</div>`:''}
+      ${btn}`;
+  } else {
+    el.innerHTML=`<span class="t">${mine?`Thanks for rating your ${esc(vehicleName(v))}`:`Own a ${esc(vehicleName(v))}?`}</span>
+      <p>${mine?'':`Rate it in a minute${reward}. `}${n?`${n} owner${n===1?' has':'s have'} rated this model year so far. `:''}Owner ratings show here once ${OWNER_MIN} owners have rated it.</p>
+      ${btn}`;
+  }
+  el.classList.remove('hidden');
+  if(!mine) track('owner_card_shown',{n});
+}
+
+// Year/make/model pickers for the form, filled the same way as the Search screen
+(function buildRateYears(){ copyOptions('year','rateYear','Year'); })();
+makesReady.then(()=>copyOptions('make','rateMake','Make'));
+async function loadRateModels(make){
+  const sel=document.getElementById('rateModel');
+  sel.innerHTML='<option value="">Loading…</option>';
+  try{
+    const r=await fetch(`${DB_URL}/reliability/${encodeURIComponent(make)}/grades.json?shallow=true`);
+    const models=r.ok?await r.json():null;
+    sel.innerHTML='<option value="">Model</option>'+Object.keys(models||{}).sort().map(m=>`<option value="${esc(m)}">${esc(displayModel(m))}</option>`).join('');
+  }catch(e){ sel.innerHTML='<option value="">Model</option>'; }
+}
+function onRateMake(){ const m=document.getElementById('rateMake').value; if(m) loadRateModels(m); else document.getElementById('rateModel').innerHTML='<option value="">Model</option>'; }
+
+function setPick(groupId, value){
+  document.querySelectorAll(`#${groupId} button`).forEach(b=>{
+    b.classList.toggle('on', groupId==='rateStars' ? Number(b.dataset.v)<=Number(value||0) : b.dataset.v===value);
+  });
+  document.getElementById(groupId).dataset.value=value??'';
+}
+document.querySelectorAll('#rateStars button').forEach(b=>b.onclick=()=>setPick('rateStars',b.dataset.v));
+document.querySelectorAll('#rateAgain button').forEach(b=>b.onclick=()=>setPick('rateAgain',b.dataset.v));
+
+// Problem checklist: engine/transmission problems first, since they matter most to buyers
+(function buildRateProblems(){
+  const T=GMCIssues.ISSUE_THEMES;
+  const keys=[...GMCIssues.KEYS].sort((a,b)=>(T[b].drivetrain?1:0)-(T[a].drivetrain?1:0));
+  document.getElementById('rateProblems').innerHTML=keys.map(k=>`
+    <div class="prob${T[k].drivetrain?'':' extra'}" data-k="${k}">
+      <label><input type="checkbox" onchange="this.closest('.prob').classList.toggle('on',this.checked)">${esc(T[k].label)}</label>
+      <div class="prob-more">
+        <input type="number" inputmode="numeric" placeholder="At mileage" aria-label="Mileage when it started">
+        <select aria-label="Repair cost">${OWNER_COSTS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
+      </div>
+    </div>`).join('')+
+    `<button class="prob-toggle" onclick="document.getElementById('rateProblems').classList.add('all')">More problem types ▾</button>`;
+})();
+
+function setRateEngine(text, src){
+  const sel=document.getElementById('rateEngine');
+  sel.querySelectorAll('option[data-vin]').forEach(o=>o.remove());
+  if(text && ![...sel.options].some(o=>o.value===text)){
+    const o=document.createElement('option'); o.value=o.textContent=text; o.dataset.vin='1'; sel.appendChild(o);
+  }
+  sel.value=text||'';
+  rateEngineSrc=src||'pick';
+}
+document.getElementById('rateEngine').addEventListener('change',()=>{ rateEngineSrc='pick'; });
+
+async function setRateCar(year, make, model){
+  document.getElementById('rateYear').value=year||'';
+  await makesReady;
+  if(!selectValue(document.getElementById('rateMake'),make)){ document.getElementById('rateModel').innerHTML='<option value="">Model</option>'; return false; }
+  await loadRateModels(document.getElementById('rateMake').value);
+  return pickModelOption(document.getElementById('rateModel'),model,'');
+}
+
+// Open the form, prefilled with the car being viewed and any earlier answers for it
+async function openRate(v, source){
+  rateReturnTo=currentScreen==='rate'?rateReturnTo:(currentScreen==='loading'?'home':currentScreen);
+  track('owner_rate_open',{source});
+  document.getElementById('rateErr').style.display='none';
+  document.getElementById('rateVin').value='';
+  document.getElementById('rateVinHelp').textContent="Fills in the car and exact engine. We don't save your VIN.";
+  document.getElementById('rateSub').textContent=currentUser&&ownerCredited
+    ?'Takes about a minute, and it helps other buyers see how this car really holds up.'
+    :'Takes about a minute. It helps other buyers, and your first car earns a free full report.';
+  const prev=v?myOwnerReports[ownerKey(v.year,v.make.toLowerCase(),v.model.toLowerCase())]:null;
+  fillRateAnswers(prev);
+  if(v){
+    await setRateCar(v.year,v.make,v.model);
+    if(!prev && v.vin?.engine) setRateEngine(v.vin.engine,'vin');
+  } else {
+    document.getElementById('rateYear').value='';
+    document.getElementById('rateMake').value='';
+    document.getElementById('rateModel').innerHTML='<option value="">Model</option>';
+  }
+  show('rate');
+}
+function fillRateAnswers(r){
+  setRateEngine(r?.engine||'', r?.engineSrc);
+  document.getElementById('rateMiles').value=r?.miles??'';
+  setPick('rateStars',r?String(r.rating):'');
+  setPick('rateAgain',r?(r.buyAgain?'yes':'no'):'');
+  const had=Object.fromEntries((r?.problems||[]).map(p=>[p.k,p]));
+  document.getElementById('rateProblems').classList.toggle('all',(r?.problems||[]).some(p=>!GMCIssues.ISSUE_THEMES[p.k]?.drivetrain));
+  document.querySelectorAll('#rateProblems .prob').forEach(row=>{
+    const p=had[row.dataset.k];
+    row.querySelector('input[type=checkbox]').checked=!!p;
+    row.classList.toggle('on',!!p);
+    row.querySelector('.prob-more input').value=p?.mi??'';
+    row.querySelector('.prob-more select').value=p?.cost||'unknown';
+  });
+}
+
+async function rateVinLookup(){
+  const vin=document.getElementById('rateVin').value;
+  const help=document.getElementById('rateVinHelp');
+  if(vin.length!==17||/[IOQ]/.test(vin)){ help.textContent='A VIN has 17 letters and numbers (never I, O or Q).'; return; }
+  const btn=document.getElementById('rateVinBtn');
+  btn.disabled=true; help.textContent='Looking up this VIN…';
+  try{
+    const r=await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+    const v=(await r.json()).Results?.[0]||{};
+    if(!v.Make||!v.Model||!v.ModelYear){ help.textContent="We couldn't decode that VIN. Pick the car below instead."; return; }
+    const ok=await setRateCar(String(v.ModelYear),String(v.Make).toLowerCase(),v.Model);
+    const eng=engineText(v);
+    if(eng) setRateEngine(eng,'vin');
+    help.textContent=ok?`✓ ${v.ModelYear} ${displayMake(v.Make)} ${v.Model}${eng?' · '+eng:''}`:`${v.ModelYear} ${displayMake(v.Make)} ${v.Model}: we don't cover this model yet.`;
+  }catch(e){ help.textContent="Couldn't reach the VIN service. Pick the car below instead."; }
+  finally{ btn.disabled=false; }
+}
+
+function rateError(msg){ const el=document.getElementById('rateErr'); el.textContent=msg; el.style.display=msg?'block':'none'; }
+function collectRate(){
+  const year=document.getElementById('rateYear').value, make=document.getElementById('rateMake').value, model=document.getElementById('rateModel').value;
+  if(!year||!make||!model) return rateError('Pick your car’s year, make and model.');
+  const milesRaw=document.getElementById('rateMiles').value, miles=Number(milesRaw);
+  if(milesRaw===''||!(miles>=0&&miles<=1000000)) return rateError('Enter your current mileage.');
+  const rating=Number(document.getElementById('rateStars').dataset.value);
+  if(!rating) return rateError('Tap a star rating.');
+  const again=document.getElementById('rateAgain').dataset.value;
+  if(!again) return rateError('Would you buy it again?');
+  const problems=[...document.querySelectorAll('#rateProblems .prob')].filter(r=>r.querySelector('input[type=checkbox]').checked)
+    .map(r=>({k:r.dataset.k, mi:r.querySelector('.prob-more input').value, cost:r.querySelector('.prob-more select').value}));
+  rateError('');
+  return {year,make,model,miles,rating,buyAgain:again==='yes',engine:document.getElementById('rateEngine').value,engineSrc:rateEngineSrc,problems};
+}
+async function submitRate(){
+  const data=collectRate();
+  if(!data) return;
+  if(!currentUser){
+    pendingRate=true;
+    openAccount('signup');
+    document.getElementById('authTitle').textContent='Sign up to submit your rating';
+    return;
+  }
+  const btn=document.getElementById('rateSubmit');
+  btn.disabled=true; btn.textContent='Submitting…';
+  try{
+    const res=(await functions.httpsCallable('submitOwnerReport')(data)).data||{};
+    track('owner_rate_submit',{credited:!!res.credited,updated:!!res.updated,problems:data.problems.length,engine_src:data.engineSrc,make:data.make,model:data.model,year:data.year});
+    if(res.credited){ ownerCredited=true; refreshCredits(); }
+    toast(res.credited?'Thanks! A free report credit was added.':res.updated?'Your rating is updated. Thanks!':'Thanks! Your rating is saved.');
+    show(rateReturnTo);
+    if(rateReturnTo==='results') renderOwnerCard();
+  }catch(e){
+    console.warn('[GMC] submitOwnerReport failed',e);
+    rateError(e?.code==='functions/invalid-argument'||e?.code==='functions/resource-exhausted'?e.message:"Couldn't submit right now. Check your connection and try again.");
+  }finally{ btn.disabled=false; btn.textContent='Submit rating'; }
+}
+// A signed-out owner who tapped Submit is sent to sign up; send the rating once the account is ready
+function runPendingRate(){
+  if(!pendingRate||!currentUser) return;
+  pendingRate=false;
+  if(currentScreen==='rate') submitRate();
 }
 
 // ── 12. BUY CREDITS ──────────────────────────────────────────────────────────
