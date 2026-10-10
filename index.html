@@ -1158,6 +1158,8 @@
             margin-bottom: 1rem;
         }
 
+        .rate-own-link { display: block; margin: -0.5rem 0 1.25rem; font-size: 0.9rem; font-weight: 700; color: #4f46e5; text-decoration: none; }
+        .rate-own-link:hover { text-decoration: underline; }
         .share-grade-btn { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 1.25rem; padding: 0.6rem 1.1rem; border-radius: 10px; border: 1.5px solid #667eea; background: white; color: #4f46e5; font-weight: 700; font-size: 0.92rem; cursor: pointer; }
         .share-grade-btn:hover { background: #eef2ff; }
         .share-grade-btn:disabled { opacity: 0.6; cursor: default; }
@@ -1405,6 +1407,7 @@
                 <li><a href="#how">How it works</a></li>
                 <li><a href="#app">App</a></li>
                 <li><a href="/reliability/">Reliability by model</a></li>
+                <li><a href="#rate">Rate your car</a></li>
                 <li><a href="#pricing">Pricing</a></li>
             </ul>
             <div class="lp-nav-actions">
@@ -1465,6 +1468,7 @@
                         <a class="lp-btn lp-btn-dark" id="hg-full" href="/phone.html?year=2014&make=ford&model=focus&src=home_hero">Full report →</a>
                         <button type="button" class="lp-btn lp-btn-ghost-dark" id="hg-share">Share</button>
                     </div>
+                    <a class="lp-rate-link" id="hg-rate" href="/phone.html?rate=1&year=2014&make=ford&model=focus&src=home_hero">Own one? Rate it and get a free full report →</a>
                     <p class="lp-result-note" id="hg-note">From 2,658 owner complaints filed with NHTSA for the 2014 model year.</p>
                 </div>
             </div>
@@ -1563,6 +1567,21 @@
                     <p>You get engine, transmission and overall grades, plus the problem owners report most, and whether a recall covers it.</p>
                 </li>
             </ol>
+        </div>
+    </section>
+
+    <!-- Owner reports: links into the app's "Rate your car" form -->
+    <section class="lp-section lp-rate" id="rate">
+        <div class="lp-wrap" data-reveal>
+            <div class="lp-section-head">
+                <div class="lp-kicker">Owner reports</div>
+                <h2>Own a car? Tell us how it's held up.</h2>
+                <p>NHTSA mostly hears from owners with problems. Rate your car in about a minute (mileage, engine, any problems and what they cost to fix) and help the next buyer see the whole picture. Your first car earns a free full report.</p>
+            </div>
+            <div class="lp-rate-cta">
+                <a href="/phone.html?rate=1&src=home_section" class="lp-btn lp-btn-primary lp-btn-lg">Rate your car</a>
+                <span>Takes about a minute. We only ever show totals across owners, never your name or email.</span>
+            </div>
         </div>
     </section>
 
@@ -1755,6 +1774,10 @@
                 <details data-reveal>
                     <summary>Does a bad grade mean the car I'm looking at is bad?</summary>
                     <p>Not necessarily. A grade describes how that model year did across thousands of owners. A well-maintained car from a weak year can be fine, especially if recall repairs were done. Use the grade to know what to check, and always get a pre-purchase inspection.</p>
+                </details>
+                <details data-reveal>
+                    <summary>Can I add my own car?</summary>
+                    <p>Yes. <a href="/phone.html?rate=1&src=home_faq">Rate your car</a> with its mileage, engine and any problems you've had. We combine ratings from many owners, and once 20 owners of the same model year have rated it, their results show next to the grade. Your first car earns a free full report.</p>
                 </details>
                 <details data-reveal>
                     <summary>What if my car is older than 2005 or brand new?</summary>
@@ -3221,6 +3244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     ${gradeNote ? `<p class="lookup-subtitle" style="font-size: 0.8rem; margin: -0.25rem 0 1rem;">${gradeNote}</p>` : ''}
                     ${rating.overall ? '<button type="button" class="share-grade-btn" id="share-grade-btn"><span aria-hidden="true">↗</span> Share this grade</button>' : ''}
+                    <a class="rate-own-link" href="/phone.html?${new URLSearchParams({ rate: 1, year, make, model, src: 'dashboard' })}" target="_blank" rel="noopener">Own one? Rate it and get a free full report →</a>
 
                     <div class="premium-unlock">
                         <div class="premium-unlock-header">

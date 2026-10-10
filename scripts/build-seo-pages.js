@@ -366,7 +366,10 @@ function carPage(car, cars) {
 
   <div class="row">${lifeBlock}${issuesBlock}</div>
   <div class="row">
-  <div class="col">${compare}</div>
+  <div class="col">${compare}
+  <section class="card"><h2>Own a ${esc(name)}?</h2>
+    <p>Tell other buyers how yours has held up: mileage, engine, and any problems with what they cost to fix. It takes about a minute, and your first car earns a free full report.</p>
+    <a class="btn" href="/phone.html?rate=1&make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&src=seo_rate">Rate your ${esc(car.modelName)}</a></section></div>
   <section class="card faq"><h2>${esc(name)} reliability FAQ</h2>
     ${faqs.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join('\n')}
   </section>

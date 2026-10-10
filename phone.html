@@ -289,6 +289,9 @@ select.prem-input{-webkit-appearance:none;appearance:none}
 #rateProblems.all .prob.extra{display:block}
 .prob-toggle{width:100%;border:0;background:none;color:var(--blue);font-weight:700;font-size:13px;padding:8px;cursor:pointer}
 #rateProblems.all .prob-toggle{display:none}
+.rate-row{display:flex;gap:8px}
+.rate-row select{flex:1;min-width:0}
+.rate-row select:disabled{opacity:.5}
 .rate-err{color:var(--red);font-size:12px;font-weight:650;margin-top:10px;display:none}
 @media(min-width:521px){body{background:#eef2f7}.demo{box-shadow:0 0 0 1px #dfe4ec}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -659,7 +662,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
             <input id="rateVin" class="vin-input" type="text" maxlength="17" placeholder="VIN (optional)" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
             <button class="vin-btn" id="rateVinBtn" onclick="rateVinLookup()">Fill in</button>
           </div>
-          <div class="rate-hint" id="rateVinHelp">Fills in the car and exact engine. We don't save your VIN.</div>
+          <div class="rate-hint" id="rateVinHelp">Fills in the car and exact engine. Your VIN is on your insurance card or app. We don't save it.</div>
           <div class="ymm-row" style="margin-top:10px">
             <select id="rateYear" aria-label="Year"><option value="">Year</option></select>
             <select id="rateMake" aria-label="Make" onchange="onRateMake()"><option value="">Make</option></select>
@@ -667,12 +670,16 @@ select.prem-input{-webkit-appearance:none;appearance:none}
           </div>
 
           <div class="rate-q">Engine <small>(if you know it)</small></div>
-          <select id="rateEngine" class="prem-input">
-            <option value="">Not sure</option>
-            <option>4-cylinder</option><option>4-cylinder turbo</option>
-            <option>6-cylinder</option><option>6-cylinder turbo</option>
-            <option>V8</option><option>Hybrid</option><option>Electric</option><option>Diesel</option>
-          </select>
+          <div class="rate-row">
+            <select id="rateEngine" class="prem-input" aria-label="Engine type">
+              <option value="">Type: not sure</option>
+              <option>4-cylinder</option><option>4-cylinder turbo</option>
+              <option>6-cylinder</option><option>6-cylinder turbo</option>
+              <option>V8</option><option>Hybrid</option><option>Electric</option><option>Diesel</option>
+            </select>
+            <select id="rateSize" class="prem-input" aria-label="Engine size"><option value="">Size: not sure</option></select>
+          </div>
+          <div class="rate-hint">Some models came with several engines of the same type (a Silverado V8 can be a 5.3L or a 6.2L), so the size helps. It's on the engine cover or in the owner's manual, or use the VIN above.</div>
 
           <div class="rate-q">Current mileage</div>
           <input id="rateMiles" class="prem-input" type="number" inputmode="numeric" placeholder="e.g. 85000">
@@ -760,7 +767,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.09-d';
+const APP_VERSION='2026.10.09-e';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1965,16 +1972,33 @@ document.querySelectorAll('#rateAgain button').forEach(b=>b.onclick=()=>setPick(
     `<button class="prob-toggle" onclick="document.getElementById('rateProblems').classList.add('all')">More problem types ▾</button>`;
 })();
 
+// Engine is saved as one string: "5.3L V8" (size + type picked by hand) or the
+// decoder's text for VIN fills, e.g. "5.3L V8" / "2.0L 4-cyl turbo"
+const ENGINE_SIZES=['1.0','1.2','1.3','1.4','1.5','1.6','1.8','2.0','2.2','2.3','2.4','2.5','2.7','2.8','3.0','3.3','3.5','3.6','3.7','3.8','4.0','4.3','4.6','4.7','4.8','5.0','5.3','5.4','5.6','5.7','6.0','6.2','6.4','6.6','6.7','6.8','7.3'];
+document.getElementById('rateSize').insertAdjacentHTML('beforeend',ENGINE_SIZES.map(l=>`<option value="${l}L">${l}L</option>`).join(''));
 function setRateEngine(text, src){
-  const sel=document.getElementById('rateEngine');
+  const sel=document.getElementById('rateEngine'), size=document.getElementById('rateSize');
   sel.querySelectorAll('option[data-vin]').forEach(o=>o.remove());
-  if(text && ![...sel.options].some(o=>o.value===text)){
-    const o=document.createElement('option'); o.value=o.textContent=text; o.dataset.vin='1'; sel.appendChild(o);
+  let type=text||'', liters='';
+  const m=src!=='vin'&&/^(\d+\.\d)L (.+)$/.exec(type);
+  if(m){ liters=m[1]+'L'; type=m[2]; }
+  if(type && ![...sel.options].some(o=>o.value===type)){
+    const o=document.createElement('option'); o.value=o.textContent=type; if(src==='vin') o.dataset.vin='1'; sel.appendChild(o);
   }
-  sel.value=text||'';
-  rateEngineSrc=src||'pick';
+  sel.value=type;
+  size.value=liters;
+  size.disabled=src==='vin'&&!!text; // a VIN engine already includes its size
+  rateEngineSrc=src==='vin'&&text?'vin':'pick';
 }
-document.getElementById('rateEngine').addEventListener('change',()=>{ rateEngineSrc='pick'; });
+document.getElementById('rateEngine').addEventListener('change',e=>{
+  const fromVin=!!e.target.selectedOptions[0]?.dataset.vin;
+  rateEngineSrc=fromVin?'vin':'pick';
+  document.getElementById('rateSize').disabled=fromVin;
+});
+function rateEngineValue(){
+  const type=document.getElementById('rateEngine').value, size=document.getElementById('rateSize');
+  return rateEngineSrc==='vin'?type:[size.value,type].filter(Boolean).join(' ');
+}
 
 async function setRateCar(year, make, model){
   document.getElementById('rateYear').value=year||'';
@@ -1990,7 +2014,7 @@ async function openRate(v, source){
   track('owner_rate_open',{source});
   document.getElementById('rateErr').style.display='none';
   document.getElementById('rateVin').value='';
-  document.getElementById('rateVinHelp').textContent="Fills in the car and exact engine. We don't save your VIN.";
+  document.getElementById('rateVinHelp').textContent="Fills in the car and exact engine. Your VIN is on your insurance card or app. We don't save it.";
   document.getElementById('rateSub').textContent=currentUser&&ownerCredited
     ?'Takes about a minute, and it helps other buyers see how this car really holds up.'
     :'Takes about a minute. It helps other buyers, and your first car earns a free full report.';
@@ -2053,7 +2077,7 @@ function collectRate(){
   const problems=[...document.querySelectorAll('#rateProblems .prob')].filter(r=>r.querySelector('input[type=checkbox]').checked)
     .map(r=>({k:r.dataset.k, mi:r.querySelector('.prob-more input').value, cost:r.querySelector('.prob-more select').value}));
   rateError('');
-  return {year,make,model,miles,rating,buyAgain:again==='yes',engine:document.getElementById('rateEngine').value,engineSrc:rateEngineSrc,problems};
+  return {year,make,model,miles,rating,buyAgain:again==='yes',engine:rateEngineValue(),engineSrc:rateEngineSrc,problems};
 }
 async function submitRate(){
   const data=collectRate();
@@ -2136,12 +2160,22 @@ async function purchaseBundle(bundleType){
     setTimeout(refreshCredits,2500); setTimeout(refreshCredits,7000);
   });
 })();
+// Rate links from the main site and /reliability pages:
+// phone.html?rate=1[&year=2012&make=ford&model=escape]&src=home_section opens the rating form
+(async function handleRateLink(){
+  const q=new URLSearchParams(location.search);
+  if(!q.has('rate')) return;
+  const year=q.get('year')||'', make=q.get('make')||'', model=q.get('model')||'';
+  const utm=new URLSearchParams([...q].filter(([k])=>k.startsWith('utm_'))).toString();
+  history.replaceState(null,'',location.pathname+(utm?'?'+utm:''));
+  await openRate(make&&model?{year,make,model}:null,q.get('src')||'link');
+})();
 // Car links from share cards and the /reliability pages:
 // phone.html?year=2018&make=honda&model=accord&src=share opens straight to that grade
 (async function handleCarLink(){
   const q=new URLSearchParams(location.search);
   const year=q.get('year'), make=q.get('make'), model=q.get('model');
-  if(!year||!make||!model) return;
+  if(!year||!make||!model||q.has('rate')) return;
   const utm=new URLSearchParams([...q].filter(([k])=>k.startsWith('utm_'))).toString();
   history.replaceState(null,'',location.pathname+(utm?'?'+utm:''));
   track('car_link_open',{src:q.get('src')||'unknown',make,model});

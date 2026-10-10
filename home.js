@@ -164,6 +164,7 @@
 
     const q = new URLSearchParams({ year, make, model, src: live ? 'home_hero' : 'home_example' });
     $('hg-full').href = `/phone.html?${q}`;
+    $('hg-rate').href = `/phone.html?${new URLSearchParams({ rate: 1, year, make, model, src: live ? 'home_hero' : 'home_example' })}`;
     $('hg-note').textContent = rating.yearGraded
       ? `From ${Number(rating.complaints).toLocaleString()} owner complaints filed with NHTSA for the ${year} model year${rating.limited ? '. Newer model year, so this grade may change.' : '.'}`
       : rating.source === 'nhtsa'
