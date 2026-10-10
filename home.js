@@ -126,7 +126,7 @@
 
   function render({ year, make, model, rating }, live) {
     const name = `${year} ${fmtMake(make)} ${fmtModel(model)}`;
-    shown = { year, make, model, name, rating, topIssue: rating.issues?.[0] || null, deal: null };
+    shown = { year, make, model, name, rating, topIssue: window.GMCIssues ? GMCIssues.headlineIssue(rating.issues) : null, deal: null };
 
     $('hg-tag').textContent = live ? 'Your result' : 'Example';
     $('hg-tag').classList.toggle('live', live);
@@ -154,9 +154,10 @@
       $(id).className = 'lp-g ' + (g ? tone(g) : '');
     }
 
-    const top = rating.issues?.[0];
+    const top = window.GMCIssues ? GMCIssues.headlineIssue(rating.issues) : null;
     $('hg-issue').style.display = top ? '' : 'none';
     if (top) {
+      $('hg-issue-label').textContent = top.heading;
       $('hg-issue-text').textContent = top.label;
       $('hg-issue-meta').textContent = `${top.count.toLocaleString()} reports${top.recall ? ' · Recall issued' : ''}`;
     }
@@ -218,7 +219,7 @@
     try {
       const y = await getJSON(`reliability/${encodeURIComponent(make)}/years/${encodeURIComponent(model)}/${year}`);
       if (!y?.o) throw new Error('no data');
-      const top = window.GMCIssues ? GMCIssues.parseIssues(y.i)[0] : null;
+      const top = window.GMCIssues ? GMCIssues.headlineIssue(GMCIssues.parseIssues(y.i)) : null;
       el.classList.remove('skeleton');
       el.style.setProperty('--strip', toneColor(y.o));
       el.innerHTML = `
@@ -228,7 +229,7 @@
         </div>
         <div class="lp-ex-issue">${score(y.o) >= 78
           ? `Only <b>${Number(y.n).toLocaleString()}</b> owner complaints for this model year`
-          : top ? `#1 complaint: <b>${esc(top.label)}</b>${top.recall ? ' (recalled)' : ''}` : `${Number(y.n).toLocaleString()} owner complaints`}</div>`;
+          : top ? `${esc(top.heading)}: <b>${esc(top.label)}</b>${top.recall ? ' (recalled)' : ''}` : `${Number(y.n).toLocaleString()} owner complaints`}</div>`;
     } catch (e) {
       el.remove();
     }

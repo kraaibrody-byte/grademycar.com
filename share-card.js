@@ -5,7 +5,7 @@
 //   GMCShare.share({ year, make, model, name, rating, deal, topIssue }, { toast, track })
 //     rating:   { engine, transmission, overall, ev? }
 //     deal:     { label, score, badge } or null (only when the premium report is open)
-//     topIssue: { label, count, recall } or null (from GMCIssues.parseIssues)
+//     topIssue: { label, count, recall, heading } or null (from GMCIssues.headlineIssue)
 (function (root) {
   const FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
   const SCORE = { 'A+': 97, 'A': 93, 'A-': 88, 'B+': 83, 'B': 78, 'B-': 73, 'C+': 68, 'C': 63, 'C-': 58, 'D+': 53, 'D': 48, 'D-': 43, 'F': 30 };
@@ -76,7 +76,7 @@
     // Up to two lines between the tiles and the footer: deal score, #1 complaint
     const lines = [];
     if (deal) lines.push([`${deal.label}: ${deal.score}/100 · ${deal.badge}`, '#4338CA', 800]);
-    if (topIssue) lines.push([`#1 complaint: ${topIssue.label}${topIssue.recall ? ' (recalled)' : ''}`, '#334155', 700]);
+    if (topIssue) lines.push([`${topIssue.heading}: ${topIssue.label}${topIssue.recall ? ' (recalled)' : ''}`, '#334155', 700]);
     if (!lines.length) lines.push(['Engine & transmission reliability, graded.', '#64748B', 600]);
     const ys = lines.length === 1 ? [1155] : [1130, 1185];
     lines.forEach(([text, color, weight], i) => {

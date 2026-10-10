@@ -1457,7 +1457,7 @@
                         </div>
                     </div>
                     <div class="lp-issue" id="hg-issue">
-                        <span class="lp-issue-label">#1 complaint</span>
+                        <span class="lp-issue-label" id="hg-issue-label">Top engine/transmission problem</span>
                         <span id="hg-issue-text">Transmission slipping / rough shifting</span>
                         <span class="lp-issue-meta" id="hg-issue-meta">1,468 reports · Recall issued</span>
                     </div>
@@ -3170,10 +3170,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const rating = yg?.o
                     ? { engine: yg.e, transmission: yg.t, overall: yg.o, ev: modelRating?.ev }
                     : modelRating;
-                const topIssue = window.GMCIssues ? GMCIssues.parseIssues(yg?.i)[0] : null;
+                const topIssue = window.GMCIssues ? GMCIssues.headlineIssue(GMCIssues.parseIssues(yg?.i)) : null;
                 const gradeNote = yg?.o
                     ? `Graded for the ${window.escapeHTML(String(year))} model year from ${Number(yg.n).toLocaleString()} owner complaints filed with NHTSA, adjusted for how many were sold.${yg.l ? ' Newer model year, so this grade may change.' : ''}`
-                      + (topIssue ? `<br><span style="color:#1e293b">Most complaints: <b>${window.escapeHTML(topIssue.label)}</b> (${topIssue.count.toLocaleString()})</span>${topIssue.recall ? '<span class="recall-pill">Recall issued</span>' : ''}` : '')
+                      + (topIssue ? `<br><span style="color:#1e293b">${window.escapeHTML(topIssue.heading)}: <b>${window.escapeHTML(topIssue.label)}</b> (${topIssue.count.toLocaleString()})</span>${topIssue.recall ? '<span class="recall-pill">Recall issued</span>' : ''}` : '')
                     : modelRating?.source === 'nhtsa'
                         ? `Model grade across the ${window.escapeHTML(modelRating.years || 'recent')} model years, from NHTSA owner complaints.`
                         : '';

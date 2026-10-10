@@ -4,26 +4,31 @@
 // re:    matched against complaint/recall text (lowercased); one complaint can hit several
 // label: shown to users
 // tip:   what to check before buying (premium report)
+// drivetrain: engine/transmission problem; these lead under the grade (see headlineIssue)
 // Order matters only for bit positions in the cache, so append new themes at the end.
 (function (root) {
   const ISSUE_THEMES = {
     stall: {
       label: 'Stalling / loss of power',
+      drivetrain: true,
       tip: 'Ask if any stalling or fuel pump recall work was done, and watch for hesitation on a test drive.',
       re: /stall|loss of (motive )?power|lost (all )?(motive )?power|power loss|engine (shut|died|cut)|(shut|shuts|shutting) (off|down) while|dies while/,
     },
     oil: {
       label: 'Oil burning / oil dilution',
+      drivetrain: true,
       tip: 'Check the oil level and whether it smells like gas, and ask for oil-change records.',
       re: /oil consumption|burn(s|ing)? (excessive )?oil|consum(es|ing) (excessive )?oil|oil dilution|(gas|fuel|gasoline) in (the )?oil|oil level (ris|increas)/,
     },
     engine: {
       label: 'Engine failure / knocking',
+      drivetrain: true,
       tip: 'Listen for knocking on a cold start and ask whether the engine was ever replaced.',
       re: /engine (fail|seiz|blew|blown|knock|rod)|seized|rod knock|knocking|catastrophic|(replace|replaced|new) engine|engine replacement/,
     },
     trans: {
       label: 'Transmission slipping / rough shifting',
+      drivetrain: true,
       tip: 'Test drive from a stop several times; feel for slipping, hesitation or hard shifts, and ask for transmission service records.',
       re: /transmission|shift(s|ing|ed)? (hard|harsh|rough|erratic)|hard shift|harsh shift|slip(s|ping)|\bcvt\b|jerk|lurch|clunk|won.?t (go into|shift)|stuck in gear/,
     },
@@ -43,7 +48,7 @@
       re: /infotainment|touch ?screen|backup camera|rear ?view camera|radio|bluetooth|carplay|android auto|screen (went|goes|is) (black|blank)|frozen screen/,
     },
     steering: {
-      label: 'Steering problems',
+      label: 'Power steering failure / steering faults',
       tip: 'Check for a heavy, loose or notchy steering feel and any steering warning lights.',
       re: /steering/,
     },
@@ -54,6 +59,7 @@
     },
     coolant: {
       label: 'Head gasket / coolant / overheating',
+      drivetrain: true,
       tip: 'Ask if the head gasket was ever replaced, look for coolant loss or white exhaust smoke, and watch the temperature gauge on a long drive.',
       re: /coolant|overheat|water pump|radiator|head gasket/,
     },
@@ -123,7 +129,22 @@
     }).filter(Boolean);
   }
 
-  const api = { ISSUE_THEMES, KEYS, themeBits, parseIssues };
+  // The one problem shown under the grade, as {key, label, count, recall, heading} or null.
+  // Grades are mostly engine + transmission, so the worst drivetrain problem leads; a
+  // recalled one counts half since the fix was usually free. Otherwise fall back to the
+  // most-reported problem. (Not fire: its pattern also catches "smoke", so it can't
+  // headline on its own without someone reading the complaints.)
+  const MIN_HEADLINE = 10;
+  function headlineIssue(issues) {
+    issues = issues || [];
+    const weight = i => i.count * (i.recall ? 0.5 : 1);
+    const dt = issues.filter(i => ISSUE_THEMES[i.key].drivetrain && i.count >= MIN_HEADLINE)
+      .sort((a, b) => weight(b) - weight(a))[0];
+    if (dt) return { ...dt, heading: 'Top engine/transmission problem' };
+    return issues[0] ? { ...issues[0], heading: 'Most complaints' } : null;
+  }
+
+  const api = { ISSUE_THEMES, KEYS, themeBits, parseIssues, headlineIssue };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GMCIssues = api;
 })(typeof window !== 'undefined' ? window : this);

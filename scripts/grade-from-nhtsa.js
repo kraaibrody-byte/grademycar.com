@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const { MODELS, FIRST_YEAR, LAST_YEAR, salesFor } = require('./nhtsa-models');
 const { GROUP_NAMES } = require('./fetch-nhtsa');
-const { KEYS: THEMES } = require('../issue-themes');
+const { KEYS: THEMES, ISSUE_THEMES } = require('../issue-themes');
 
 const args = process.argv.slice(2);
 const CACHE = path.resolve(args.find(a => !a.startsWith('--')) || path.join(__dirname, '..', '..', 'AI', 'nhtsa-cache'));
@@ -78,9 +78,12 @@ function readCounts(m, y) {
   }
   sum.recalls = campaigns.size;
   // Top problems: "stall:261:1,head:40:0" (key:complaints:recall issued)
-  sum.issues = Object.entries(sum.themes)
-    .filter(([, n]) => n >= 3)
-    .sort((a, b) => b[1] - a[1]).slice(0, 4)
+  const ranked = Object.entries(sum.themes).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1]);
+  const top = ranked.slice(0, 4);
+  // Always keep the worst engine/transmission problem: it's the one shown under the grade
+  const dt = ranked.find(([k]) => ISSUE_THEMES[k].drivetrain);
+  if (dt && !top.includes(dt)) top.push(dt);
+  sum.issues = top
     .map(([k, n]) => `${k}:${n}:${recalled & (1 << THEMES.indexOf(k)) ? 1 : 0}`).join(',');
   return sum;
 }

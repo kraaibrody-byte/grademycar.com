@@ -7,7 +7,7 @@
 // Writes reliability/<slug>/index.html, reliability/index.html, sitemap.xml.
 
 const fs = require('fs');
-const { parseIssues } = require('../issue-themes');
+const { parseIssues, headlineIssue } = require('../issue-themes');
 const path = require('path');
 
 const SITE = 'https://www.grademycar.com';
@@ -248,7 +248,7 @@ function carPage(car, cars) {
   const solid = yearList.filter(x => !x.l);
   const best = solid.filter(x => score(x.o) >= 88).map(x => x.y);
   const avoid = solid.filter(x => score(x.o) < 58).sort((a, b) => score(a.o) - score(b.o));
-  const topIssue = x => parseIssues(x.i)[0];
+  const topIssue = x => headlineIssue(parseIssues(x.i));
   // "2012-2018 (transmission slipping / rough shifting), 2020 (stalling / loss of power)":
   // consecutive years with the same top problem are merged into one range
   const avoidSummary = xs => {
@@ -287,7 +287,7 @@ function carPage(car, cars) {
         ? `Based on NHTSA owner complaints, the most reliable ${name} model years are ${yearsList(best)}.`
         : `No ${name} model year stands out as exceptionally reliable in NHTSA owner complaints. The best-graded years are ${yearsList([...solid].sort((a, b) => score(b.o) - score(a.o)).slice(0, 3).map(x => x.y).sort())}.`],
       [`What ${name} years should I avoid?`, avoid.length
-        ? `Based on NHTSA owner complaints, the ${name} years to be most careful with are ${yearsList(avoid.map(x => x.y).sort())}. ${avoid.slice(0, 2).map(x => { const t = topIssue(x); return `The ${x.y} grades ${article(x.o)} ${x.o} overall (${ENG} ${x.e}, ${TRN} ${x.t})${t ? `, and its most common complaint is ${t.label.toLowerCase()}${t.recall ? ', which a recall covers' : ''}` : ''}.`; }).join(' ')}`
+        ? `Based on NHTSA owner complaints, the ${name} years to be most careful with are ${yearsList(avoid.map(x => x.y).sort())}. ${avoid.slice(0, 2).map(x => { const t = topIssue(x); return `The ${x.y} grades ${article(x.o)} ${x.o} overall (${ENG} ${x.e}, ${TRN} ${x.t})${t ? `, and its ${t.heading === 'Most complaints' ? 'most common complaint' : 'top engine/transmission problem'} is ${t.label.toLowerCase()}${t.recall ? ', which a recall covers' : ''}` : ''}.`; }).join(' ')}`
         : `No ${name} model year stands out as a problem year in NHTSA owner complaints.`]);
   }
   if (lifeAnswer) faqs.splice(1, 0, [`How many miles will a ${name} last?`, lifeAnswer]);
@@ -303,7 +303,7 @@ function carPage(car, cars) {
 
   const yearBlock = yearList.length ? `<section class="card years"><h2>${esc(name)} reliability by year</h2>
     <p>Overall grade for each model year, from owner complaints filed with NHTSA. Tap a year to see its full grade.</p>
-    <div class="ygrid">${yearList.map(x => `<a class="yr ${tone(x.o)}${x.l ? ' lim' : ''}"${topIssue(x) ? ` title="Most complaints: ${esc(topIssue(x).label)}"` : ''} href="/phone.html?year=${x.y}&make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&src=seo_year"><span>${x.y}</span><b>${esc(x.o)}</b></a>`).join('')}</div>
+    <div class="ygrid">${yearList.map(x => `<a class="yr ${tone(x.o)}${x.l ? ' lim' : ''}"${topIssue(x) ? ` title="${esc(topIssue(x).heading)}: ${esc(topIssue(x).label)}"` : ''} href="/phone.html?year=${x.y}&make=${encodeURIComponent(car.make)}&model=${encodeURIComponent(car.model)}&src=seo_year"><span>${x.y}</span><b>${esc(x.o)}</b></a>`).join('')}</div>
     ${best.length ? `<p class="yl"><b class="good-t">Best years:</b> ${yearsList(best)}</p>` : ''}
     ${avoid.length ? `<p class="yl"><b class="bad-t">Years to avoid:</b> ${esc(avoidSummary(avoid))}</p>` : ''}
     ${yearList.some(x => x.l) ? '<p class="note">Faded years are recent, so fewer complaints have come in. Their grades may change.</p>' : ''}

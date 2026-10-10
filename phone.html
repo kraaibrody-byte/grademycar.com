@@ -677,7 +677,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.09-b';
+const APP_VERSION='2026.10.09-c';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1475,9 +1475,9 @@ function renderGradeSource(rating, year){
   if(rating?.yearGraded){
     html=`Graded for the <b>${esc(year)}</b> model year from <b>${Number(rating.complaints).toLocaleString()}</b> owner complaints filed with NHTSA, adjusted for how many were sold.`;
     if(rating.limited) html+=' Newer model year, so fewer complaints are in yet. This grade may change.';
-    // Free: the #1 problem behind the grade. The full breakdown is in the premium report.
-    const top=rating.issues?.[0];
-    if(top) html+=`<div class="top-issue">Most complaints: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}</div>`;
+    // Free: the main problem behind the grade (engine/transmission first). The full breakdown is in the premium report.
+    const top=window.GMCIssues?GMCIssues.headlineIssue(rating.issues):null;
+    if(top) html+=`<div class="top-issue">${esc(top.heading)}: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}</div>`;
   } else if(rating?.source==='nhtsa'){
     const why=Number(year)<2005?`We grade model years from 2005 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
     html=`${why}, so this is the model's grade across the ${esc(rating.years||'recent')} model years, from NHTSA owner complaints.`;
@@ -1510,7 +1510,7 @@ function shareGrade(){
           badge:document.getElementById('dealBadge').textContent};
   }
   return GMCShare.share({year:v.year, make:v.make, model:v.model, name:vehicleName(v), rating:v.rating,
-                         deal, topIssue:v.rating.issues?.[0]||null}, {toast, track});
+                         deal, topIssue:window.GMCIssues?GMCIssues.headlineIssue(v.rating.issues):null}, {toast, track});
 }
 
 // ── 9. UNLOCK PREMIUM REPORT ─────────────────────────────────────────────────
