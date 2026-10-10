@@ -677,7 +677,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.09-a';
+const APP_VERSION='2026.10.09-b';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -821,7 +821,7 @@ auth.onAuthStateChanged(user=>{
   updateUnlimitedNote();
   detachListeners();
   if(user){
-    if(!signingUp) refreshCredits();
+    if(!signingUp){ refreshCredits(); ensureUserRecord(user); }
     listenToHistory(user.uid);
     listenToSaved(user.uid);
   } else {
@@ -830,6 +830,21 @@ auth.onAuthStateChanged(user=>{
     updateSaveBtn();
   }
 });
+
+// Accounts whose sign-up record write failed never show up in admin.html, which
+// lists users/ — recreate the record on login (index.html's dashboard does the same).
+// Rules only allow creating it once, starting at 0 or 1 credits.
+function ensureUserRecord(user){
+  const r=rtdb.ref(`users/${user.uid}`);
+  r.once('value').then(snap=>{
+    if(snap.exists()) return;
+    const isNew=Date.now()-Date.parse(user.metadata.creationTime)<86400000; // still owed the free report
+    return r.set({
+      email:user.email||'', createdAt:firebase.database.ServerValue.TIMESTAMP,
+      reportCredits:isNew?1:0, totalSearches:0, totalPurchases:0, totalSpent:0
+    }).then(()=>refreshCredits());
+  }).catch(e=>console.warn('[GMC] user record check failed',e));
+}
 
 // Ask the server for the real balance. Never assume access on failure.
 async function refreshCredits(){

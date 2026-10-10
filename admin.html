@@ -511,6 +511,8 @@ onAuthStateChanged(auth, (user) => {
   } else {
     $("login-screen").style.display = "flex";
     $("app").style.display = "none";
+    ref(db, "users").off(); // the next sign-in re-attaches the live user list
+    usersListening = false;
   }
 });
 
@@ -569,20 +571,31 @@ async function loadEverything() {
   loadReliability(); // fire and forget, has its own UI
 }
 
-async function loadUsers() {
+// Live: new sign-ups and credit changes show up without refreshing the page.
+// Resolves after the first snapshot so loadEverything can await it.
+let usersListening = false;
+function loadUsers() {
+  if (usersListening) return Promise.resolve();
   $("overview-banner").innerHTML = "";
   $("users-banner").innerHTML = "";
-  try {
-    const snap = await get(ref(db, "users"));
-    usersCache = snap.exists() ? snap.val() : {};
-    renderOverview();
-    renderUsers();
-  } catch (e) {
-    permissionBanner($("overview-banner"), e);
-    permissionBanner($("users-banner"), e);
-    $("kpi-users").textContent = "—";
-    $("users-tbody").innerHTML = `<tr><td colspan="7" class="empty-note">Couldn't load users — see banner above.</td></tr>`;
-  }
+  return new Promise(resolve => {
+    ref(db, "users").on("value", snap => {
+      usersListening = true;
+      $("overview-banner").innerHTML = "";
+      $("users-banner").innerHTML = "";
+      usersCache = snap.exists() ? snap.val() : {};
+      renderOverview();
+      renderUsers();
+      resolve();
+    }, e => {
+      usersListening = false;
+      permissionBanner($("overview-banner"), e);
+      permissionBanner($("users-banner"), e);
+      $("kpi-users").textContent = "—";
+      $("users-tbody").innerHTML = `<tr><td colspan="7" class="empty-note">Couldn't load users — see banner above.</td></tr>`;
+      resolve();
+    });
+  });
 }
 
 function renderOverview() {
