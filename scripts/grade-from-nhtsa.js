@@ -129,6 +129,19 @@ for (const [y, rs] of Object.entries(cohorts)) {
   }
   const sc = sortNum(pool.map(r => combine(pct(d.eng, r.eng), pct(d.trn, r.trn), pct(d.oth, r.oth))));
   for (const r of rs) r.ps = pct(sc, r.score);
+  // Numbers for the app's "Why this grade?" panel: rates per 1,000 sold, the typical
+  // (median) rate among the cars it was ranked against, and its place among them
+  // (1 = fewest complaints)
+  const median = a => a[Math.floor(a.length / 2)];
+  const place = (a, v) => a.filter(x => x < v).length + 1;
+  const yrs = pool.map(r => r.y);
+  for (const r of rs) {
+    r.why = {
+      er: +r.eng.toFixed(2), tr: +r.trn.toFixed(2), em: +median(d.eng).toFixed(2), tm: +median(d.trn).toFixed(2),
+      ek: place(d.eng, r.eng), tk: place(d.trn, r.trn), ok: place(sc, r.score), c: pool.length,
+      ...(Math.min(...yrs) !== Math.max(...yrs) ? { p: `${Math.min(...yrs)}-${Math.max(...yrs)}` } : {}),
+    };
+  }
 }
 
 // 2. Grades per model-year and per model
@@ -141,7 +154,7 @@ for (const m of MODELS) {
     years[r.y] = {
       engine: letter(r.pe), transmission: letter(r.pt), overall: letter(r.ps),
       complaints: r.c.total, engineComplaints: m.ev ? r.c.evdrive : r.c.engine, transComplaints: r.c.powertrain,
-      issues: r.c.issues, recalls: r.c.recalls,
+      issues: r.c.issues, recalls: r.c.recalls, why: r.why,
       ...(r.newish ? { limited: true } : {}),
     };
   }

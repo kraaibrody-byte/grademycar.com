@@ -89,6 +89,16 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .grade-source{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;line-height:1.45;color:var(--muted);text-align:center}
 .grade-source b{color:var(--ink)}
 .top-issue{margin-top:8px;font-size:12px;color:var(--ink);line-height:1.45}
+/* "Why this grade?" panel */
+.why-link{display:inline-block;margin-top:8px;border:0;background:none;color:var(--blue);font-weight:700;font-size:12px;cursor:pointer;padding:4px}
+.why{margin-top:10px;text-align:left;background:var(--bg);border-radius:13px;padding:12px 14px;font-size:12px;line-height:1.5;color:var(--ink)}
+.why p{margin:0 0 9px}.why p:last-child{margin-bottom:0}
+.why b{color:var(--navy)}
+.why .yrs{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.why .yrs span{background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 7px;font-weight:700;font-size:11px}
+.why .yrs span.me{border-color:var(--blue);color:var(--blue)}
+.why .fine{color:var(--muted);font-size:11px}
+.why a{color:var(--blue);font-weight:700}
 .recall-pill{display:inline-block;font-size:10px;font-weight:750;padding:2px 7px;border-radius:999px;background:#DBEAFE;color:#1D4ED8;margin-left:4px;vertical-align:1px;white-space:nowrap}
 .owner-reports{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}
 .owner-reports strong{font-size:13px;color:var(--navy)}
@@ -548,6 +558,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
               </div>
             </div>
             <div class="grade-source hidden" id="gradeSource"></div>
+            <div class="why hidden" id="whyPanel"></div>
           </div>
 
           <!-- Signed-out only, once per grade. Never covers or gates the grade above. -->
@@ -817,7 +828,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.12-b';
+const APP_VERSION='2026.10.12-c';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1750,7 +1761,7 @@ async function checkGrade(){
 
     // Keep the VIN only if it still describes the car being graded
     const vin=(vinInfo && vinInfo.year==year && vinInfo.make===make.toLowerCase())?vinInfo:null;
-    currentVehicle={year,make,model,makeData,rating,vin};
+    currentVehicle={year,make,model,makeData,rating,vin,yearsData};
     currentResult={year,make,model,grade:rating?.overall||null};
     currentSavedId=null;
 
@@ -1806,7 +1817,7 @@ function yearRating(modelRating, y, year, yearsData){
   }
   return {engine:y.e, transmission:y.t, overall:y.o, ev:modelRating?.ev, source:'nhtsa',
           yearGraded:true, complaints:y.n, limited:!!y.l,
-          issues:window.GMCIssues?GMCIssues.parseIssues(y.i):[]};
+          issues:window.GMCIssues?GMCIssues.parseIssues(y.i):[], why:y.x||null};
 }
 function renderGradeSource(rating, year){
   const el=document.getElementById('gradeSource');
@@ -1821,6 +1832,7 @@ function renderGradeSource(rating, year){
     // Free: the main problem behind the grade (engine/transmission first). The full breakdown is in the premium report.
     const top=window.GMCIssues?GMCIssues.headlineIssue(rating.issues):null;
     if(top) html+=`<div class="top-issue">${esc(top.heading)}: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}</div>`;
+    html+='<button class="why-link" onclick="toggleWhy()">Why this grade? ›</button>';
   } else if(rating?.source==='nhtsa'){
     const why=Number(year)<2005?`We grade model years from 2005 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
     html=`${why}, so this is the model's grade across the ${esc(rating.years||'recent')} model years, from NHTSA owner complaints.`;
@@ -1829,6 +1841,53 @@ function renderGradeSource(rating, year){
   }
   el.innerHTML=html;
   el.classList.toggle('hidden',!html);
+  document.getElementById('whyPanel').classList.add('hidden');
+}
+
+// ── WHY THIS GRADE? ──────────────────────────────────────────────────────────
+// The numbers behind a model-year grade, so people can check it for themselves:
+// complaint rates against the typical car of the same year, its place among them,
+// the nearby model years, and a link to the complaints on nhtsa.gov.
+// The rates come from the `x` field the grading script stores with each year.
+function toggleWhy(){
+  const el=document.getElementById('whyPanel');
+  if(!el.classList.contains('hidden')){ el.classList.add('hidden'); return; }
+  const v=currentVehicle; if(!v?.rating?.yearGraded) return;
+  el.innerHTML=whyHtml(v);
+  el.classList.remove('hidden');
+  track('why_grade_open',{make:v.make,model:v.model,year:String(v.year),grade:v.rating.overall,has_numbers:!!v.rating.why});
+}
+function whyHtml(v){
+  const r=v.rating, x=r.why, year=esc(v.year);
+  const ord=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
+  const vsTypical=(rate,typ)=>{
+    if(!(typ>0)) return '';
+    const k=rate/typ;
+    return k>=1.5?`, ${k.toFixed(k>=10?0:1).replace(/\.0$/,'')}× the typical ${year} car (${typ})`
+         : k<=0.67?`, well under the typical ${year} car (${typ})`
+         : `, close to the typical ${year} car (${typ})`;
+  };
+  const among=x?(x.p?`cars from ${esc(x.p)}`:`${year} models`):'';
+  const line=(label,grade,rate,typ,rank)=>`<p><b>${label}: ${esc(grade||'—')}</b>`+
+    (x?` · ${rate} complaints per 1,000 sold${vsTypical(rate,typ)}. ${ord(rank)} of ${x.c} ${among} we grade (1st = fewest complaints).`:'')+`</p>`;
+  let h='';
+  h+=line(r.ev?'Motor & battery':'Engine',r.engine,x?.er,x?.em,x?.ek);
+  h+=line(r.ev?'Drivetrain':'Transmission',r.transmission,x?.tr,x?.tm,x?.tk);
+  h+=`<p><b>Overall: ${esc(r.overall)}</b> · counts engine 40%, transmission 40% and everything else 20%`+
+     (x?`, which puts it ${ord(x.ok)} of ${x.c}.`:'.')+
+     ` Based on ${Number(r.complaints).toLocaleString()} owner complaints across all versions of the ${year} ${esc(displayModel(v.model))}.</p>`;
+  // Nearby model years, so a bad grade can be seen in context
+  const ys=Object.keys(v.yearsData||{}).filter(k=>v.yearsData[k]?.o).map(Number).sort((a,b)=>a-b);
+  const i=ys.indexOf(Number(v.year));
+  if(i>=0 && ys.length>1){
+    const near=ys.slice(Math.max(0,i-2),i+3);
+    h+=`<p>Other years of the ${esc(displayModel(v.model))}:<span class="yrs">`+
+       near.map(y=>`<span class="${y===Number(v.year)?'me':''}">${y} · ${esc(v.yearsData[y].o)}</span>`).join('')+`</span></p>`;
+  }
+  h+=`<p class="fine">Grades compare each car only with cars from the same model year, by complaints per 1,000 sold, so they're relative: a C means more complaints than most ${year} cars, not that every one has problems. Sales figures are estimates, and NHTSA mostly hears from owners who had a problem.</p>`;
+  const nhtsa=`https://www.nhtsa.gov/vehicle/${encodeURIComponent(v.year)}/${encodeURIComponent(displayMake(v.make).toUpperCase())}/${encodeURIComponent(displayModel(v.model).toUpperCase())}`;
+  h+=`<p><a href="${nhtsa}" target="_blank" rel="noopener" onclick="track('why_grade_nhtsa',{make:'${esc(v.make)}',model:'${esc(v.model)}'})">See the complaints on nhtsa.gov ↗</a></p>`;
+  return h;
 }
 
 function setGradeCircle(id, grade){
