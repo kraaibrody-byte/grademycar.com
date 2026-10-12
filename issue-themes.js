@@ -5,6 +5,9 @@
 // label: shown to users
 // tip:   what to check before buying (premium report)
 // drivetrain: engine/transmission problem; these lead under the grade (see headlineIssue)
+// subs:  for broad themes, the specific causes. When one clearly dominates a model year's
+//        complaints (see dominantSub), that year shows its label and tip instead, so a
+//        2018 Accord says "Blown head gasket" and a 2019 RAV4 "Overheating / coolant leaks".
 // Order matters only for bit positions in the cache, so append new themes at the end.
 (function (root) {
   const ISSUE_THEMES = {
@@ -19,6 +22,12 @@
       drivetrain: true,
       tip: 'Check the oil level and whether it smells like gas, and ask for oil-change records.',
       re: /oil consumption|burn(s|ing)? (excessive )?oil|consum(es|ing) (excessive )?oil|oil dilution|(gas|fuel|gasoline) in (the )?oil|oil level (ris|increas)/,
+      subs: [
+        { key: 'dilution', label: 'Oil dilution (fuel in the oil)', tip: 'Check whether the oil smells like gas or the level is above full, and ask whether the dealer software update was done.',
+          re: /oil dilution|(gas|fuel|gasoline) in (the )?oil|oil level (ris|increas)|oil (smells|smelled) (of|like) (gas|fuel)/ },
+        { key: 'burning', label: 'Oil burning', tip: 'Ask how often it needs oil topped up between changes, and look for blue exhaust smoke.',
+          re: /oil consumption|burn(s|ing)? (excessive )?oil|consum(es|ing) (excessive )?oil/ },
+      ],
     },
     engine: {
       label: 'Engine failure / knocking',
@@ -58,10 +67,18 @@
       re: /brake(s)? (fail|failed|grind|grinding|soft|spongy|went to the floor)|brake pedal|\babs\b|brake booster|vacuum pump/,
     },
     coolant: {
-      label: 'Head gasket / coolant / overheating',
+      label: 'Cooling system / overheating',
       drivetrain: true,
-      tip: 'Ask if the head gasket was ever replaced, look for coolant loss or white exhaust smoke, and watch the temperature gauge on a long drive.',
+      tip: 'Look for coolant loss or white exhaust smoke, ask about cooling-system repairs, and watch the temperature gauge on a long drive.',
       re: /coolant|overheat|water pump|radiator|head gasket/,
+      subs: [
+        { key: 'gasket', label: 'Blown head gasket', tip: 'Ask if the head gasket was ever replaced, look for coolant loss or white exhaust smoke, and watch the temperature gauge on a long drive.',
+          re: /head gasket/ },
+        { key: 'leak', label: 'Overheating / coolant leaks', tip: 'Check the coolant level and look for leaks or crusty residue around the engine, and watch the temperature gauge on a long drive.',
+          re: /overheat|coolant (leak|loss)|leak(s|ing|ed)? (of )?coolant|losing coolant|low coolant/ },
+        { key: 'pump', label: 'Water pump failure', tip: 'Ask whether the water pump was replaced, and look for coolant drips near the front of the engine.',
+          re: /water pump|coolant pump/ },
+      ],
     },
     fuelleak: {
       label: 'Fuel leak / fuel smell',
@@ -119,13 +136,27 @@
     return bits;
   }
 
-  // "stall:261:1,oil:40:0" -> [{key, label, tip, count, recall}]
+  // The cause behind most of a theme's complaints, or null when none clearly leads.
+  // counts: {subKey: complaints mentioning it}; total: all of the theme's complaints.
+  // It has to cover most complaints that name a cause, and a good share of all of them.
+  function dominantSub(theme, counts, total) {
+    const subs = ISSUE_THEMES[theme]?.subs;
+    if (!subs) return null;
+    const named = subs.reduce((n, s) => n + (counts[s.key] || 0), 0);
+    const best = subs.map(s => [s.key, counts[s.key] || 0]).sort((a, b) => b[1] - a[1])[0];
+    return best && best[1] >= 10 && best[1] >= 0.6 * named && best[1] >= 0.25 * total ? best[0] : null;
+  }
+
+  // "stall:261:1,coolant:399:0:gasket" -> [{key, label, tip, count, recall, sub}]
+  // (the optional 4th part is the dominant cause, whose label and tip replace the theme's)
   function parseIssues(s) {
     if (!s) return [];
     return String(s).split(',').map(part => {
-      const [key, count, recall] = part.split(':');
+      const [key, count, recall, subKey] = part.split(':');
       const th = ISSUE_THEMES[key];
-      return th ? { key, label: th.label, tip: th.tip, count: Number(count), recall: recall === '1' } : null;
+      if (!th) return null;
+      const sub = subKey && th.subs ? th.subs.find(x => x.key === subKey) : null;
+      return { key, label: (sub || th).label, tip: (sub || th).tip, count: Number(count), recall: recall === '1', ...(sub ? { sub: subKey } : {}) };
     }).filter(Boolean);
   }
 
@@ -144,7 +175,7 @@
     return issues[0] ? { ...issues[0], heading: 'Most complaints' } : null;
   }
 
-  const api = { ISSUE_THEMES, KEYS, themeBits, parseIssues, headlineIssue };
+  const api = { ISSUE_THEMES, KEYS, themeBits, parseIssues, headlineIssue, dominantSub };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.GMCIssues = api;
 })(typeof window !== 'undefined' ? window : this);

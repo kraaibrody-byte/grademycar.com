@@ -13,12 +13,17 @@
 // 15-18% since 2022), so when it's empty we take the mileage the owner wrote in the
 // complaint ("blew the head gasket at 118,000 miles"). Checked against complaints that
 // have both, the text figure agrees 97-100% of the time.
-// grade-from-nhtsa.js picks it up when present.
+//
+// Also writes <cacheDir>/subcauses.json  { odiNumber: "gasket,leak" }: the specific
+// causes (issue-themes.js `subs`) each complaint's text mentions, so broad problems
+// can be labelled by their main cause. grade-from-nhtsa.js picks both up when present.
 
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { spawn } = require('child_process');
+const { ISSUE_THEMES } = require('../issue-themes');
+const SUBS = Object.values(ISSUE_THEMES).flatMap(t => t.subs || []);
 
 const CACHE = path.resolve(process.argv[2] || path.join(__dirname, '..', '..', 'AI', 'nhtsa-cache'));
 const FLAT = path.join(CACHE, 'flat');
@@ -51,7 +56,7 @@ const ids = new Set();
 })(path.join(CACHE, 'complaints-v3'));
 console.log('Complaints in cache:', ids.size.toLocaleString());
 
-function readZip(file, miles) {
+function readZip(file, miles, subs) {
   return new Promise((resolve, reject) => {
     const unzip = spawn('unzip', ['-p', file]);
     const rl = readline.createInterface({ input: unzip.stdout, crlfDelay: Infinity });
@@ -60,7 +65,13 @@ function readZip(file, miles) {
       rows++;
       const f = line.split('\t');
       const id = f[1];
-      if (!ids.has(id) || miles[id]) return; // complaints repeat once per component
+      if (!ids.has(id)) return;
+      // Complaints repeat once per component; a repeat can carry a mileage the first lacked
+      if (!(id in subs)) {
+        const text = (f[19] || '').toLowerCase();
+        subs[id] = SUBS.filter(x => x.re.test(text)).map(x => x.key).join(',');
+      }
+      if (miles[id]) return;
       const form = Number(f[17]);
       const m = form > 0 && form <= MAX_MILES ? form : textMiles(f[19] || '');
       if (m) { miles[id] = m; m === form ? fromForm++ : fromText++; }
@@ -73,12 +84,15 @@ function readZip(file, miles) {
 (async () => {
   const zips = fs.readdirSync(FLAT).filter(f => /^COMPLAINTS_RECEIVED_.*\.zip$/.test(f)).sort();
   if (!zips.length) { console.error('No COMPLAINTS_RECEIVED_*.zip in', FLAT); process.exit(1); }
-  const miles = {};
+  const miles = {}, subs = {};
   fromForm = 0; fromText = 0;
   for (const z of zips) {
-    const rows = await readZip(path.join(FLAT, z), miles);
+    const rows = await readZip(path.join(FLAT, z), miles, subs);
     console.log(`${z}: ${rows.toLocaleString()} rows`);
   }
+  const named = Object.fromEntries(Object.entries(subs).filter(([, v]) => v));
+  fs.writeFileSync(path.join(CACHE, 'subcauses.json'), JSON.stringify(named));
+  console.log(`Specific causes named in ${Object.keys(named).length.toLocaleString()} complaints -> ${path.join(CACHE, 'subcauses.json')}`);
   const n = Object.keys(miles).length;
   fs.writeFileSync(path.join(CACHE, 'mileage.json'), JSON.stringify(miles));
   console.log(`Mileage for ${n.toLocaleString()} of ${ids.size.toLocaleString()} complaints (${Math.round(100 * n / ids.size)}%: ${fromForm.toLocaleString()} from the form, ${fromText.toLocaleString()} from the text) -> ${path.join(CACHE, 'mileage.json')}`);

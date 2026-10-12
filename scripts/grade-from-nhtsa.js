@@ -22,7 +22,7 @@ const fs = require('fs');
 const path = require('path');
 const { MODELS, FIRST_YEAR, LAST_YEAR, salesFor } = require('./nhtsa-models');
 const { GROUP_NAMES } = require('./fetch-nhtsa');
-const { KEYS: THEMES, ISSUE_THEMES } = require('../issue-themes');
+const { KEYS: THEMES, ISSUE_THEMES, dominantSub } = require('../issue-themes');
 
 const args = process.argv.slice(2);
 const CACHE = path.resolve(args.find(a => !a.startsWith('--')) || path.join(__dirname, '..', '..', 'AI', 'nhtsa-cache'));
@@ -39,6 +39,11 @@ const MIN_COMPLAINTS = 8;
 const MILEAGE_FILE = path.join(CACHE, 'mileage.json');
 const MILEAGE = fs.existsSync(MILEAGE_FILE) ? JSON.parse(fs.readFileSync(MILEAGE_FILE, 'utf8')) : null;
 const MILEAGE_MIN = 30, MILEAGE_MIN_AGE = 6;
+
+// Specific causes each complaint names ("gasket,leak"), from the same script. Lets a
+// broad problem show its main cause, e.g. "Blown head gasket" (issue-themes.js `subs`).
+const SUBS_FILE = path.join(CACHE, 'subcauses.json');
+const SUBCAUSES = fs.existsSync(SUBS_FILE) ? JSON.parse(fs.readFileSync(SUBS_FILE, 'utf8')) : null;
 
 // Percentile (share of model-years doing better) -> letter. Best first.
 const CURVE = [
@@ -73,7 +78,7 @@ function readCounts(m, y) {
   }
   if (!seen.size) return null;
   const sum = { total: seen.size, themes: {} };
-  const themeMiles = {};
+  const themeMiles = {}, themeSubs = {};
   for (const name of GROUP_NAMES) sum[name] = 0;
   for (const [id, [bits, themes]] of seen) {
     GROUP_NAMES.forEach((name, i) => { if (bits & (1 << i)) sum[name]++; });
@@ -82,6 +87,10 @@ function readCounts(m, y) {
       if (!(themes & (1 << i))) return;
       sum.themes[k] = (sum.themes[k] || 0) + 1;
       if (mi) (themeMiles[k] ||= []).push(mi);
+      if (ISSUE_THEMES[k].subs && SUBCAUSES?.[id]) {
+        const c = (themeSubs[k] ||= {});
+        for (const sk of SUBCAUSES[id].split(',')) c[sk] = (c[sk] || 0) + 1;
+      }
     });
   }
   // Problem types a recall covered for this model year
@@ -98,7 +107,10 @@ function readCounts(m, y) {
   const dt = ranked.find(([k]) => ISSUE_THEMES[k].drivetrain);
   if (dt && !top.includes(dt)) top.push(dt);
   sum.issues = top
-    .map(([k, n]) => `${k}:${n}:${recalled & (1 << THEMES.indexOf(k)) ? 1 : 0}`).join(',');
+    .map(([k, n]) => {
+      const sub = themeSubs[k] ? dominantSub(k, themeSubs[k], n) : null;
+      return `${k}:${n}:${recalled & (1 << THEMES.indexOf(k)) ? 1 : 0}${sub ? ':' + sub : ''}`;
+    }).join(',');
   // Typical mileage for each top problem, in thousands: [25th percentile, median, 75th, complaints with a mileage]
   if (MILEAGE && NOW - y >= MILEAGE_MIN_AGE) {
     const k1 = v => Math.round(v / 1000);
