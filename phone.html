@@ -840,7 +840,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.12-e';
+const APP_VERSION='2026.10.12-f';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1893,6 +1893,13 @@ function whyHtml(v){
   // that the cars have reached high mileage; see grade-from-nhtsa.js)
   const top=window.GMCIssues?GMCIssues.headlineIssue(r.issues):null, tm=top&&x?.mi?.[top.key];
   if(tm) h+=`<p><b>${esc(top.label)}</b> complaints typically mention around <b>${tm[1]}k miles</b>, and half fall between ${tm[0]}k and ${tm[2]}k (from ${tm[3].toLocaleString()} complaints that give a mileage).</p>`;
+  // Recalls don't lower the grade (a recall also means many cars failed, and not every
+  // car gets the work done), so say here when one covered a top problem. Only the
+  // headline problem is named: the full problem list is in the premium report.
+  const recalled=(r.issues||[]).filter(i=>i.recall);
+  const vinCheck=`<a href="#" onclick="copyVinAndCheck();return false">Check the car's VIN on NHTSA</a>`;
+  if(top?.recall) h+=`<p>A recall was issued for <b>${esc(top.label.toLowerCase())}</b> on the ${year} ${esc(displayModel(v.model))}. If this car had it done (it's free), that risk is much lower. ${vinCheck}.</p>`;
+  else if(recalled.length) h+=`<p>Recalls were issued for ${recalled.length===1?'one':recalled.length} of this model year's most-reported problems. If this car had the work done (it's free), those risks are lower. ${vinCheck}.</p>`;
   // Nearby model years, so a bad grade can be seen in context
   const ys=Object.keys(v.yearsData||{}).filter(k=>v.yearsData[k]?.o).map(Number).sort((a,b)=>a-b);
   const i=ys.indexOf(Number(v.year));
@@ -2039,6 +2046,7 @@ function renderRiskCard(mileage){
     <p>${esc(top.label)} complaints on the ${esc(v.year)} ${esc(displayModel(v.model))} typically come in around <b>${mid}k miles</b>, and half fall between ${lo}k and ${hi}k.</p>
     <div class="risk-bar"><div class="win" style="left:${pos(lo)}%;width:${pos(hi)-pos(lo)}%"></div><div class="car" style="left:${pos(k)}%"><span>This car · ${k}k</span></div></div>
     <p>At ${mileage.toLocaleString()} miles, this car is ${where}.</p>
+    ${top.recall?`<p>A recall covered this problem. If this car had it done (it's free), the risk is much lower. Check its VIN in the NHTSA section below.</p>`:''}
     <p class="est-note" style="margin:6px 0 0">From ${n.toLocaleString()} NHTSA complaints that give a mileage.</p>`;
   el.classList.remove('hidden');
 }
