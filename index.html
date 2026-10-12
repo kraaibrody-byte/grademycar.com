@@ -3195,11 +3195,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const modelRating = data[make] && data[make][model];
                 // Prefer the grade for this exact model year when we have one
                 const yg = window.YEAR_GRADES[make]?.[model]?.[year];
+                // A year newer than every graded year gets no grade rather than the model-wide
+                // one, which comes from older years, often before a redesign
+                const gradedYears = Object.entries(window.YEAR_GRADES[make]?.[model] || {}).filter(([, v]) => v?.o).map(([k]) => Number(k));
+                const latestYear = gradedYears.length ? Math.max(...gradedYears) : null;
+                const tooNew = !yg?.o && latestYear && Number(year) > latestYear;
                 const rating = yg?.o
                     ? { engine: yg.e, transmission: yg.t, overall: yg.o, ev: modelRating?.ev }
-                    : modelRating;
+                    : tooNew ? { ev: modelRating?.ev, source: 'nhtsa' } : modelRating;
                 const topIssue = window.GMCIssues ? GMCIssues.headlineIssue(GMCIssues.parseIssues(yg?.i)) : null;
-                const gradeNote = yg?.o
+                const gradeNote = tooNew
+                    ? `The ${window.escapeHTML(String(year))} is too new to grade: owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${latestYear} got a <b>${window.YEAR_GRADES[make][model][latestYear].o}</b>, but a newer model year can be quite different, especially after a redesign.`
+                    : yg?.o
                     ? `Graded for the ${window.escapeHTML(String(year))} model year from ${Number(yg.n).toLocaleString()} owner complaints filed with NHTSA, adjusted for how many were sold.${yg.l ? ' Newer model year, so this grade may change.' : ''}`
                       + (topIssue ? `<br><span style="color:#1e293b">${window.escapeHTML(topIssue.heading)}: <b>${window.escapeHTML(topIssue.label)}</b> (${topIssue.count.toLocaleString()})</span>${topIssue.recall ? '<span class="recall-pill">Recall issued</span>' : ''}` : '')
                     : modelRating?.source === 'nhtsa'

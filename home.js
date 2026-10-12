@@ -28,14 +28,20 @@
     return r.json();
   }
 
-  // Grade for one make/model/year: the model-year grade when we have one, else the model's
+  // Grade for one make/model/year: the model-year grade when we have one, else the model's.
+  // A year newer than every graded year gets no grade (tooNew) rather than the model-wide
+  // one, which comes from older years, often before a redesign.
   function gradeFor(makeData, model, year) {
     const base = makeData?.grades?.[model];
-    const y = makeData?.years?.[model]?.[year];
+    const years = makeData?.years?.[model] || {};
+    const y = years[year];
     if (y?.o) {
       return { engine: y.e, transmission: y.t, overall: y.o, ev: !!base?.ev, complaints: y.n, limited: !!y.l,
                yearGraded: true, issues: window.GMCIssues ? GMCIssues.parseIssues(y.i) : [] };
     }
+    const graded = Object.keys(years).filter(k => years[k]?.o).map(Number);
+    const latest = graded.length ? Math.max(...graded) : null;
+    if (latest && Number(year) > latest) return { tooNew: true, refYear: latest, ref: years[latest].o, ev: !!base?.ev, issues: [] };
     if (base?.overall) return { ...base, yearGraded: false, issues: [] };
     return null;
   }
@@ -132,19 +138,20 @@
     $('hg-tag').classList.toggle('live', live);
     $('hg-name').textContent = name;
     const v = $('hg-verdict');
-    v.textContent = verdict(rating.overall);
-    v.className = 'lp-result-verdict ' + tone(rating.overall);
+    v.textContent = rating.tooNew ? 'Too new to grade yet' : verdict(rating.overall);
+    v.className = 'lp-result-verdict ' + (rating.tooNew ? '' : tone(rating.overall));
+    $('hg-share').style.display = rating.tooNew ? 'none' : '';
 
     const ring = $('hg-ring'), fg = $('hg-ring-fg'), letter = $('hg-grade');
-    letter.textContent = rating.overall;
-    letter.className = tone(rating.overall);
+    letter.textContent = rating.tooNew ? '—' : rating.overall;
+    letter.className = rating.tooNew ? '' : tone(rating.overall);
     fg.style.stroke = toneColor(rating.overall);
     fg.style.strokeDashoffset = 326.7;
     ring.classList.remove('pop');
     void ring.offsetWidth; // restart the animation
     ring.classList.add('pop');
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      fg.style.strokeDashoffset = String(326.7 * (1 - score(rating.overall) / 100));
+      fg.style.strokeDashoffset = String(rating.tooNew ? 326.7 : 326.7 * (1 - score(rating.overall) / 100));
     }));
 
     $('hg-eng-label').textContent = rating.ev ? 'Motor & battery' : 'Engine';
@@ -165,7 +172,9 @@
     const q = new URLSearchParams({ year, make, model, src: live ? 'home_hero' : 'home_example' });
     $('hg-full').href = `/phone.html?${q}`;
     $('hg-rate').href = `/phone.html?${new URLSearchParams({ rate: 1, year, make, model, src: live ? 'home_hero' : 'home_example' })}`;
-    $('hg-note').textContent = rating.yearGraded
+    $('hg-note').textContent = rating.tooNew
+      ? `The ${year} is too new to grade: owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${rating.refYear} got a ${rating.ref}, but a newer model year can be quite different, especially after a redesign.`
+      : rating.yearGraded
       ? `From ${Number(rating.complaints).toLocaleString()} owner complaints filed with NHTSA for the ${year} model year${rating.limited ? '. Newer model year, so this grade may change.' : '.'}`
       : rating.source === 'nhtsa'
         ? `No grade for ${year} specifically, so this is the model's grade across ${rating.years} from NHTSA owner complaints.`
@@ -182,7 +191,7 @@
       const rating = gradeFor(await loadMake(make), model, year);
       if (!rating) { $('hg-note').textContent = `We don't have data for the ${fmtMake(make)} ${fmtModel(model)} yet.`; return; }
       render({ year, make, model, rating }, true);
-      track('hero_grade', { make, model, year: String(year), grade: rating.overall });
+      track('hero_grade', { make, model, year: String(year), grade: rating.overall || (rating.tooNew ? 'too_new' : 'none') });
       if (window.innerWidth < 980) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (err) {
       $('hg-note').textContent = "Couldn't load grades. Check your connection and try again.";
