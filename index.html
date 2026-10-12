@@ -3474,27 +3474,28 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="premium-report-grid">
                             ${dealScoreHtml}
                             <div class="premium-report-card">
-                                <div class="label">Avg. Expected Lifespan</div>
+                                <div class="label">Est. Lifespan (model)</div>
                                 <div class="value">${avgLifespan ? avgLifespan.toLocaleString() + ' mi' : 'N/A'}</div>
                             </div>
                             <div class="premium-report-card">
-                                <div class="label">Miles Remaining</div>
+                                <div class="label">Est. Miles Remaining</div>
                                 <div class="value">${milesRemaining !== null ? milesRemaining.toLocaleString() + ' mi' : 'N/A'}</div>
                                 <div class="sub">${pctUsed !== null ? pctUsed + '% of expected lifespan used' : ''}</div>
                             </div>
                             <div class="premium-report-card">
-                                <div class="label">Cost per Remaining Mile</div>
+                                <div class="label">Est. Cost per Remaining Mile</div>
                                 <div class="value">${costPerMile !== null ? '$' + costPerMile.toFixed(3) : 'N/A'}</div>
                                 <div class="sub">${price ? 'Based on $' + price.toLocaleString() + ' asking price' : ''}</div>
                             </div>
                             <div class="premium-report-card">
-                                <div class="label">Max Reported Mileage</div>
+                                <div class="label">Est. High Mileage (model)</div>
                                 <div class="value">${lifespanData.maxReported ? lifespanData.maxReported.toLocaleString() + ' mi' : 'N/A'}</div>
                             </div>
                         </div>
+                        <p class="lookup-subtitle" style="font-size:0.75rem;margin:0.5rem 0 0">Lifespan figures are rough estimates for this model across all years, not measured for this model year. The grades and problems come from NHTSA owner complaints.</p>
                         ${lifespanData.commonIssues && lifespanData.commonIssues.length ? `
                             <div class="premium-issues">
-                                <h5>Commonly Reported Issues</h5>
+                                <h5>Other Known Issues (model, all years)</h5>
                                 <ul>${lifespanData.commonIssues.map(i => `<li>${i}</li>`).join('')}</ul>
                             </div>
                         ` : ''}

@@ -272,8 +272,10 @@ function carPage(car, cars) {
     : '';
   const summary = `The ${name} earns ${article(ovr)} ${ovr} overall reliability grade from GradeMyCar, with ${article(eng)} ${eng} for its ${ENG} and ${article(trn)} ${trn} for its ${TRN}. ${rankLine} ${weak} ${source}`.replace(/\s+/g, ' ').trim();
 
+  // Lifespan figures are hand-made model-level estimates with no recorded source, so
+  // pages call them estimates and leave out the unsourced extras (top mileage, % reaching 250k)
   const lifeAnswer = life?.avgLifespan
-    ? `A well-maintained ${name} typically lasts around ${miles(life.avgLifespan)} miles${life.maxReported ? `, and owners have reported examples reaching ${miles(life.maxReported)} miles` : ''}.${life.percentReach250k ? ` About ${life.percentReach250k}% reach 250,000 miles.` : ''}`
+    ? `We estimate a well-maintained ${name} lasts around ${miles(life.avgLifespan)} miles. That's a rough figure for the model across all years, not measured for each model year, so check the grade for the year you're looking at.`
     : null;
 
   const faqs = [
@@ -311,10 +313,9 @@ function carPage(car, cars) {
 
   const lifeBlock = life?.avgLifespan ? `<section class="card"><h2>How long does the ${esc(name)} last?</h2>
     <div class="stats">
-      <div><b>${miles(life.avgLifespan)}</b><span>Typical lifespan (miles)</span></div>
-      ${life.maxReported ? `<div><b>${miles(life.maxReported)}</b><span>Highest reported (miles)</span></div>` : ''}
-      ${life.percentReach250k ? `<div><b>${life.percentReach250k}%</b><span>Reach 250,000 miles</span></div>` : ''}
-    </div></section>` : '';
+      <div><b>${miles(life.avgLifespan)}</b><span>Estimated lifespan (miles)</span></div>
+    </div>
+    <p class="note">A rough estimate for the model across all years, not measured for each model year.</p></section>` : '';
 
   const compare = car.segments.map(s => {
     const r = rankIn(s, car, cars);

@@ -144,6 +144,7 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .stat-tile{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}
 .stat-lbl{font-size:11px;color:var(--muted);line-height:1.35;margin-bottom:7px;font-weight:500}
 .stat-val{font-size:20px;font-weight:800;color:var(--navy)}
+.est-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:-4px}
 .stat-sub{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
 /* Issues */
 .issues-res{background:#FFF7ED;border:1px solid #FED7AA;border-radius:15px;padding:14px}
@@ -434,7 +435,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
             <div class="sample-stats">
               <div><div class="sample-grade gc-red" id="sampleGrade">D</div><div class="sample-lbl">Reliability</div></div>
               <div><div class="sample-val"><span id="sampleDeal">50</span><small>/100</small></div><div class="sample-lbl" id="sampleDealLbl">Fair deal</div></div>
-              <div><div class="sample-val" id="sampleLife">250k</div><div class="sample-lbl">mi avg. lifespan</div></div>
+              <div><div class="sample-val" id="sampleComplaints">2,001</div><div class="sample-lbl">NHTSA complaints</div></div>
             </div>
             <div class="sample-foot"><b>See this example ›</b></div>
           </div>
@@ -633,31 +634,33 @@ select.prem-input{-webkit-appearance:none;appearance:none}
             <!-- 4 stat tiles -->
             <div class="stat-grid">
               <div class="stat-tile">
-                <div class="stat-lbl">Avg. Expected Lifespan</div>
+                <div class="stat-lbl">Est. Lifespan (model)</div>
                 <div class="stat-val" id="statLifespan">—</div>
               </div>
               <div class="stat-tile">
-                <div class="stat-lbl">Miles Remaining</div>
+                <div class="stat-lbl">Est. Miles Remaining</div>
                 <div class="stat-val" id="statMilesRem">—</div>
                 <div class="stat-sub" id="statMilesRemSub"></div>
               </div>
               <div class="stat-tile">
-                <div class="stat-lbl">Cost per Remaining Mile</div>
+                <div class="stat-lbl">Est. Cost per Remaining Mile</div>
                 <div class="stat-val" id="statCPRM">—</div>
                 <div class="stat-sub" id="statCPRMSub"></div>
               </div>
               <div class="stat-tile">
-                <div class="stat-lbl">Max Reported Mileage</div>
+                <div class="stat-lbl">Est. High Mileage (model)</div>
                 <div class="stat-val" id="statMaxMileage">—</div>
               </div>
             </div>
+            <!-- The lifespan figures are hand-made model-level estimates, not measured per model year -->
+            <div class="est-note">Lifespan figures are rough estimates for this model across all years, not measured for this model year. The grades and problems come from NHTSA owner complaints.</div>
 
             <!-- What owners of this model year report (NHTSA complaints) -->
             <div class="owner-reports hidden" id="ownerReports"></div>
 
             <!-- Common issues -->
             <div class="issues-res hidden" id="issuesSection">
-              <strong>Commonly Reported Issues</strong>
+              <strong>Other Known Issues (model, all years)</strong>
               <ul id="premIssuesList"></ul>
             </div>
 
@@ -828,7 +831,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.12-c';
+const APP_VERSION='2026.10.12-d';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -2178,7 +2181,7 @@ function dismissInstall(){
     gEl.className='sample-grade '+(s>=80?'gc-green':s>=65?'gc-amber':'gc-red');
     document.getElementById('sampleDeal').textContent=deal.score;
     document.getElementById('sampleDealLbl').textContent=deal.category.replace(' Deal',' deal');
-    if(l?.avgLifespan) document.getElementById('sampleLife').textContent=Math.round(l.avgLifespan/1000)+'k';
+    if(y?.n) document.getElementById('sampleComplaints').textContent=Number(y.n).toLocaleString();
   }catch(e){}
 })();
 
