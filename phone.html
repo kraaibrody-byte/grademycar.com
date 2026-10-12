@@ -21,6 +21,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" id="ati-link">
 <link rel="manifest" id="manifest-link">
+<!-- Instagram/Facebook in-app browsers start cold: open these connections while the page parses -->
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://grademycar-default-rtdb.firebaseio.com">
 <script src="/attribution.js"></script>
 <style>
 :root{
@@ -258,6 +261,21 @@ button.credits-chip{border:0;cursor:pointer}
 .signup-prompt b{display:block;font-size:14px;color:var(--navy);margin:0 26px 3px 0}
 .signup-prompt p{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45}
 .signup-prompt .primary{height:44px;font-size:14px}
+.sp-row{display:flex;gap:8px}
+.sp-row input{flex:1;min-width:0;height:44px;border:1.5px solid var(--line);border-radius:12px;padding:0 12px;font-size:16px;outline:none;color:var(--ink);background:#fff}
+.sp-row input:focus{border-color:var(--blue)}
+.sp-err{color:var(--red);font-size:12px;font-weight:650;margin-top:8px}.sp-err:empty{display:none}
+.sp-more{font-size:12px;color:var(--blue);font-weight:650;margin-top:10px;cursor:pointer;display:inline-block}
+.sp-sent{font-size:13px;color:#166534;background:var(--greenbg);border-radius:12px;padding:10px 12px;line-height:1.45}
+/* Header account button: "Sign in" when signed out, initials when signed in */
+.acct-btn{height:34px;border:0;border-radius:17px;background:var(--blue);color:#fff;font-weight:750;font-size:13px;padding:0 14px;cursor:pointer;white-space:nowrap}
+.acct-btn.avatar{width:34px;padding:0;background:#EEF2FF;color:var(--blue);border:1.5px solid #C7D2FE}
+/* Auth modal extras */
+.google-btn{width:100%;height:46px;margin-top:10px;border:1.5px solid var(--line);background:#fff;border-radius:15px;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.google-btn:disabled{opacity:.6}
+.auth-alt{text-align:center;font-size:12px;color:var(--blue);font-weight:650;margin-top:12px;cursor:pointer}
+.auth-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.45}
+.sheet-signin{margin:12px 0 6px}
 .signup-prompt .x{position:absolute;top:10px;right:10px;border:0;background:none;color:#98A0AE;font-size:16px;cursor:pointer;padding:4px}
 /* Owner reports */
 .owner-card{background:#fff;border:1px solid var(--line);border-radius:19px;padding:14px 16px}
@@ -317,15 +335,21 @@ select.prem-input{-webkit-appearance:none;appearance:none}
       <div id="authModal" class="modal-wrap hidden" onclick="if(event.target===this)closeAccount()">
         <div class="modal" style="position:relative">
           <button class="iconbtn" style="position:absolute;top:12px;right:12px;width:32px;height:32px" onclick="closeAccount()" aria-label="Close">✕</button>
-          <h2 id="authTitle">Welcome back</h2>
-          <p class="sub">Sign in to save searches and unlock premium reports.</p>
-          <input id="authEmail" type="email" placeholder="Email" autocomplete="email" autocapitalize="off">
-          <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()">
-          <a class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot password?</a>
+          <h2 id="authTitle">Create your free account</h2>
+          <p class="sub" id="authSub"></p>
+          <input id="authEmail" type="email" placeholder="Email" autocomplete="email" autocapitalize="off" onkeydown="if(event.key==='Enter')submitAuth()">
+          <!-- Password is optional: by default we email a one-tap sign-in link -->
+          <div id="pwBlock" class="hidden">
+            <input id="authPassword" type="password" placeholder="Password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitAuth()">
+            <a class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot password?</a>
+          </div>
           <div id="authError" class="err">Something went wrong. Try again.</div>
           <div id="authOk" class="ok"></div>
-          <button class="primary" id="authSubmit" onclick="submitAuth()">Sign in</button>
-          <div class="switch" id="authSwitch" onclick="toggleAuthMode()">Don't have an account? <b>Sign up</b></div>
+          <button class="primary" id="authSubmit" onclick="submitAuth()">Email me a sign-in link</button>
+          <button class="google-btn" id="googleBtn" onclick="googleSignIn()"><b style="color:#4285F4;font-size:16px">G</b>Continue with Google</button>
+          <div class="auth-hint hidden" id="inAppHint">Google sign-in doesn't work inside Instagram or Facebook. Use your email and we'll send you a link.</div>
+          <div class="auth-alt" id="pwToggle" onclick="togglePassword()">Use a password instead</div>
+          <div class="switch" id="authSwitch" onclick="toggleAuthMode()">Already have an account? <b>Sign in</b></div>
           <div class="auth-legal">By continuing you agree to our <a href="/terms.html?from=app">Terms</a> and <a href="/privacy.html?from=app">Privacy Policy</a>.</div>
         </div>
       </div>
@@ -334,13 +358,14 @@ select.prem-input{-webkit-appearance:none;appearance:none}
         <div class="sheet">
           <div class="sheet-grip"></div>
           <div class="sheet-who" id="moreWho"></div>
+          <button class="primary sheet-signin hidden" id="moreSignInBtn" onclick="closeMore();openAccount(null,'more_sheet')">Sign in / Create account</button>
           <button class="sheet-item" onclick="closeMore();openBuy()"><span>＋</span>Buy Credits</button>
           <button class="sheet-item" onclick="closeMore();show('saved')"><span>♡</span>Saved &amp; History</button>
           <button class="sheet-item" onclick="closeMore();openRate(null,'menu')"><span>★</span>Rate your car</button>
           <a class="sheet-item" href="mailto:support@grademycar.com?subject=GradeMyCar%20support"><span>✉</span>Contact Support</a>
           <a class="sheet-item" href="/terms.html?from=app"><span>§</span>Terms &amp; Refunds</a>
           <a class="sheet-item" href="/privacy.html?from=app"><span>ⓘ</span>Privacy Policy</a>
-          <button class="sheet-item" id="moreAuthBtn" onclick="moreAuth()"><span>⎋</span>Sign in</button>
+          <button class="sheet-item danger hidden" id="moreAuthBtn" onclick="moreAuth()"><span>⎋</span>Log out</button>
           <button class="sheet-item subtle hidden" id="deleteAcctBtn" onclick="requestDeleteAccount()"><span></span>Delete account</button>
           <div class="app-version" id="appVersion"></div>
         </div>
@@ -352,7 +377,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
           <div class="logo"><img src="data:image/png;base64,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" width="32" height="32" alt="GradeMyCar"><span class="logo-text">GradeMyCar</span></div>
           <div style="display:flex;align-items:center;gap:8px">
             <button id="creditsChip" class="credits-chip hidden" onclick="openBuy()" aria-label="Buy credits"></button>
-            <button class="iconbtn" id="accountBtn" onclick="openMore()" aria-label="Account">●</button>
+            <button class="acct-btn" id="accountBtn" onclick="headerAccount()" aria-label="Sign in" style="visibility:hidden">Sign in</button>
           </div>
         </div>
         <div class="page">
@@ -373,15 +398,15 @@ select.prem-input{-webkit-appearance:none;appearance:none}
             </div>
             <button class="primary" onclick="homeGrade('ymm')">Grade it free &nbsp;›</button>
           </div>
-          <div class="trust"><span>✓ Free to try</span><span>✓ No signup needed</span></div>
+          <div class="trust"><span style="text-align:center">✓ Free to try. Save your results with a free account.</span></div>
           <button class="sample-link" onclick="tryExample('hero_link')">See a sample grade ›</button>
           <!-- Sample report: values are refreshed from the live DB by loadSample() -->
           <div class="sample" id="sampleCard" onclick="tryExample('sample_card')">
             <div class="sample-top"><span class="sample-tag">Sample report</span><span class="sample-car">2018 Honda Accord</span></div>
             <div class="sample-meta">60,000 miles · $18,500 asking price</div>
             <div class="sample-stats">
-              <div><div class="sample-grade gc-green" id="sampleGrade">A</div><div class="sample-lbl">Reliability</div></div>
-              <div><div class="sample-val"><span id="sampleDeal">86</span><small>/100</small></div><div class="sample-lbl" id="sampleDealLbl">Excellent deal</div></div>
+              <div><div class="sample-grade gc-red" id="sampleGrade">D</div><div class="sample-lbl">Reliability</div></div>
+              <div><div class="sample-val"><span id="sampleDeal">50</span><small>/100</small></div><div class="sample-lbl" id="sampleDealLbl">Fair deal</div></div>
               <div><div class="sample-val" id="sampleLife">250k</div><div class="sample-lbl">mi avg. lifespan</div></div>
             </div>
             <div class="sample-foot"><b>See this example ›</b></div>
@@ -510,10 +535,18 @@ select.prem-input{-webkit-appearance:none;appearance:none}
 
           <!-- Signed-out only, once per grade. Never covers or gates the grade above. -->
           <div class="signup-prompt hidden" id="signupPrompt">
-            <button class="x" onclick="dismissSignupPrompt()" aria-label="Dismiss">✕</button>
-            <b id="signupPromptTitle">Save this grade and get a free full report</b>
-            <p>Make a free account to keep this car in your Saved list. Your grade stays here either way.</p>
-            <button class="primary" onclick="signupPromptClick()">Sign up free</button>
+            <button class="x" onclick="dismissSignupPrompt(true)" aria-label="Dismiss">✕</button>
+            <b>Save this report free</b>
+            <div id="spForm">
+              <p>We'll email you a sign-in link, no password needed. Your first full report is free too.</p>
+              <div class="sp-row">
+                <input id="spEmail" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" aria-label="Email" onkeydown="if(event.key==='Enter')signupPromptSubmit()">
+                <button class="vin-btn" id="spBtn" onclick="signupPromptSubmit()">Save</button>
+              </div>
+              <div class="sp-err" id="spErr"></div>
+              <span class="sp-more" onclick="signupPromptMore()">Other ways to sign up</span>
+            </div>
+            <div class="sp-sent hidden" id="spSent"></div>
           </div>
 
           <!-- Owner ratings for this model year, and the invite to add one (renderOwnerCard) -->
@@ -767,7 +800,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.09-e';
+const APP_VERSION='2026.10.11-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -785,13 +818,32 @@ const APP_VERSION='2026.10.09-e';
     location.replace(u.toString());
   }catch(e){}
 })();
+// No analytics at all from local testing: test sign-ups on localhost were inflating
+// sign_up. Local events are logged to the console instead.
+const IS_LOCAL=/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname)||/\.(localhost|test)$/.test(location.hostname);
 let analytics=null;
-try { analytics=firebase.analytics(); } catch(e) {}
+if(!IS_LOCAL){ try { analytics=firebase.analytics(); } catch(e) {} }
 // Funnel events (view in Firebase console → Analytics → Events)
-function track(name, params){ try{ if(analytics) analytics.logEvent(name, Object.assign({app:'phone'}, params||{})); }catch(e){} }
+function track(name, params){
+  const p=Object.assign({app:'phone'}, params||{});
+  if(IS_LOCAL){ console.debug('[GMC track]',name,p); return; }
+  try{ if(analytics) analytics.logEvent(name, p); }catch(e){}
+}
+// localStorage can throw in private mode and some in-app browsers
+const store={
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
 
 let currentUser = null;
-let authMode = 'signin';
+// New visitors get the sign-up form; anyone who has signed in on this browser before gets sign-in
+let authMode = store.get('gmc_has_account')?'signin':'signup';
+let authSource = 'menu';    // which prompt opened the auth modal, sent with signup_* events
+let authDone = false;       // the modal closed because sign-in finished, not a dismissal
+let usePassword = false;
+// Instagram, Facebook, TikTok and Snapchat in-app browsers, where Google blocks its sign-in page
+const IN_APP=/Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|musical_ly|TikTok|Snapchat/i.test(navigator.userAgent);
 let signingUp = false;
 let currentResult = null;
 let currentVehicle = null;   // { year, make, model, makeData, rating }
@@ -826,70 +878,213 @@ function displayModel(model){
 function vehicleName(v){ return `${v.year} ${displayMake(v.make)} ${displayModel(v.model)}`; }
 
 // ── 2. AUTH ──────────────────────────────────────────────────────────────────
-function openAccount(mode){
+// Three ways in, all ending in onSignedIn: an emailed sign-in link (the default,
+// and the one that works inside Instagram/Facebook), Google, or a password.
+const AUTH_COPY={
+  signup:{title:'Create your free account', sub:'Save your grades, keep your search history, and get your first full report free.',
+          link:'Email me a sign-in link', pw:'Create account', sw:'Already have an account? <b>Sign in</b>'},
+  signin:{title:'Welcome back', sub:'Sign in to see your saved cars and credits.',
+          link:'Email me a sign-in link', pw:'Sign in', sw:"New here? <b>Create a free account</b>"}
+};
+function openAccount(mode, source){
   if(currentUser){ if(confirm('Log out of GradeMyCar?')) auth.signOut(); return; }
-  if(mode && mode!==authMode) toggleAuthMode();
-  if(authMode==='signup') document.getElementById('authTitle').textContent='Get your first report free';
+  authSource=source||'menu';
+  authDone=false;
+  setAuthMode(mode||(store.get('gmc_has_account')?'signin':'signup'));
+  document.getElementById('googleBtn').classList.toggle('hidden',IN_APP);
+  document.getElementById('inAppHint').classList.toggle('hidden',!IN_APP);
   document.getElementById('authModal').classList.remove('hidden');
+  track('signup_prompt_shown',{source:authSource,prompt:'auth_modal',mode:authMode});
 }
-function closeAccount(){ document.getElementById('authModal').classList.add('hidden'); }
-function toggleAuthMode(){
-  authMode = authMode==='signin'?'signup':'signin';
-  document.getElementById('authTitle').textContent = authMode==='signin'?'Welcome back':'Get your first report free';
-  document.getElementById('authSubmit').textContent = authMode==='signin'?'Sign in':'Sign up';
-  document.getElementById('authSwitch').innerHTML = authMode==='signin'
-    ?"Don't have an account? <b>Sign up</b>"
-    :"Already have an account? <b>Sign in</b>";
+function closeAccount(){
+  const modal=document.getElementById('authModal');
+  if(!modal.classList.contains('hidden') && !authDone) track('signup_prompt_dismissed',{source:authSource,prompt:'auth_modal',mode:authMode});
+  modal.classList.add('hidden');
+}
+function setAuthMode(mode){
+  authMode=mode;
+  const c=AUTH_COPY[mode];
+  document.getElementById('authTitle').textContent=c.title;
+  document.getElementById('authSub').textContent=c.sub;
+  document.getElementById('authSubmit').textContent=usePassword?c.pw:c.link;
+  document.getElementById('authSwitch').innerHTML=c.sw;
   document.getElementById('authError').style.display='none';
   document.getElementById('authOk').style.display='none';
-  document.getElementById('forgotLink').classList.toggle('hidden',authMode!=='signin');
-  document.getElementById('authPassword').autocomplete=authMode==='signin'?'current-password':'new-password';
+  document.getElementById('forgotLink').classList.toggle('hidden',mode!=='signin');
+  document.getElementById('authPassword').autocomplete=mode==='signin'?'current-password':'new-password';
+}
+function toggleAuthMode(){ setAuthMode(authMode==='signin'?'signup':'signin'); }
+function togglePassword(){
+  usePassword=!usePassword;
+  document.getElementById('pwBlock').classList.toggle('hidden',!usePassword);
+  document.getElementById('pwToggle').textContent=usePassword?'Email me a link instead':'Use a password instead';
+  setAuthMode(authMode);
+}
+function authMsg(kind, text){
+  const errEl=document.getElementById('authError'), okEl=document.getElementById('authOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!kind) return;
+  const el=kind==='err'?errEl:okEl;
+  el.textContent=text; el.style.display='block';
 }
 function forgotPassword(){
   const email=document.getElementById('authEmail').value.trim();
-  const errEl=document.getElementById('authError'), okEl=document.getElementById('authOk');
-  errEl.style.display='none'; okEl.style.display='none';
-  if(!email){ errEl.textContent='Enter your email above, then tap "Forgot password?" again.'; errEl.style.display='block'; return; }
+  authMsg(null);
+  if(!email){ authMsg('err','Enter your email above, then tap "Forgot password?" again.'); return; }
   auth.sendPasswordResetEmail(email)
-    .then(()=>{ okEl.textContent=`If an account exists for ${email}, a reset link is on its way. Check your inbox and spam folder.`; okEl.style.display='block'; track('password_reset_requested'); })
+    .then(()=>{ authMsg('ok',`If an account exists for ${email}, a reset link is on its way. Check your inbox and spam folder.`); track('password_reset_requested'); })
     .catch(err=>{
       // Don't reveal whether an account exists
-      if(err&&err.code==='auth/user-not-found'){ okEl.textContent=`If an account exists for ${email}, a reset link is on its way.`; okEl.style.display='block'; return; }
-      errEl.textContent=friendlyAuthError(err); errEl.style.display='block';
+      if(err&&err.code==='auth/user-not-found'){ authMsg('ok',`If an account exists for ${email}, a reset link is on its way.`); return; }
+      authMsg('err',friendlyAuthError(err));
     });
 }
 function submitAuth(){
-  // Enter in the password field bypasses the disabled button, so ignore repeats while a request is in flight
-  if(document.getElementById('authSubmit').disabled) return;
+  // Enter in a field bypasses the disabled button, so ignore repeats while a request is in flight
+  const btn=document.getElementById('authSubmit');
+  if(btn.disabled) return;
   const email=document.getElementById('authEmail').value.trim();
   const password=document.getElementById('authPassword').value;
-  const errEl=document.getElementById('authError');
-  errEl.style.display='none';
-  if(!email||!password){ errEl.textContent='Enter an email and password.'; errEl.style.display='block'; return; }
-  const mode=authMode;
-  const btn=document.getElementById('authSubmit');
+  authMsg(null);
+  if(!usePassword){
+    if(!/^\S+@\S+\.\S+$/.test(email)){ authMsg('err','Enter your email address.'); return; }
+    btn.disabled=true;
+    if(authMode==='signup') track('signup_started',{method:'email_link',source:authSource});
+    sendSignInLink(email,authSource,saveAfterSignup)
+      .then(()=>authMsg('ok',`Check your email. Tap the link we sent to ${email} to finish. It may open in your browser instead of this app. That's fine.`))
+      .catch(err=>{
+        if(err&&err.code==='auth/operation-not-allowed'){ if(!usePassword) togglePassword(); authMsg('err','Email links are not available right now. Please use a password.'); }
+        else authMsg('err',friendlyAuthError(err));
+      })
+      .finally(()=>{ btn.disabled=false; });
+    return;
+  }
+  if(!email||!password){ authMsg('err','Enter an email and password.'); return; }
+  const mode=authMode, source=authSource, car=saveAfterSignup;
   btn.disabled=true;
   // Hold off the credit check until the new account's record (with its free credit) exists
-  signingUp=mode==='signup';
+  signingUp=true;
+  if(mode==='signup') track('signup_started',{method:'password',source});
   const action=mode==='signin'
     ?auth.signInWithEmailAndPassword(email,password)
-    :auth.createUserWithEmailAndPassword(email,password).then(cred=>
-        // Same user record index.html creates on signup, with 1 free credit
-        // (database rules allow a new record to start at 0 or 1 credits, never more)
-        rtdb.ref(`users/${cred.user.uid}`).set({
-          email, createdAt:firebase.database.ServerValue.TIMESTAMP,
-          reportCredits:1, totalSearches:0, totalPurchases:0, totalSpent:0
-        }).catch(e=>console.warn('[GMC] user record create failed',e))
-          .finally(()=>{ signingUp=false; refreshCredits(); runPendingRate(); }));
-  action.then(()=>{
-          closeAccount();
-          toast(mode==='signin'?'Signed in':'Account created. Your first report is free!');
-          track(mode==='signin'?'login':'sign_up',
-                Object.assign({method:'email'},mode==='signup'&&window.GMCAttribution?GMCAttribution.params():{}));
-        })
-        .catch(err=>{ signingUp=false; errEl.textContent=friendlyAuthError(err); errEl.style.display='block'; })
-        .finally(()=>{ btn.disabled=false; });
+    :auth.createUserWithEmailAndPassword(email,password);
+  action.then(cred=>onSignedIn(cred,'password',source,car))
+        .catch(err=>authMsg('err',friendlyAuthError(err)))
+        .finally(()=>{ btn.disabled=false; finishSignIn(); });
 }
+function googleSignIn(){
+  const btn=document.getElementById('googleBtn');
+  const source=authSource, car=saveAfterSignup;
+  authMsg(null);
+  btn.disabled=true;
+  signingUp=true;
+  if(authMode==='signup') track('signup_started',{method:'google',source});
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .then(cred=>onSignedIn(cred,'google',source,car))
+    .catch(err=>{
+      if(err&&(err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')) return;
+      authMsg('err',friendlyAuthError(err));
+    })
+    .finally(()=>{ btn.disabled=false; finishSignIn(); });
+}
+// Firebase emails a one-tap sign-in link. On a phone the link usually opens in the
+// default browser, not the Instagram tab it was asked for in, so everything needed
+// afterwards travels in the link: the car to save, the prompt that started it, and
+// the first-touch UTMs (attribution.js on the new browser picks those up). The email
+// address stays out of the URL; it's kept in this browser only.
+function sendSignInLink(email, source, car){
+  const u=new URL('/phone.html',location.origin);
+  u.searchParams.set('auth','link');
+  u.searchParams.set('su_src',source||'menu');
+  if(car){
+    u.searchParams.set('save_year',car.year); u.searchParams.set('save_make',car.make);
+    u.searchParams.set('save_model',car.model); if(car.grade) u.searchParams.set('save_grade',car.grade);
+  }
+  try{
+    const ft=JSON.parse(store.get('gmc_first_touch')||'null')||{};
+    ['utm_source','utm_medium','utm_campaign'].forEach(k=>{ if(ft[k]) u.searchParams.set(k,ft[k]); });
+  }catch(e){}
+  return auth.sendSignInLinkToEmail(email,{url:u.toString(),handleCodeInApp:true})
+    .then(()=>{ store.set('gmc_link_email',email); });
+}
+// Opened from the emailed link: finish signing in, save the car, and show its grade
+(async function completeSignInLink(){
+  if(!auth.isSignInWithEmailLink(location.href)) return;
+  await null; // let the rest of this script set up first
+  const href=location.href, q=new URLSearchParams(location.search);
+  const source=q.get('su_src')||'email';
+  const car=q.get('save_make')&&q.get('save_model')&&q.get('save_year')
+    ?{year:q.get('save_year'),make:q.get('save_make'),model:q.get('save_model'),grade:q.get('save_grade')||null}:null;
+  // Drop the one-time code from the address bar; keep the UTMs
+  const utm=new URLSearchParams([...q].filter(([k])=>k.startsWith('utm_'))).toString();
+  history.replaceState(null,'',location.pathname+(utm?'?'+utm:''));
+  // Opened in a different browser than the one that asked for it, so we don't know the email
+  let email=store.get('gmc_link_email');
+  if(!email) email=(prompt('Confirm your email to finish signing in')||'').trim();
+  if(!email) return;
+  signingUp=true;
+  try{
+    const cred=await auth.signInWithEmailLink(email,href);
+    store.del('gmc_link_email');
+    await onSignedIn(cred,'email_link',source,car);
+    if(car){ markLookupStart('signin_link'); show('loading'); if(await fillSearch(car.make,car.model,car.year)) await checkGrade(); else show('home'); }
+  }catch(err){
+    console.warn('[GMC] sign-in link failed',err);
+    toast(err&&(err.code==='auth/invalid-action-code'||err.code==='auth/expired-action-code')
+      ?'That sign-in link expired or was already used. Request a new one.':friendlyAuthError(err));
+  }finally{ finishSignIn(); }
+})();
+// Every successful sign-in or sign-up, whatever the method
+async function onSignedIn(cred, method, source, car){
+  const user=cred.user;
+  const isNew=!!(cred.additionalUserInfo&&cred.additionalUserInfo.isNewUser);
+  authDone=true; closeAccount();
+  store.set('gmc_has_account','1');
+  if(isNew){
+    // Same user record index.html creates on signup, with 1 free credit
+    // (database rules allow a new record to start at 0 or 1 credits, never more)
+    await rtdb.ref(`users/${user.uid}`).set({
+      email:user.email||'', createdAt:firebase.database.ServerValue.TIMESTAMP,
+      reportCredits:1, totalSearches:0, totalPurchases:0, totalSpent:0
+    }).catch(e=>console.warn('[GMC] user record create failed',e));
+    // sign_up fires once per account: only when Firebase reports a brand-new user,
+    // and the per-account flag stops a double tap or reload from sending it again
+    if(!store.get('gmc_su_'+user.uid)){
+      store.set('gmc_su_'+user.uid,'1');
+      const p=Object.assign({method,source},window.GMCAttribution?GMCAttribution.params():{});
+      track('sign_up',p);
+      track('signup_completed',p);
+    }
+    toast('Account created. Your first report is free!');
+  } else {
+    track('login',{method});
+    toast('Signed in');
+  }
+  if(car) saveCarTo(user.uid,car).then(added=>{ if(added) toast(`Saved ${vehicleName(car)}`); });
+  saveAfterSignup=null;
+}
+// Runs after any sign-in attempt, success or not: the credit check and pending
+// owner rating were held back while the account record was being written
+function finishSignIn(){
+  signingUp=false;
+  if(!currentUser) return;
+  refreshCredits(); ensureUserRecord(currentUser); runPendingRate();
+}
+// Adds a car to the account's Saved list unless it's already there. Resolves true if added.
+function saveCarTo(uid, car){
+  const col=rtdb.ref(`saved_vehicles/${uid}`);
+  return col.once('value').then(snap=>{
+    let dup=false; snap.forEach(c=>{ if(sameVehicle(c.val(),car)) dup=true; });
+    if(dup) return false;
+    return col.push({year:String(car.year),make:car.make,model:car.model,grade:car.grade||null,createdAt:Date.now()}).then(()=>true);
+  }).catch(e=>{ console.warn('[GMC] save after sign-in failed',e); return false; });
+}
+function initials(user){
+  const n=String(user.displayName||'').trim().split(/\s+/).filter(Boolean);
+  if(n.length) return (n[0][0]+(n.length>1?n[n.length-1][0]:'')).toUpperCase();
+  return String(user.email||'U').charAt(0).toUpperCase();
+}
+function headerAccount(){ if(currentUser) openMore(); else openAccount(null,'header'); }
 function friendlyAuthError(err){
   switch(err&&err.code){
     case 'auth/invalid-email': return 'That email address looks invalid.';
@@ -899,13 +1094,22 @@ function friendlyAuthError(err){
       return 'Incorrect email or password.';
     case 'auth/too-many-requests': return 'Too many attempts. Please wait a minute and try again.';
     case 'auth/network-request-failed': return 'No connection. Check your internet and try again.';
+    case 'auth/operation-not-allowed': return 'That sign-in method is not available right now. Try email instead.';
+    case 'auth/popup-blocked': return 'Your browser blocked the Google window. Use your email instead.';
+    case 'auth/unauthorized-domain': return 'Sign-in is not available on this address. Use grademycar.com.';
+    case 'auth/account-exists-with-different-credential': return 'That email already has an account. Sign in with your email instead.';
+    case 'auth/invalid-action-code': case 'auth/expired-action-code': return 'That sign-in link expired or was already used. Request a new one.';
     default: return 'Something went wrong. Please try again.';
   }
 }
 auth.onAuthStateChanged(user=>{
   currentUser=user;
+  if(user) store.set('gmc_has_account','1');
   const btn=document.getElementById('accountBtn');
-  btn.textContent=user?(user.email||'U').charAt(0).toUpperCase():'●';
+  btn.textContent=user?initials(user):'Sign in';
+  btn.className='acct-btn'+(user?' avatar':'');
+  btn.setAttribute('aria-label',user?'Account':'Sign in');
+  btn.style.visibility='';
   userCredits=null; hasUnlimited=false;
   updateCreditsDisplay();
   updateUnlimitedNote();
@@ -1044,7 +1248,7 @@ async function replaySearch(v){
   show('search');
 }
 function toggleSave(){
-  if(!currentUser){ openAccount(); return; }
+  if(!currentUser){ saveAfterSignup=currentResult; openAccount('signup','save_button'); return; }
   if(!currentResult) return;
   const col=rtdb.ref(`saved_vehicles/${currentUser.uid}`);
   const {year,make,model,grade}=currentResult;
@@ -1244,10 +1448,9 @@ async function homeGrade(method){
 
 // ── POST-GRADE SIGNUP PROMPT ─────────────────────────────────────────────────
 // Signed-out users see one dismissible card under each new grade. It never hides
-// or gates the grade. Signing up from it saves that car to the new account.
-// Matches the reportCredits a new account starts with (see submitAuth).
-const FREE_SIGNUP_CREDITS=1;
-let saveAfterSignup=null;
+// or gates the grade. One email field: we send a sign-in link that also saves this
+// car to the new account (see sendSignInLink).
+let saveAfterSignup=null;   // car to add to Saved once the user signs in from a prompt
 function gradeParams(){
   const r=currentResult||{};
   return {make:r.make||'',model:r.model||'',year:String(r.year||''),grade:r.grade||'none'};
@@ -1257,25 +1460,44 @@ function onGradeShown(found){
   const offer=!currentUser && found && !showingExample;
   document.getElementById('signupPrompt').classList.toggle('hidden',!offer);
   if(!offer) return;
-  document.getElementById('signupPromptTitle').textContent=
-    `Save this grade and get ${FREE_SIGNUP_CREDITS} free full report${FREE_SIGNUP_CREDITS===1?'':'s'}`;
-  track('signup_prompt_shown',gradeParams());
+  document.getElementById('spForm').classList.remove('hidden');
+  document.getElementById('spSent').classList.add('hidden');
+  document.getElementById('spErr').textContent='';
+  const saved=store.get('gmc_link_email');
+  if(saved) document.getElementById('spEmail').value=saved;
+  track('signup_prompt_shown',Object.assign({source:'post_grade',prompt:'grade_card'},gradeParams()));
 }
-function dismissSignupPrompt(){ document.getElementById('signupPrompt').classList.add('hidden'); }
-function signupPromptClick(){
-  track('signup_prompt_click',gradeParams());
+function dismissSignupPrompt(byUser){
+  const el=document.getElementById('signupPrompt');
+  if(byUser && !el.classList.contains('hidden')) track('signup_prompt_dismissed',Object.assign({source:'post_grade',prompt:'grade_card'},gradeParams()));
+  el.classList.add('hidden');
+}
+function signupPromptSubmit(){
+  const btn=document.getElementById('spBtn'), errEl=document.getElementById('spErr');
+  if(btn.disabled) return;
+  const email=document.getElementById('spEmail').value.trim();
+  errEl.textContent='';
+  if(!/^\S+@\S+\.\S+$/.test(email)){ errEl.textContent='Enter your email address.'; return; }
+  btn.disabled=true; btn.textContent='…';
+  track('signup_started',Object.assign({method:'email_link',source:'post_grade'},gradeParams()));
+  sendSignInLink(email,'post_grade',currentResult).then(()=>{
+    document.getElementById('spForm').classList.add('hidden');
+    const sent=document.getElementById('spSent');
+    sent.innerHTML=`✓ Check your email. Tap the link we sent to <b style="display:inline;font-size:13px;color:inherit;margin:0">${esc(email)}</b> and this car will be in your Saved list. The link may open in your browser instead of this app.`;
+    sent.classList.remove('hidden');
+  }).catch(err=>{
+    // Email links switched off in Firebase: fall back to the full sign-up form
+    if(err&&err.code==='auth/operation-not-allowed'){ signupPromptMore(); return; }
+    errEl.textContent=friendlyAuthError(err);
+  }).finally(()=>{ btn.disabled=false; btn.textContent='Save'; });
+}
+function signupPromptMore(){
   saveAfterSignup=currentResult;
-  openAccount('signup');
+  openAccount('signup','post_grade');
+  const email=document.getElementById('spEmail').value.trim();
+  if(email) document.getElementById('authEmail').value=email;
 }
-auth.onAuthStateChanged(user=>{
-  if(!user) return;
-  dismissSignupPrompt();
-  const r=saveAfterSignup; saveAfterSignup=null;
-  if(r && authMode==='signup'){
-    rtdb.ref(`saved_vehicles/${user.uid}`).push({year:String(r.year),make:r.make,model:r.model,grade:r.grade||null,createdAt:Date.now()})
-      .catch(e=>console.warn('[GMC] save after signup failed',e));
-  }
-});
+auth.onAuthStateChanged(user=>{ if(user) dismissSignupPrompt(); });
 
 // ── VIN LOOKUP ───────────────────────────────────────────────────────────────
 // Decoded on the phone with NHTSA's free vPIC service. The VIN never goes to our
@@ -1616,7 +1838,7 @@ async function unlockPremium(){
   if(mileage>1000000){ toast('That mileage looks too high'); return; }
 
   // Premium requires an account; the credit is spent server-side (same as index.html)
-  if(!currentUser){ openAccount('signup'); return; }
+  if(!currentUser){ openAccount('signup','unlock'); return; }
 
   const {year,make,model,makeData,rating}=currentVehicle;
   const unlockBtn=document.getElementById('unlockBtn');
@@ -1631,7 +1853,7 @@ async function unlockPremium(){
   }catch(err){
     console.error('[GMC] useReportCredit error:',err);
     if(err.code==='functions/failed-precondition'){ document.getElementById('noCreditsModal').classList.remove('hidden'); track('out_of_credits'); }
-    else if(err.code==='functions/unauthenticated'){ toast('Please sign in again'); openAccount(); }
+    else if(err.code==='functions/unauthenticated'){ toast('Please sign in again'); openAccount('signin','unlock'); }
     else toast('Could not verify credits. Please try again.');
     return;
   }finally{
@@ -1818,10 +2040,10 @@ function openMore(){
     const bal=hasUnlimited?'Unlimited plan active':userCredits!==null?`${userCredits} credit${userCredits!==1?'s':''}`:'';
     who.innerHTML=`<b>${esc(currentUser.email||'Signed in')}</b>${esc(bal)}`;
   } else {
-    who.innerHTML='<b>Not signed in</b>Sign in to save cars and unlock premium reports.';
+    who.innerHTML='<b>Not signed in</b>Save your grades and get your first full report free.';
   }
-  document.getElementById('moreAuthBtn').innerHTML=currentUser?'<span>⎋</span>Log out':'<span>→</span>Sign in / Create account';
-  document.getElementById('moreAuthBtn').classList.toggle('danger',!!currentUser);
+  document.getElementById('moreSignInBtn').classList.toggle('hidden',!!currentUser);
+  document.getElementById('moreAuthBtn').classList.toggle('hidden',!currentUser);
   document.getElementById('deleteAcctBtn').classList.toggle('hidden',!currentUser);
   document.getElementById('moreSheet').classList.remove('hidden');
 }
@@ -1857,14 +2079,16 @@ function dismissInstall(){
 // them from the live DB with the same deal-score math the real report uses.
 (async function loadSample(){
   try{
-    const get=p=>fetch(`${DB_URL}/reliability/${EXAMPLE.make}/${p}/${EXAMPLE.model}.json`).then(r=>r.ok?r.json():null);
-    const [g,l]=await Promise.all([get('grades'),get('lifespan')]);
-    if(!g?.overall) return;
-    const deal=calcDealScore({overallGrade:g.overall,avgLifespan:l?.avgLifespan||null,maxLifespan:l?.maxReported||null,
+    const get=p=>fetch(`${DB_URL}/reliability/${EXAMPLE.make}/${p}.json`).then(r=>r.ok?r.json():null);
+    const [g,y,l]=await Promise.all([get(`grades/${EXAMPLE.model}`),get(`years/${EXAMPLE.model}/${EXAMPLE.year}`),get(`lifespan/${EXAMPLE.model}`)]);
+    // Same per-year grade the report shows (checkGrade), not the model-wide one
+    const overall=yearRating(g,y)?.overall;
+    if(!overall) return;
+    const deal=calcDealScore({overallGrade:overall,avgLifespan:l?.avgLifespan||null,maxLifespan:l?.maxReported||null,
                               mileage:EXAMPLE.mileage,price:EXAMPLE.price,year:EXAMPLE.year});
     const gEl=document.getElementById('sampleGrade');
-    const s=gradeToScore(g.overall);
-    gEl.textContent=g.overall;
+    const s=gradeToScore(overall);
+    gEl.textContent=overall;
     gEl.className='sample-grade '+(s>=80?'gc-green':s>=65?'gc-amber':'gc-red');
     document.getElementById('sampleDeal').textContent=deal.score;
     document.getElementById('sampleDealLbl').textContent=deal.category.replace(' Deal',' deal');
@@ -1876,7 +2100,7 @@ function closeMore(){ document.getElementById('moreSheet').classList.add('hidden
 function moreAuth(){
   closeMore();
   if(currentUser){ if(confirm('Log out of GradeMyCar?')) auth.signOut().then(()=>toast('Logged out')); }
-  else openAccount();
+  else openAccount(null,'more_sheet');
 }
 
 // ── 11b. OWNER REPORTS ("Rate your car") ─────────────────────────────────────
@@ -2084,7 +2308,7 @@ async function submitRate(){
   if(!data) return;
   if(!currentUser){
     pendingRate=true;
-    openAccount('signup');
+    openAccount('signup','rate');
     document.getElementById('authTitle').textContent='Sign up to submit your rating';
     return;
   }
@@ -2119,14 +2343,14 @@ function openBuy(){
 }
 function updateBuyBalance(){
   const el=document.getElementById('buyBalance');
-  if(!currentUser){ el.innerHTML='<span>Sign in to buy credits</span><b style="cursor:pointer" onclick="openAccount()">Sign in ›</b>'; el.classList.remove('hidden'); return; }
+  if(!currentUser){ el.innerHTML='<span>Sign in to buy credits</span><b style="cursor:pointer" onclick="openAccount(null,\'buy\')">Sign in ›</b>'; el.classList.remove('hidden'); return; }
   if(hasUnlimited){ el.innerHTML='<span>Your plan</span><b>∞ Unlimited</b>'; el.classList.remove('hidden'); return; }
   if(userCredits!==null){ el.innerHTML=`<span>Current balance</span><b>${userCredits} credit${userCredits!==1?'s':''}</b>`; el.classList.remove('hidden'); return; }
   el.classList.add('hidden');
 }
 // Same createCheckoutSession Cloud Function and bundle ids as index.html.
 async function purchaseBundle(bundleType){
-  if(!currentUser){ toast('Sign in first to buy credits'); openAccount(); return; }
+  if(!currentUser){ toast('Sign in first to buy credits'); openAccount(null,'buy'); return; }
   const btns=document.querySelectorAll('.plan');
   btns.forEach(b=>b.disabled=true);
   const btn=document.querySelector(`.plan[data-bundle="${bundleType}"] .plan-per`);
@@ -2141,7 +2365,7 @@ async function purchaseBundle(bundleType){
   }catch(err){
     console.error('[GMC] checkout error:',err);
     btns.forEach(b=>b.disabled=false); btn.textContent=orig;
-    if(err.code==='functions/unauthenticated'){ toast('Please sign in again'); openAccount(); }
+    if(err.code==='functions/unauthenticated'){ toast('Please sign in again'); openAccount('signin','buy'); }
     else toast("Couldn't start checkout. Please try again.");
   }
 }
