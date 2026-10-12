@@ -144,6 +144,13 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .stat-tile{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}
 .stat-lbl{font-size:11px;color:var(--muted);line-height:1.35;margin-bottom:7px;font-weight:500}
 .stat-val{font-size:20px;font-weight:800;color:var(--navy)}
+.risk-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px;font-size:12px;line-height:1.5;color:var(--ink)}
+.risk-card strong{display:block;font-size:13px;color:var(--navy);margin-bottom:6px}
+.risk-card p{margin:0 0 8px}.risk-card p:last-child{margin:0}
+.risk-bar{position:relative;height:8px;border-radius:8px;background:#EEF1F5;margin:10px 0 22px}
+.risk-bar .win{position:absolute;top:0;bottom:0;border-radius:8px;background:#FDBA74}
+.risk-bar .car{position:absolute;top:-4px;width:3px;height:16px;margin-left:-1px;border-radius:2px;background:var(--navy)}
+.risk-bar .car span{position:absolute;top:17px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;white-space:nowrap;color:var(--navy)}
 .est-note{font-size:11px;color:var(--muted);line-height:1.45;margin-top:-4px}
 .stat-sub{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.3}
 /* Issues */
@@ -653,6 +660,8 @@ select.prem-input{-webkit-appearance:none;appearance:none}
               </div>
             </div>
             <!-- The lifespan figures are hand-made model-level estimates, not measured per model year -->
+            <!-- When this model year's main problem usually shows up vs this car's mileage (renderRiskCard) -->
+            <div class="risk-card hidden" id="riskCard"></div>
             <div class="est-note">Lifespan figures are rough estimates for this model across all years, not measured for this model year. The grades and problems come from NHTSA owner complaints.</div>
 
             <!-- What owners of this model year report (NHTSA complaints) -->
@@ -831,7 +840,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.12-d';
+const APP_VERSION='2026.10.12-e';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1834,7 +1843,8 @@ function renderGradeSource(rating, year){
     if(rating.limited) html+=' Newer model year, so fewer complaints are in yet. This grade may change.';
     // Free: the main problem behind the grade (engine/transmission first). The full breakdown is in the premium report.
     const top=window.GMCIssues?GMCIssues.headlineIssue(rating.issues):null;
-    if(top) html+=`<div class="top-issue">${esc(top.heading)}: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}</div>`;
+    const topMi=top&&rating.why?.mi?.[top.key];
+    if(top) html+=`<div class="top-issue">${esc(top.heading)}: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}${topMi?`<br>Usually reported around <b>${topMi[1]}k miles</b>`:''}</div>`;
     html+='<button class="why-link" onclick="toggleWhy()">Why this grade? ›</button>';
   } else if(rating?.source==='nhtsa'){
     const why=Number(year)<2005?`We grade model years from 2005 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
@@ -1879,6 +1889,10 @@ function whyHtml(v){
   h+=`<p><b>Overall: ${esc(r.overall)}</b> · counts engine 40%, transmission 40% and everything else 20%`+
      (x?`, which puts it ${ord(x.ok)} of ${x.c}.`:'.')+
      ` Based on ${Number(r.complaints).toLocaleString()} owner complaints across all versions of the ${year} ${esc(displayModel(v.model))}.</p>`;
+  // At what mileage owners report the main problem (only for model years old enough
+  // that the cars have reached high mileage; see grade-from-nhtsa.js)
+  const top=window.GMCIssues?GMCIssues.headlineIssue(r.issues):null, tm=top&&x?.mi?.[top.key];
+  if(tm) h+=`<p><b>${esc(top.label)}</b> complaints typically mention around <b>${tm[1]}k miles</b>, and half fall between ${tm[0]}k and ${tm[2]}k (from ${tm[3].toLocaleString()} complaints that give a mileage).</p>`;
   // Nearby model years, so a bad grade can be seen in context
   const ys=Object.keys(v.yearsData||{}).filter(k=>v.yearsData[k]?.o).map(Number).sort((a,b)=>a-b);
   const i=ys.indexOf(Number(v.year));
@@ -2007,7 +2021,29 @@ function issuesForYear(issues, year){
   });
 }
 
+// "When problems show up": this car's mileage against the mileages at which owners of
+// this model year report its main engine/transmission problem (from NHTSA complaints)
+function renderRiskCard(mileage){
+  const el=document.getElementById('riskCard');
+  const v=currentVehicle, r=v?.rating, mi=r?.why?.mi;
+  let top=window.GMCIssues?GMCIssues.headlineIssue(r?.issues):null;
+  if(top&&!mi?.[top.key]) top=(r.issues||[]).find(i=>mi?.[i.key]&&GMCIssues.ISSUE_THEMES[i.key].drivetrain)||null;
+  if(!top||!mileage){ el.classList.add('hidden'); return; }
+  const [lo,mid,hi,n]=mi[top.key];
+  const k=Math.round(mileage/1000);
+  const where=k<lo?`<b>before</b> the mileage where most of these problems are reported, so if this car is prone to it, it may not have shown yet. Ask about it and budget for it`
+             :k>hi?`<b>past</b> the mileage where most of these problems are reported. Ask whether it happened and what was repaired`
+             :`<b>right in</b> the mileage range where most of these problems are reported. Ask whether it has happened and what was repaired`;
+  const max=Math.max(hi*1.4,k*1.15,60), pos=x=>Math.min(100,Math.max(0,x/max*100));
+  el.innerHTML=`<strong>When problems show up</strong>
+    <p>${esc(top.label)} complaints on the ${esc(v.year)} ${esc(displayModel(v.model))} typically come in around <b>${mid}k miles</b>, and half fall between ${lo}k and ${hi}k.</p>
+    <div class="risk-bar"><div class="win" style="left:${pos(lo)}%;width:${pos(hi)-pos(lo)}%"></div><div class="car" style="left:${pos(k)}%"><span>This car · ${k}k</span></div></div>
+    <p>At ${mileage.toLocaleString()} miles, this car is ${where}.</p>
+    <p class="est-note" style="margin:6px 0 0">From ${n.toLocaleString()} NHTSA complaints that give a mileage.</p>`;
+  el.classList.remove('hidden');
+}
 function renderPremiumResults({mileage,price,avgLifespan,maxReported,commonIssues,overallGrade,dealResult,nhtsaRating,recalls}){
+  renderRiskCard(mileage);
   // Deal score card
   const dc=document.getElementById('dealCard');
   const cls=dealResult.score>=80?'dex':dealResult.score>=65?'dgd':dealResult.score>=50?'dfr':'dpr';

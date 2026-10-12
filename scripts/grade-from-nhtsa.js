@@ -32,6 +32,14 @@ const NOW = 2026.75; // complaints are counted up to this point (Oct 2026)
 // Model years with fewer complaints than this are treated as "not enough data"
 const MIN_COMPLAINTS = 8;
 
+// Mileage at failure per complaint (scripts/mileage-from-nhtsa.js), used to say at what
+// mileage each top problem is typically reported. Complaints arrive at whatever mileage
+// the cars have reached, so young model years would look like they fail early: only
+// years at least MILEAGE_MIN_AGE old, and problems with MILEAGE_MIN mileages, get one.
+const MILEAGE_FILE = path.join(CACHE, 'mileage.json');
+const MILEAGE = fs.existsSync(MILEAGE_FILE) ? JSON.parse(fs.readFileSync(MILEAGE_FILE, 'utf8')) : null;
+const MILEAGE_MIN = 30, MILEAGE_MIN_AGE = 6;
+
 // Percentile (share of model-years doing better) -> letter. Best first.
 const CURVE = [
   [0.15, 'A'], [0.25, 'A-'], [0.37, 'B+'], [0.49, 'B'], [0.60, 'B-'],
@@ -65,10 +73,16 @@ function readCounts(m, y) {
   }
   if (!seen.size) return null;
   const sum = { total: seen.size, themes: {} };
+  const themeMiles = {};
   for (const name of GROUP_NAMES) sum[name] = 0;
-  for (const [bits, themes] of seen.values()) {
+  for (const [id, [bits, themes]] of seen) {
     GROUP_NAMES.forEach((name, i) => { if (bits & (1 << i)) sum[name]++; });
-    THEMES.forEach((k, i) => { if (themes & (1 << i)) sum.themes[k] = (sum.themes[k] || 0) + 1; });
+    const mi = MILEAGE?.[id];
+    THEMES.forEach((k, i) => {
+      if (!(themes & (1 << i))) return;
+      sum.themes[k] = (sum.themes[k] || 0) + 1;
+      if (mi) (themeMiles[k] ||= []).push(mi);
+    });
   }
   // Problem types a recall covered for this model year
   let recalled = 0;
@@ -85,6 +99,16 @@ function readCounts(m, y) {
   if (dt && !top.includes(dt)) top.push(dt);
   sum.issues = top
     .map(([k, n]) => `${k}:${n}:${recalled & (1 << THEMES.indexOf(k)) ? 1 : 0}`).join(',');
+  // Typical mileage for each top problem, in thousands: [25th percentile, median, 75th, complaints with a mileage]
+  if (MILEAGE && NOW - y >= MILEAGE_MIN_AGE) {
+    const k1 = v => Math.round(v / 1000);
+    for (const [k] of top) {
+      const a = (themeMiles[k] || []).sort((x, z) => x - z);
+      if (a.length < MILEAGE_MIN) continue;
+      const q = f => a[Math.min(a.length - 1, Math.floor(f * a.length))];
+      (sum.miles ||= {})[k] = [k1(q(0.25)), k1(q(0.5)), k1(q(0.75)), a.length];
+    }
+  }
   return sum;
 }
 
@@ -154,7 +178,7 @@ for (const m of MODELS) {
     years[r.y] = {
       engine: letter(r.pe), transmission: letter(r.pt), overall: letter(r.ps),
       complaints: r.c.total, engineComplaints: m.ev ? r.c.evdrive : r.c.engine, transComplaints: r.c.powertrain,
-      issues: r.c.issues, recalls: r.c.recalls, why: r.why,
+      issues: r.c.issues, recalls: r.c.recalls, why: r.c.miles ? { ...r.why, mi: r.c.miles } : r.why,
       ...(r.newish ? { limited: true } : {}),
     };
   }
