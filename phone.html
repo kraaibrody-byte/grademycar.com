@@ -252,6 +252,13 @@ button.credits-chip{border:0;cursor:pointer}
 .ymm-row select{min-width:0;width:100%;height:44px;border:1.5px solid var(--line);border-radius:12px;padding:0 24px 0 10px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2364748B' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 9px center;font-size:16px;font-weight:650;color:var(--ink);-webkit-appearance:none;appearance:none;outline:none;cursor:pointer;text-overflow:ellipsis}
 .ymm-row select:focus{border-color:var(--blue)}
 .quick .primary{margin-top:10px}
+/* Home: one-tap popular cars */
+.pop-lbl{font-size:12px;color:var(--muted);font-weight:650;margin:-4px 0 7px}
+.pop-row{display:flex;gap:8px;overflow-x:auto;margin:0 -18px 14px;padding:0 18px 2px;scrollbar-width:none}
+.pop-row::-webkit-scrollbar{display:none}
+.pop{flex:none;display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:7px 8px 7px 11px;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap;box-shadow:0 2px 6px #10245108}
+.pop i{font-style:normal;min-width:26px;height:22px;padding:0 4px;border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:800;background:#F3F4F6;color:#9CA3AF}
+.pop i.g{background:var(--greenbg);color:var(--green)}.pop i.a{background:var(--amberbg);color:var(--amber)}.pop i.r{background:var(--redbg);color:var(--red)}
 .trust{display:flex;justify-content:center;gap:14px;font-size:12px;font-weight:650;color:#166534;margin:12px 0 4px}
 .sample-link{display:block;margin:6px auto 18px;border:0;background:none;color:var(--blue);font-weight:700;font-size:13px;cursor:pointer;padding:6px}
 /* Results: example label + post-grade signup prompt */
@@ -382,6 +389,16 @@ select.prem-input{-webkit-appearance:none;appearance:none}
         </div>
         <div class="page">
           <h1 class="home-h1">Don't buy a lemon.<br><span style="color:var(--blue)">Grade it first.</span></h1>
+          <!-- One tap to a real grade. Edit these to match recent posts; the grades shown
+               here are refreshed from the live data on load (loadPopular). -->
+          <div class="pop-lbl">Tap a car to see its grade</div>
+          <div class="pop-row" id="popRow">
+            <button class="pop" data-year="2018" data-make="honda" data-model="accord">2018 Accord<i class="r">D</i></button>
+            <button class="pop" data-year="2020" data-make="toyota" data-model="camry">2020 Camry<i class="g">B+</i></button>
+            <button class="pop" data-year="2019" data-make="ford" data-model="f-150">2019 F-150<i class="a">C+</i></button>
+            <button class="pop" data-year="2017" data-make="honda" data-model="civic">2017 Civic<i class="g">B+</i></button>
+            <button class="pop" data-year="2019" data-make="toyota" data-model="rav4">2019 RAV4<i class="a">C+</i></button>
+          </div>
           <!-- Lookup on the first screen. These mirror the Search screen's fields and run the same lookup. -->
           <div class="quick">
             <label class="label" for="homeVin">Paste a VIN <span style="color:#98A0AE">(most accurate)</span></label>
@@ -800,7 +817,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.11-a';
+const APP_VERSION='2026.10.12-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -2094,6 +2111,50 @@ function dismissInstall(){
     document.getElementById('sampleDealLbl').textContent=deal.category.replace(' Deal',' deal');
     if(l?.avgLifespan) document.getElementById('sampleLife').textContent=Math.round(l.avgLifespan/1000)+'k';
   }catch(e){}
+})();
+
+// ── POPULAR CARS ON HOME ─────────────────────────────────────────────────────
+// One-tap grades for visitors who aren't shopping for a specific car yet. The
+// buttons ship with grades so they show instantly; this refreshes them with the
+// same per-year grade the report shows.
+(function loadPopular(){
+  document.querySelectorAll('#popRow .pop').forEach(async btn=>{
+    const {year,make,model}=btn.dataset;
+    btn.onclick=async()=>{
+      track('popular_car_click',{make,model,year});
+      markLookupStart('popular');
+      show('loading');
+      if(await fillSearch(make,model,year)) await checkGrade(); else show('home');
+    };
+    try{
+      const get=p=>fetch(`${DB_URL}/reliability/${make}/${p}.json`).then(r=>r.ok?r.json():null);
+      const [g,y]=await Promise.all([get(`grades/${model}`),get(`years/${model}/${year}`)]);
+      const overall=yearRating(g,y)?.overall;
+      if(!overall) return;
+      const s=gradeToScore(overall), i=btn.querySelector('i');
+      i.textContent=overall;
+      i.className=s>=80?'g':s>=65?'a':'r';
+    }catch(e){}
+  });
+})();
+
+// ── FIRST-SECONDS ENGAGEMENT ─────────────────────────────────────────────────
+// GA's own engagement ping is sent when the page closes, which Instagram's and
+// Facebook's in-app browsers often never report. These fire while the page is
+// still open, so they show whether visitors leave at once or just go unmeasured.
+(function trackFirstSeconds(){
+  const types=['pointerdown','keydown','scroll'];
+  let interacted=false;
+  function first(e){
+    if(interacted) return;
+    interacted=true;
+    types.forEach(t=>document.removeEventListener(t,first,true));
+    track('first_interaction',{type:e.type,screen:currentScreen,secs:Math.round(performance.now()/1000),in_app:IN_APP});
+  }
+  types.forEach(t=>document.addEventListener(t,first,{capture:true,passive:true}));
+  setTimeout(()=>{
+    if(document.visibilityState==='visible') track('still_here_10s',{screen:currentScreen,interacted,in_app:IN_APP});
+  },10000);
 })();
 
 function closeMore(){ document.getElementById('moreSheet').classList.add('hidden'); }
