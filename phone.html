@@ -847,7 +847,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.12-h';
+const APP_VERSION='2026.10.12-i';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -865,17 +865,35 @@ const APP_VERSION='2026.10.12-h';
     location.replace(u.toString());
   }catch(e){}
 })();
-// No analytics at all from local testing: test sign-ups on localhost were inflating
-// sign_up. Local events are logged to the console instead.
+// No analytics at all from local testing (test sign-ups on localhost were inflating
+// sign_up) or from a browser flagged with ?gmc_test=1. Those events go to the console.
+// Your own devices: open any page once with ?internal=1 to tag their events internal.
 const IS_LOCAL=/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname)||/\.(localhost|test)$/.test(location.hostname);
+const GA=window.GMCAttribution;
+const NO_ANALYTICS=IS_LOCAL||(GA&&GA.analyticsOff());
 let analytics=null;
-if(!IS_LOCAL){ try { analytics=firebase.analytics(); } catch(e) {} }
+if(!NO_ANALYTICS){
+  try{
+    analytics=firebase.analytics();
+    // A user property reaches every event, including GA's automatic ones (page_view…)
+    if(GA&&GA.internal()) analytics.setUserProperties({internal_user:'true'});
+  }catch(e){}
+}
 // Funnel events (view in Firebase console → Analytics → Events)
 function track(name, params){
-  const p=Object.assign({app:'phone'}, params||{});
-  if(IS_LOCAL){ console.debug('[GMC track]',name,p); return; }
+  const p=Object.assign({app:'phone'}, GA?GA.common():{}, params||{});
+  if(NO_ANALYTICS){ console.debug('[GMC track]',name,p); return; }
   try{ if(analytics) analytics.logEvent(name, p); }catch(e){}
 }
+// GA4 ecommerce item for each plan (same ids and names in index.html, success.html and
+// the Stripe webhook, so begin_checkout and purchase line up)
+const PLANS={
+  starter: {item_id:'starter', item_name:'5 Report Credits',  price:1.99},
+  value:   {item_id:'value',   item_name:'15 Report Credits', price:4.99},
+  weekend: {item_id:'weekend', item_name:'48-Hour Unlimited', price:14.99},
+  extended:{item_id:'extended',item_name:'2-Week Unlimited',  price:29.99},
+};
+const planParams=id=>{ const p=PLANS[id]; return p?{currency:'USD',value:p.price,items:[{...p,quantity:1}]}:{}; };
 // localStorage can throw in private mode and some in-app browsers
 const store={
   get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
@@ -1049,7 +1067,7 @@ function sendSignInLink(email, source, car){
   }
   try{
     const ft=JSON.parse(store.get('gmc_first_touch')||'null')||{};
-    ['utm_source','utm_medium','utm_campaign'].forEach(k=>{ if(ft[k]) u.searchParams.set(k,ft[k]); });
+    ['utm_source','utm_medium','utm_campaign','utm_content'].forEach(k=>{ if(ft[k]) u.searchParams.set(k,ft[k]); });
   }catch(e){}
   return auth.sendSignInLinkToEmail(email,{url:u.toString(),handleCodeInApp:true})
     .then(()=>{ store.set('gmc_link_email',email); });
@@ -1152,6 +1170,9 @@ function friendlyAuthError(err){
 auth.onAuthStateChanged(user=>{
   currentUser=user;
   if(user) store.set('gmc_has_account','1');
+  // GA user_id is the Firebase uid (an opaque id, never the email), so one person's
+  // phone and laptop count as one user
+  try{ if(analytics) analytics.setUserId(user?user.uid:null); }catch(e){}
   const btn=document.getElementById('accountBtn');
   btn.textContent=user?initials(user):'Sign in';
   btn.className='acct-btn'+(user?' avatar':'');
@@ -2555,17 +2576,24 @@ function updateBuyBalance(){
 }
 // Same createCheckoutSession Cloud Function and bundle ids as index.html.
 async function purchaseBundle(bundleType){
+  // Which tier people tap, even if they then have to sign in first
+  track('select_plan',{item_id:bundleType,signed_in:currentUser?'yes':'no',...planParams(bundleType)});
   if(!currentUser){ toast('Sign in first to buy credits'); openAccount(null,'buy'); return; }
   const btns=document.querySelectorAll('.plan');
   btns.forEach(b=>b.disabled=true);
   const btn=document.querySelector(`.plan[data-bundle="${bundleType}"] .plan-per`);
   const orig=btn.textContent; btn.textContent='Opening checkout…';
   try{
-    const res=await functions.httpsCallable('createCheckoutSession')({bundleType,sourceExtension:false});
+    // GA's ids for this browser ride along in the Stripe session, so the webhook can
+    // report the purchase as this visitor even if the buyer never comes back here
+    const ids=GA?GA.gaIds(firebaseConfig.measurementId):{};
+    const res=await functions.httpsCallable('createCheckoutSession')({bundleType,sourceExtension:false,
+      gaClientId:ids.clientId||null,gaSessionId:ids.sessionId||null,internal:!!(GA&&GA.internal())});
     if(!res.data||!res.data.url) throw new Error('No checkout URL');
     // success.html reads this to send the buyer back to the phone app
     try{ localStorage.setItem('gmc_return','phone:'+Date.now()); }catch(e){}
-    track('begin_checkout',{bundle:bundleType});
+    track('begin_checkout',{bundle:bundleType,...planParams(bundleType)});
+    await new Promise(r=>setTimeout(r,300)); // let the event leave before the page does
     location.href=res.data.url;
   }catch(err){
     console.error('[GMC] checkout error:',err);

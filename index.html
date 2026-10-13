@@ -2014,7 +2014,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
         import { getDatabase, ref, set, get, push, update, serverTimestamp, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+        import { getAnalytics, logEvent, setUserId, setUserProperties } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
 
@@ -2062,13 +2062,29 @@
         const database = getDatabase(app);
         const functions = getFunctions(app);
         // No analytics from local testing (localhost test sign-ups were inflating sign_up)
+        // or from a browser flagged with ?gmc_test=1; ?internal=1 tags your own devices
+        // (see attribution.js)
         const IS_LOCAL = /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname) || /\.(localhost|test)$/.test(location.hostname);
-        const analytics = IS_LOCAL ? null : getAnalytics(app);
+        const GA = window.GMCAttribution;
+        const NO_ANALYTICS = IS_LOCAL || (GA && GA.analyticsOff());
+        const analytics = NO_ANALYTICS ? null : getAnalytics(app);
+        if (analytics && GA && GA.internal()) { try { setUserProperties(analytics, { internal_user: 'true' }); } catch (e) {} }
+        // GA user_id is the Firebase uid (opaque, never the email)
+        onAuthStateChanged(auth, (u) => { try { if (analytics) setUserId(analytics, u ? u.uid : null); } catch (e) {} });
         // Analytics events for non-module scripts (share button)
         window.gmcTrack = (name, params) => {
-            if (IS_LOCAL) { console.debug('[GMC track]', name, params); return; }
-            try { logEvent(analytics, name, Object.assign({ app: 'web' }, params || {})); } catch (e) {}
+            const p = Object.assign({ app: 'web' }, GA ? GA.common() : {}, params || {});
+            if (NO_ANALYTICS) { console.debug('[GMC track]', name, p); return; }
+            try { logEvent(analytics, name, p); } catch (e) {}
         };
+        // GA4 ecommerce items: same ids and names as phone.html, success.html and the webhook
+        const PLANS = {
+            starter:  { item_id: 'starter',  item_name: '5 Report Credits',  price: 1.99 },
+            value:    { item_id: 'value',    item_name: '15 Report Credits', price: 4.99 },
+            weekend:  { item_id: 'weekend',  item_name: '48-Hour Unlimited', price: 14.99 },
+            extended: { item_id: 'extended', item_name: '2-Week Unlimited',  price: 29.99 },
+        };
+        const planParams = (id) => { const p = PLANS[id]; return p ? { currency: 'USD', value: p.price, items: [{ ...p, quantity: 1 }] } : {}; };
 
         // Bundle configurations that match your Cloud Functions
         const BUNDLE_CONFIGS = {
@@ -2096,6 +2112,7 @@
 
         // Purchase bundle function
         window.purchaseBundle = async function(bundleType) {
+    window.gmcTrack('select_plan', Object.assign({ item_id: bundleType, signed_in: auth.currentUser ? 'yes' : 'no' }, planParams(bundleType)));
     try {
         const user = auth.currentUser;
         if (!user) {
@@ -2150,9 +2167,14 @@
 }
 
         const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+        // GA's ids for this browser, so the Stripe webhook can report the purchase as this visitor
+        const ids = GA ? GA.gaIds(firebaseConfig.measurementId) : {};
         const result = await createCheckoutSession({ 
             bundleType: bundleType,
-            sourceExtension: fromExtension // ADD THIS LINE
+            sourceExtension: fromExtension,
+            gaClientId: ids.clientId || null,
+            gaSessionId: ids.sessionId || null,
+            internal: !!(GA && GA.internal())
         });
 
         console.log('Checkout session created:', result.data);
@@ -2167,6 +2189,8 @@
         sessionStorage.setItem('purchaseBundle', bundleType);
     }
     
+    window.gmcTrack('begin_checkout', Object.assign({ bundle: bundleType }, planParams(bundleType)));
+    await new Promise(r => setTimeout(r, 300)); // let the event leave before the page does
     window.location.href = result.data.url;
 }
 
