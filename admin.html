@@ -99,6 +99,7 @@
   .navitem svg{flex:none; opacity:.8;}
   .navitem:hover{background:var(--line-soft); color:var(--ink);}
   .navitem.active{background:#eff6ff; color:var(--blue-deep);}
+  .navrow{display:flex; flex-direction:column; gap:1.4rem;}
   .sidebar-foot{margin-top:auto; border-top:1px solid var(--line); padding-top:.8rem;}
   .admin-chip{font-size:.72rem; color:var(--ink-soft); word-break:break-all; line-height:1.5;}
   .admin-chip b{color:var(--ink); display:block; font-size:.82rem;}
@@ -200,6 +201,73 @@
   .spinner{display:inline-block; width:14px; height:14px; border:2px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
   .muted{color:var(--ink-soft);}
+
+  /* ---------------- Phones ----------------
+     The sidebar becomes a sticky top bar with one swipeable row of tabs, and the
+     Users and Owner reports tables become stacked cards with a label on each value
+     (labels come from the column order, so the table code stays the same). */
+  @media (max-width:760px){
+    body{font-size:15px;}
+    .shell{display:block; min-height:0;}
+    .sidebar{
+      position:sticky; top:0; z-index:20; height:auto; gap:.55rem;
+      padding:calc(.6rem + env(safe-area-inset-top, 0px)) .9rem .55rem;
+      border-right:none; border-bottom:1px solid var(--line);
+      display:grid; grid-template-columns:1fr auto; align-items:center;
+    }
+    .navgroup-label{display:none;}
+    .navrow > div, .navgroup{display:contents;}
+    .navrow{grid-column:1 / -1; display:flex; flex-direction:row; gap:6px; overflow-x:auto; scrollbar-width:none; margin:0 -.9rem; padding:0 .9rem .1rem; scroll-snap-type:x proximity;}
+    .navrow::-webkit-scrollbar{display:none;}
+    .navitem{width:auto; flex:none; white-space:nowrap; padding:.45rem .8rem; border:1px solid var(--line); border-radius:100px; font-size:.82rem; scroll-snap-align:start;}
+    .navitem.active{border-color:#bfdbfe;}
+    .navitem svg{display:none;}
+    .sidebar-foot{grid-row:1; grid-column:2; margin:0; padding:0; border:none;}
+    .admin-chip{display:none;}
+    .btn-signout{margin:0; width:auto; padding:.4rem .75rem;}
+
+    .main{padding:1rem .9rem 3rem; max-width:none;}
+    .topbar{margin-bottom:1rem; align-items:flex-start;}
+    .topbar h1{font-size:1.2rem;}
+    .searchbar{min-width:0; width:100%;}
+    .searchbar input{font-size:16px;} /* 16px stops iPhone zooming in on focus */
+    .kpi-row{gap:.6rem;}
+    .kpi{padding:.8rem .85rem;}
+    .kpi-value{font-size:1.25rem;}
+    .panel-head, .panel-body{padding-left:.85rem; padding-right:.85rem;}
+    .bar-label{width:88px;}
+    .bar-value{width:48px;}
+    .roadmap-row{flex-wrap:wrap;}
+    .roadmap-meta{margin-left:0; width:100%; justify-content:space-between;}
+    .field-inline input[type=text], .field-inline input[type=number]{font-size:16px; flex:1 1 120px;}
+    .btn{padding:.55rem .85rem; font-size:.85rem;}
+    .code-block{font-size:.7rem;}
+
+    /* Tables -> cards */
+    .cards table, .cards thead, .cards tbody, .cards tr, .cards td{display:block; width:100%;}
+    .cards thead{display:none;}
+    .cards tr{border:1px solid var(--line); border-radius:12px; padding:.65rem .8rem; margin-bottom:.6rem; background:var(--surface);}
+    .cards td{border:none; padding:.2rem 0; display:flex; justify-content:space-between; gap:1rem; text-align:right;}
+    .cards td.num{font-family:var(--mono);}
+    .cards td::before{font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); font-weight:700; text-align:left; flex:none; font-family:var(--font);}
+    .cards td:first-child{justify-content:flex-start; text-align:left; font-size:.95rem; padding-bottom:.4rem;}
+    .cards td:last-child{justify-content:flex-start; padding-top:.5rem;}
+    .cards td:last-child .btn{width:100%;}
+    .cards td.empty-note{display:block; text-align:left;}
+    .cards .table-wrap{overflow:visible;}
+    .panel.cards-panel{background:none; border:none; box-shadow:none;}
+    .panel.cards-panel .panel-body{padding:0;}
+    #users-tbody td:nth-child(2){--l:'Credits'} #users-tbody td:nth-child(3){--l:'Unlimited'}
+    #users-tbody td:nth-child(4){--l:'Searches'} #users-tbody td:nth-child(5){--l:'Lifetime spend'}
+    #users-tbody td:nth-child(6){--l:'Joined'}
+    #owners-tbody td:nth-child(2){--l:'Engine'} #owners-tbody td:nth-child(3){--l:'Miles'}
+    #owners-tbody td:nth-child(4){--l:'Rating'} #owners-tbody td:nth-child(5){--l:'Buy again'}
+    #owners-tbody td:nth-child(6){--l:'Problems'} #owners-tbody td:nth-child(7){--l:'Owner'}
+    #owners-tbody td:nth-child(8){--l:'Updated'}
+    .cards td::before{content:var(--l, '');}
+    .cards td:first-child::before, .cards td:last-child::before, .cards td.empty-note::before{content:none;}
+    #owners-tbody td:nth-child(7){word-break:break-all;}
+  }
 </style>
 </head>
 <body>
@@ -241,6 +309,7 @@
     <aside class="sidebar">
       <div class="brand"><div class="mark"></div><div class="word">GradeMyCar</div></div>
 
+      <div class="navrow">
       <div>
         <div class="navgroup-label">Business</div>
         <nav class="navgroup">
@@ -286,6 +355,7 @@
           </button>
         </nav>
       </div>
+      </div>
 
       <div class="sidebar-foot">
         <div class="admin-chip"><b id="admin-email">—</b><span id="admin-uid" style="cursor:pointer;" title="Click to copy UID">uid: —</span></div>
@@ -327,7 +397,7 @@
           </div>
         </div>
         <div id="users-banner"></div>
-        <div class="panel">
+        <div class="panel cards cards-panel">
           <div class="panel-body table-wrap">
             <table>
               <thead><tr><th>User</th><th class="num">Credits</th><th>Unlimited</th><th class="num">Searches</th><th class="num">Lifetime spend</th><th>Joined</th><th></th></tr></thead>
@@ -387,7 +457,7 @@
           <button class="btn" id="owners-refresh">↻ Refresh</button>
         </div>
         <div id="owners-banner"></div>
-        <div class="panel">
+        <div class="panel cards cards-panel">
           <div class="panel-body table-wrap">
             <table>
               <thead><tr><th>Car</th><th>Engine</th><th class="num">Miles</th><th class="num">Rating</th><th>Buy again</th><th>Problems</th><th>Owner</th><th>Updated</th><th></th></tr></thead>
@@ -570,6 +640,10 @@ document.querySelectorAll(".navitem").forEach(btn => {
     btn.classList.add("active");
     $("view-" + btn.dataset.view).classList.add("active");
     history.replaceState(null, "", "#" + btn.dataset.view);
+    if (matchMedia("(max-width:760px)").matches) {
+      window.scrollTo(0, 0);
+      btn.scrollIntoView({ block: "nearest", inline: "center" });
+    }
   });
 });
 // Deep links from GradeMyCar HQ, e.g. admin.html#users
