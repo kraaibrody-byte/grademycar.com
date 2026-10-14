@@ -267,6 +267,14 @@
     .cards td::before{content:var(--l, '');}
     .cards td:first-child::before, .cards td:last-child::before, .cards td.empty-note::before{content:none;}
     #owners-tbody td:nth-child(7){word-break:break-all;}
+
+    /* Manage opens as a sheet from the bottom, so it appears where you tapped */
+    #manage-panel{position:fixed; left:0; right:0; bottom:0; z-index:40; margin:0; max-height:85vh; overflow-y:auto;
+      border-radius:18px 18px 0 0; box-shadow:0 -12px 40px rgba(15,23,42,.25);
+      padding-bottom:env(safe-area-inset-bottom, 0px);}
+    #manage-panel .panel-head{position:sticky; top:0; background:var(--surface); z-index:1;}
+    body.sheet-open::after{content:""; position:fixed; inset:0; background:rgba(15,23,42,.35); z-index:35;}
+    .bar-label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   }
 </style>
 </head>
@@ -407,7 +415,7 @@
         </div>
 
         <div class="panel" id="manage-panel" style="display:none;">
-          <div class="panel-head"><div><h2>Manage — <span id="manage-email">—</span></h2><div class="sub">Writes directly to <span class="num">users/&lt;uid&gt;</span> in Realtime Database</div></div></div>
+          <div class="panel-head"><div style="min-width:0"><h2>Manage — <span id="manage-email" style="word-break:break-all">—</span></h2><div class="sub">Writes directly to <span class="num">users/&lt;uid&gt;</span> in Realtime Database</div></div><button class="btn" id="manage-close">Close</button></div>
           <div class="panel-body">
             <div class="field-inline" style="margin-bottom:.8rem;">
               <button class="btn primary" data-grant="5">+5 credits</button>
@@ -826,8 +834,12 @@ function openManage(uid) {
   $("manage-panel").style.display = "block";
   $("manage-email").textContent = u.email || uid;
   $("manage-status").textContent = "";
-  $("manage-panel").scrollIntoView({behavior:"smooth", block:"start"});
+  // Phones show it as a sheet over the list; desktop scrolls down to it
+  if (!matchMedia("(max-width:760px)").matches) $("manage-panel").scrollIntoView({behavior:"smooth", block:"start"});
+  else { $("manage-panel").scrollTop = 0; document.body.classList.add("sheet-open"); }
 }
+function closeManage() { $("manage-panel").style.display = "none"; document.body.classList.remove("sheet-open"); }
+$("manage-close").addEventListener("click", closeManage);
 
 async function writeUser(patch) {
   if (!selectedUid) return;
@@ -907,7 +919,9 @@ async function loadSearches() {
   try {
     const snap = await get(ref(db, "vehicle_searches"));
     const raw = snap.exists() ? snap.val() : {};
-    const entries = Object.values(raw);
+    // Stored as vehicle_searches/{uid}/{pushId}; older entries may sit directly under the root
+    const entries = Object.values(raw).flatMap(v =>
+      v && typeof v === "object" && ("make" in v || "searchedAt" in v) ? [v] : Object.values(v || {}));
     renderActivity(entries);
   } catch (e) {
     permissionBanner($("activity-banner"), e);
@@ -931,7 +945,7 @@ function renderActivity(entries) {
   entries.forEach(e => {
     const g = (e.grade || "unknown").toString().toUpperCase();
     gradeCounts[g] = (gradeCounts[g]||0) + 1;
-    const mk = (e.make || "unknown").toString();
+    const mk = (e.make || "unknown").toString().toLowerCase(); // saved as both "honda" and "Honda"
     makeCounts[mk] = (makeCounts[mk]||0) + 1;
   });
 
