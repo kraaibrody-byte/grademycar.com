@@ -2052,6 +2052,7 @@
     {
       type: "GRADECAR_AUTH_CHANGE",
       idToken,
+      refreshToken: user.refreshToken, // lets the extension renew the 1-hour idToken
       uid: user.uid,
       email: user.email,
     },

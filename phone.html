@@ -847,11 +847,20 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+// Signs the GradeMyCar Chrome extension in with the same account (its content script on
+// grademycar.com relays this). The refresh token lets it renew the 1-hour ID token.
+auth.onIdTokenChanged(async user=>{
+  try{
+    if(!user){ window.postMessage({type:'GRADECAR_AUTH_CHANGE',idToken:null},location.origin); return; }
+    window.postMessage({type:'GRADECAR_AUTH_CHANGE',idToken:await user.getIdToken(),refreshToken:user.refreshToken,
+                        uid:user.uid,email:user.email},location.origin);
+  }catch(e){}
+});
 const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.13-a';
+const APP_VERSION='2026.10.13-b';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
