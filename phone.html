@@ -290,6 +290,9 @@ button.credits-chip{border:0;cursor:pointer}
 .signup-prompt{position:relative;background:#fff;border:1.5px solid #C7D2FE;border-radius:19px;padding:14px 16px}
 .signup-prompt b{display:block;font-size:14px;color:var(--navy);margin:0 26px 3px 0}
 .signup-prompt p{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.45}
+.sp-perks{list-style:none;margin:6px 0 10px;padding:0;display:grid;gap:6px}
+.sp-perks li{position:relative;padding-left:22px;font-size:13px;color:var(--navy);line-height:1.4}
+.sp-perks li::before{content:'🔒';position:absolute;left:0;top:0;font-size:12px}
 .signup-prompt .primary{height:44px;font-size:14px}
 .sp-row{display:flex;gap:8px}
 .sp-row input{flex:1;min-width:0;height:44px;border:1.5px solid var(--line);border-radius:12px;padding:0 12px;font-size:16px;outline:none;color:var(--ink);background:#fff}
@@ -577,12 +580,13 @@ select.prem-input{-webkit-appearance:none;appearance:none}
           <!-- Signed-out only, once per grade. Never covers or gates the grade above. -->
           <div class="signup-prompt hidden" id="signupPrompt">
             <button class="x" onclick="dismissSignupPrompt(true)" aria-label="Dismiss">✕</button>
-            <b>Save this report free</b>
+            <b>Your full report is free</b>
             <div id="spForm">
-              <p>We'll email you a sign-in link, no password needed. Your first full report is free too.</p>
+              <ul class="sp-perks" id="spPerks"></ul>
+              <p>Create a free account with your email and your first full report is on us. No password: we email you a sign-in link, and this car is saved to your account.</p>
               <div class="sp-row">
                 <input id="spEmail" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" aria-label="Email" onkeydown="if(event.key==='Enter')signupPromptSubmit()">
-                <button class="vin-btn" id="spBtn" onclick="signupPromptSubmit()">Save</button>
+                <button class="vin-btn" id="spBtn" onclick="signupPromptSubmit()">Get it free</button>
               </div>
               <div class="sp-err" id="spErr"></div>
               <span class="sp-more" onclick="signupPromptMore()">Other ways to sign up</span>
@@ -847,7 +851,7 @@ const rtdb = firebase.database();
 const functions = firebase.functions();
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.12-i';
+const APP_VERSION='2026.10.13-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1533,11 +1537,26 @@ function onGradeShown(found){
   document.getElementById('spErr').textContent='';
   const saved=store.get('gmc_link_email');
   if(saved) document.getElementById('spEmail').value=saved;
-  track('signup_prompt_shown',Object.assign({source:'post_grade',prompt:'grade_card'},gradeParams()));
+  renderSignupPerks();
+  track('signup_prompt_shown',Object.assign({source:'post_grade',prompt:'free_report'},gradeParams()));
+}
+// What the full report adds for THIS car, from its own data, so the offer is concrete.
+// Only lines the car really has are shown (no problem count without NHTSA themes, no
+// mileage line without mileage data).
+function renderSignupPerks(){
+  const r=currentVehicle?.rating||{}, issues=r.issues||[];
+  const more=Math.max(0,issues.length-1), risk=riskIssue(r);
+  const perks=[];
+  const recalled=issues.slice(1).filter(i=>i.recall).length;
+  if(more) perks.push(`${more} more problem${more>1?'s':''} owners reported${recalled?`, ${recalled===more&&more>1?'all':recalled} with a recall`:''}`);
+  if(risk) perks.push(`When ${risk.label.toLowerCase()} usually shows up, and where this car falls`);
+  if(issues.length) perks.push('What to check before you buy');
+  perks.push('Miles remaining and a deal score for the price you\'re offered');
+  document.getElementById('spPerks').innerHTML=perks.map(t=>`<li>${esc(t)}</li>`).join('');
 }
 function dismissSignupPrompt(byUser){
   const el=document.getElementById('signupPrompt');
-  if(byUser && !el.classList.contains('hidden')) track('signup_prompt_dismissed',Object.assign({source:'post_grade',prompt:'grade_card'},gradeParams()));
+  if(byUser && !el.classList.contains('hidden')) track('signup_prompt_dismissed',Object.assign({source:'post_grade',prompt:'free_report'},gradeParams()));
   el.classList.add('hidden');
 }
 function signupPromptSubmit(){
@@ -1551,13 +1570,13 @@ function signupPromptSubmit(){
   sendSignInLink(email,'post_grade',currentResult).then(()=>{
     document.getElementById('spForm').classList.add('hidden');
     const sent=document.getElementById('spSent');
-    sent.innerHTML=`✓ Check your email. Tap the link we sent to <b style="display:inline;font-size:13px;color:inherit;margin:0">${esc(email)}</b> and this car will be in your Saved list. The link may open in your browser instead of this app.`;
+    sent.innerHTML=`✓ Check your email. Tap the link we sent to <b style="display:inline;font-size:13px;color:inherit;margin:0">${esc(email)}</b>. This car will be in your Saved list with your free report credit ready to use. The link may open in your browser instead of this app.`;
     sent.classList.remove('hidden');
   }).catch(err=>{
     // Email links switched off in Firebase: fall back to the full sign-up form
     if(err&&err.code==='auth/operation-not-allowed'){ signupPromptMore(); return; }
     errEl.textContent=friendlyAuthError(err);
-  }).finally(()=>{ btn.disabled=false; btn.textContent='Save'; });
+  }).finally(()=>{ btn.disabled=false; btn.textContent='Get it free'; });
 }
 function signupPromptMore(){
   saveAfterSignup=currentResult;
