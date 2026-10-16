@@ -251,6 +251,12 @@ button.credits-chip{border:0;cursor:pointer}
 .modal .ok{color:var(--green);font-size:12px;margin:-4px 0 10px;display:none}
 .toast{top:calc(13px + env(safe-area-inset-top))}
 .modal .err{color:#B42318;font-size:12px;margin:-4px 0 10px;display:none}
+.modal .msg-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.modal .msg-acts button{border:1px solid currentColor;background:#fff;color:inherit;font-size:12px;font-weight:700;border-radius:9px;padding:7px 10px;cursor:pointer}
+.modal .msg-acts button:disabled{opacity:.5;cursor:default}
+/* Sign-in sits at the top, not centered, so the iOS keyboard never covers the button */
+#authModal{align-items:flex-start;overflow-y:auto;padding-top:calc(18px + env(safe-area-inset-top))}
+.sp-sent button{background:none;border:0;padding:0;color:var(--blue);font-weight:700;font-size:inherit;cursor:pointer}
 .modal .switch{text-align:center;font-size:12px;color:var(--muted);margin-top:12px;cursor:pointer}
 .modal .switch b{color:var(--blue)}
 /* Home: sample report + hero extras */
@@ -370,16 +376,19 @@ select.prem-input{-webkit-appearance:none;appearance:none}
           <button class="iconbtn" style="position:absolute;top:12px;right:12px;width:32px;height:32px" onclick="closeAccount()" aria-label="Close">✕</button>
           <h2 id="authTitle">Create your free account</h2>
           <p class="sub" id="authSub"></p>
-          <input id="authEmail" type="email" placeholder="Email" autocomplete="email" autocapitalize="off" onkeydown="if(event.key==='Enter')submitAuth()">
-          <!-- Password is optional: by default we email a one-tap sign-in link -->
-          <div id="pwBlock" class="hidden">
-            <input id="authPassword" type="password" placeholder="Password" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitAuth()">
-            <a class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot password?</a>
-          </div>
-          <div id="authError" class="err">Something went wrong. Try again.</div>
-          <div id="authOk" class="ok"></div>
-          <button class="primary" id="authSubmit" onclick="submitAuth()">Email me a sign-in link</button>
-          <button class="google-btn" id="googleBtn" onclick="googleSignIn()"><b style="color:#4285F4;font-size:16px">G</b>Continue with Google</button>
+          <!-- A real form so Return submits and password managers offer to save -->
+          <form id="authForm" novalidate onsubmit="event.preventDefault();submitAuth()">
+            <input id="authEmail" name="email" type="email" inputmode="email" placeholder="Email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" onfocus="trackFieldFocus('email')">
+            <!-- Password is optional: by default we email a one-tap sign-in link -->
+            <div id="pwBlock" class="hidden">
+              <input id="authPassword" name="password" type="password" placeholder="Password" autocomplete="new-password" enterkeyhint="go" onfocus="trackFieldFocus('password')">
+              <a class="forgot" id="forgotLink" onclick="forgotPassword()">Forgot password?</a>
+            </div>
+            <div id="authError" class="err" role="alert"></div>
+            <div id="authOk" class="ok" role="status"></div>
+            <button type="submit" class="primary" id="authSubmit">Email me a sign-in link</button>
+          </form>
+          <button type="button" class="google-btn" id="googleBtn" onclick="googleSignIn()"><b style="color:#4285F4;font-size:16px">G</b>Continue with Google</button>
           <div class="auth-hint hidden" id="inAppHint">Google sign-in doesn't work inside Instagram or Facebook. Use your email and we'll send you a link.</div>
           <div class="auth-alt" id="pwToggle" onclick="togglePassword()">Use a password instead</div>
           <div class="switch" id="authSwitch" onclick="toggleAuthMode()">Already have an account? <b>Sign in</b></div>
@@ -585,7 +594,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
               <ul class="sp-perks" id="spPerks"></ul>
               <p>Create a free account with your email and your first full report is on us. No password: we email you a sign-in link, and this car is saved to your account.</p>
               <div class="sp-row">
-                <input id="spEmail" type="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" aria-label="Email" onkeydown="if(event.key==='Enter')signupPromptSubmit()">
+                <input id="spEmail" name="email" type="email" inputmode="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Email" onfocus="trackFieldFocus('card_email')" onkeydown="if(event.key==='Enter')signupPromptSubmit()">
                 <button class="vin-btn" id="spBtn" onclick="signupPromptSubmit()">Get it free</button>
               </div>
               <div class="sp-err" id="spErr"></div>
@@ -858,15 +867,33 @@ auth.onIdTokenChanged(async user=>{
 });
 const rtdb = firebase.database();
 const functions = firebase.functions();
+// Local sign-up testing against the Firebase emulators, so test accounts never reach the
+// real project: run `firebase emulators:start --only auth,database --project demo-grademycar`
+// and open http://localhost:PORT/phone.html?emu=1 (remembered on this browser; ?emu=0 turns it off).
+const USE_EMU=(()=>{
+  if(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return false;
+  try{
+    const q=new URLSearchParams(location.search).get('emu');
+    if(q==='1') localStorage.setItem('gmc_emu','1'); else if(q==='0') localStorage.removeItem('gmc_emu');
+    return localStorage.getItem('gmc_emu')==='1';
+  }catch(e){ return false; }
+})();
+if(USE_EMU){
+  auth.useEmulator('http://127.0.0.1:9099',{disableWarnings:true});
+  rtdb.useEmulator('127.0.0.1',9000);
+}
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.13-b';
+const APP_VERSION='2026.10.16-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
 // The ?v= query makes it a URL the old cache has never seen; the check against it
 // stops a reload loop if the server is still serving the old file.
 (async function checkForUpdate(){
+  // Not while finishing an emailed sign-in link: completeSignInLink strips the one-time
+  // code from the address bar, so a reload here would land signed out with the link used up.
+  if(new URLSearchParams(location.search).has('oobCode')) return;
   try{
     const r=await fetch('/version.json?t='+Date.now(),{cache:'no-store'});
     if(!r.ok) return;
@@ -962,15 +989,28 @@ const AUTH_COPY={
   signup:{title:'Create your free account', sub:'Save your grades, keep your search history, and get your first full report free.',
           link:'Email me a sign-in link', pw:'Create account', sw:'Already have an account? <b>Sign in</b>'},
   signin:{title:'Welcome back', sub:'Sign in to see your saved cars and credits.',
-          link:'Email me a sign-in link', pw:'Sign in', sw:"New here? <b>Create a free account</b>"}
+          link:'Email me a sign-in link', pw:'Sign in', sw:"New here? <b>Create a free account</b>"},
+  // Opened an emailed link in a different browser than the one that asked for it
+  confirm:{title:'Finish signing in', sub:'This link opened in a different browser, so enter the email you used and we\'ll finish.',
+           link:'Finish signing in', pw:'Finish signing in', sw:''}
 };
+// Funnel events. Never the email or password: only which field, which method, and
+// Firebase's error code (auth/…), or client/… for problems caught before sending.
+const focusedFields=new Set();
+function trackFieldFocus(field){
+  if(focusedFields.has(field)) return;
+  focusedFields.add(field);
+  track('signup_field_focus',{field});
+}
+function trackAuthError(method, err){
+  const code=typeof err==='string'?err:String((err&&err.code)||'unknown');
+  track('signup_error',{method,error_code:code.slice(0,60)});
+}
 function openAccount(mode, source){
   if(currentUser){ if(confirm('Log out of GradeMyCar?')) auth.signOut(); return; }
   authSource=source||'menu';
   authDone=false;
   setAuthMode(mode||(store.get('gmc_has_account')?'signin':'signup'));
-  document.getElementById('googleBtn').classList.toggle('hidden',IN_APP);
-  document.getElementById('inAppHint').classList.toggle('hidden',!IN_APP);
   document.getElementById('authModal').classList.remove('hidden');
   track('signup_prompt_shown',{source:authSource,prompt:'auth_modal',mode:authMode});
 }
@@ -981,29 +1021,62 @@ function closeAccount(){
 }
 function setAuthMode(mode){
   authMode=mode;
-  const c=AUTH_COPY[mode];
-  document.getElementById('authTitle').textContent=c.title;
-  document.getElementById('authSub').textContent=c.sub;
-  document.getElementById('authSubmit').textContent=usePassword?c.pw:c.link;
-  document.getElementById('authSwitch').innerHTML=c.sw;
-  document.getElementById('authError').style.display='none';
-  document.getElementById('authOk').style.display='none';
-  document.getElementById('forgotLink').classList.toggle('hidden',mode!=='signin');
-  document.getElementById('authPassword').autocomplete=mode==='signin'?'current-password':'new-password';
+  const c=AUTH_COPY[mode], confirming=mode==='confirm';
+  if(confirming) usePassword=false;
+  const $=id=>document.getElementById(id);
+  $('authTitle').textContent=c.title;
+  $('authSub').textContent=c.sub;
+  $('authSubmit').textContent=usePassword?c.pw:c.link;
+  $('authSwitch').innerHTML=c.sw;
+  $('authSwitch').classList.toggle('hidden',confirming);
+  $('pwBlock').classList.toggle('hidden',!usePassword);
+  $('pwToggle').classList.toggle('hidden',confirming);
+  $('pwToggle').textContent=usePassword?'Email me a link instead':'Use a password instead';
+  $('googleBtn').classList.toggle('hidden',IN_APP||confirming);
+  $('inAppHint').classList.toggle('hidden',!IN_APP||confirming);
+  $('forgotLink').classList.toggle('hidden',mode!=='signin');
+  $('authPassword').autocomplete=mode==='signin'?'current-password':'new-password';
+  $('authPassword').placeholder=mode==='signin'?'Password':'Password (6+ characters)';
+  authMsg(null);
 }
 function toggleAuthMode(){ setAuthMode(authMode==='signin'?'signup':'signin'); }
-function togglePassword(){
-  usePassword=!usePassword;
-  document.getElementById('pwBlock').classList.toggle('hidden',!usePassword);
-  document.getElementById('pwToggle').textContent=usePassword?'Email me a link instead':'Use a password instead';
-  setAuthMode(authMode);
-}
-function authMsg(kind, text){
+function togglePassword(){ usePassword=!usePassword; setAuthMode(authMode); }
+// kind 'err' or 'ok', or null to clear. actions: [{label, fn}] shown as one-tap buttons
+// under the message, so every error says what to do next and offers it.
+function authMsg(kind, text, actions){
   const errEl=document.getElementById('authError'), okEl=document.getElementById('authOk');
   errEl.style.display='none'; okEl.style.display='none';
   if(!kind) return;
   const el=kind==='err'?errEl:okEl;
-  el.textContent=text; el.style.display='block';
+  el.textContent=text;
+  if(actions&&actions.length){
+    const row=document.createElement('div'); row.className='msg-acts';
+    actions.forEach(a=>{
+      const b=document.createElement('button'); b.type='button'; b.textContent=a.label;
+      b.onclick=()=>a.fn(b); row.appendChild(b);
+    });
+    el.appendChild(row);
+  }
+  el.style.display='block';
+}
+// One-tap ways out of each error
+const ACT={
+  signIn:   {label:'Sign in instead',        fn:()=>{ setAuthMode('signin'); submitAuth(); }},
+  emailLink:{label:'Email me a sign-in link', fn:()=>{ if(usePassword) togglePassword(); submitAuth(); }},
+  password: {label:'Use a password instead',  fn:()=>{ if(!usePassword) togglePassword(); document.getElementById('authPassword').focus(); }},
+  forgot:   {label:'Reset my password',       fn:()=>forgotPassword()},
+  retry:    {label:'Try again',               fn:()=>submitAuth()},
+};
+function authErrorActions(err){
+  switch(err&&err.code){
+    case 'auth/email-already-in-use': return [ACT.signIn, ACT.emailLink];
+    case 'auth/user-not-found': case 'auth/wrong-password': case 'auth/invalid-credential': case 'auth/invalid-login-credentials':
+      return [ACT.emailLink, ACT.forgot];
+    case 'auth/network-request-failed': case 'auth/internal-error': return [ACT.retry];
+    case 'auth/quota-exceeded': case 'auth/operation-not-allowed': return usePassword?[]:[ACT.password];
+    case 'auth/account-exists-with-different-credential': case 'auth/popup-blocked': return [ACT.emailLink];
+    default: return [];
+  }
 }
 function forgotPassword(){
   const email=document.getElementById('authEmail').value.trim();
@@ -1017,37 +1090,54 @@ function forgotPassword(){
       authMsg('err',friendlyAuthError(err));
     });
 }
+// Shown once a link is sent: send it again, or switch to a password
+function linkSentActions(){
+  const resend={label:'Resend link', fn:b=>{ b.disabled=true; submitAuth(); }};
+  return [resend, ACT.password];
+}
 function submitAuth(){
-  // Enter in a field bypasses the disabled button, so ignore repeats while a request is in flight
+  // Return in a field bypasses the disabled button, so ignore repeats while a request is in flight
   const btn=document.getElementById('authSubmit');
   if(btn.disabled) return;
   const email=document.getElementById('authEmail').value.trim();
   const password=document.getElementById('authPassword').value;
   authMsg(null);
-  if(!usePassword){
-    if(!/^\S+@\S+\.\S+$/.test(email)){ authMsg('err','Enter your email address.'); return; }
+  if(authMode==='confirm'){
+    if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('email_link','client/invalid-email'); authMsg('err','Enter the email address you used to request the link.'); return; }
+    track('signup_submitted',{method:'email_link_confirm',source:authSource});
     btn.disabled=true;
+    finishLinkSignIn(email).finally(()=>{ btn.disabled=false; });
+    return;
+  }
+  if(!usePassword){
+    if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('email_link','client/invalid-email'); authMsg('err','Enter your email address, like name@gmail.com.'); return; }
+    btn.disabled=true;
+    track('signup_submitted',{method:'email_link',source:authSource});
     if(authMode==='signup') track('signup_started',{method:'email_link',source:authSource});
     sendSignInLink(email,authSource,saveAfterSignup)
-      .then(()=>authMsg('ok',`Check your email. Tap the link we sent to ${email} to finish. It may open in your browser instead of this app. That's fine.`))
+      .then(()=>authMsg('ok',`Check your email. Tap the link we sent to ${email} to finish. It may open in your browser instead of this app. That's fine. Not there after a minute? Check spam or Promotions.`,linkSentActions()))
       .catch(err=>{
-        if(err&&err.code==='auth/operation-not-allowed'){ if(!usePassword) togglePassword(); authMsg('err','Email links are not available right now. Please use a password.'); }
-        else authMsg('err',friendlyAuthError(err));
+        trackAuthError('email_link',err);
+        if(err&&err.code==='auth/operation-not-allowed'){ togglePassword(); authMsg('err','Email links are not available right now. Choose a password to create your account.'); return; }
+        authMsg('err',friendlyAuthError(err),authErrorActions(err));
       })
       .finally(()=>{ btn.disabled=false; });
     return;
   }
-  if(!email||!password){ authMsg('err','Enter an email and password.'); return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('password','client/invalid-email'); authMsg('err','Enter your email address, like name@gmail.com.'); return; }
+  if(!password){ trackAuthError('password','client/missing-password'); authMsg('err',authMode==='signup'?'Choose a password (6+ characters).':'Enter your password.'); return; }
+  if(authMode==='signup'&&password.length<6){ trackAuthError('password','client/weak-password'); authMsg('err','Use at least 6 characters for your password.'); return; }
   const mode=authMode, source=authSource, car=saveAfterSignup;
   btn.disabled=true;
   // Hold off the credit check until the new account's record (with its free credit) exists
   signingUp=true;
+  track('signup_submitted',{method:'password',source});
   if(mode==='signup') track('signup_started',{method:'password',source});
   const action=mode==='signin'
     ?auth.signInWithEmailAndPassword(email,password)
     :auth.createUserWithEmailAndPassword(email,password);
   action.then(cred=>onSignedIn(cred,'password',source,car))
-        .catch(err=>authMsg('err',friendlyAuthError(err)))
+        .catch(err=>{ trackAuthError('password',err); authMsg('err',friendlyAuthError(err),authErrorActions(err)); })
         .finally(()=>{ btn.disabled=false; finishSignIn(); });
 }
 function googleSignIn(){
@@ -1056,12 +1146,14 @@ function googleSignIn(){
   authMsg(null);
   btn.disabled=true;
   signingUp=true;
+  track('signup_submitted',{method:'google',source});
   if(authMode==='signup') track('signup_started',{method:'google',source});
   auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
     .then(cred=>onSignedIn(cred,'google',source,car))
     .catch(err=>{
+      trackAuthError('google',err);
       if(err&&(err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')) return;
-      authMsg('err',friendlyAuthError(err));
+      authMsg('err',friendlyAuthError(err),authErrorActions(err));
     })
     .finally(()=>{ btn.disabled=false; finishSignIn(); });
 }
@@ -1086,6 +1178,7 @@ function sendSignInLink(email, source, car){
     .then(()=>{ store.set('gmc_link_email',email); });
 }
 // Opened from the emailed link: finish signing in, save the car, and show its grade
+let pendingLink=null;   // {href, source, car} while the link waits for the email to be confirmed
 (async function completeSignInLink(){
   if(!auth.isSignInWithEmailLink(location.href)) return;
   await null; // let the rest of this script set up first
@@ -1096,22 +1189,46 @@ function sendSignInLink(email, source, car){
   // Drop the one-time code from the address bar; keep the UTMs
   const utm=new URLSearchParams([...q].filter(([k])=>k.startsWith('utm_'))).toString();
   history.replaceState(null,'',location.pathname+(utm?'?'+utm:''));
-  // Opened in a different browser than the one that asked for it, so we don't know the email
-  let email=store.get('gmc_link_email');
-  if(!email) email=(prompt('Confirm your email to finish signing in')||'').trim();
-  if(!email) return;
+  pendingLink={href,source,car};
+  const email=store.get('gmc_link_email');
+  // Shows the email arrived and was tapped; same_browser=no means it opened somewhere else
+  track('signup_link_opened',{source,same_browser:email?'yes':'no'});
+  if(email){ finishLinkSignIn(email); return; }
+  // A different browser than the one that asked, so we don't know the email: ask in the modal
+  openAccount('confirm',source);
+  document.getElementById('authEmail').focus();
+})();
+async function finishLinkSignIn(email){
+  if(!pendingLink) return;
+  const {href,source,car}=pendingLink;
   signingUp=true;
   try{
     const cred=await auth.signInWithEmailLink(email,href);
+    pendingLink=null;
     store.del('gmc_link_email');
     await onSignedIn(cred,'email_link',source,car);
     if(car){ markLookupStart('signin_link'); show('loading'); if(await fillSearch(car.make,car.model,car.year)) await checkGrade(); else show('home'); }
   }catch(err){
     console.warn('[GMC] sign-in link failed',err);
-    toast(err&&(err.code==='auth/invalid-action-code'||err.code==='auth/expired-action-code')
-      ?'That sign-in link expired or was already used. Request a new one.':friendlyAuthError(err));
+    trackAuthError('email_link',err);
+    const code=err&&err.code;
+    if(code==='auth/invalid-email'){
+      // Wrong email for this link: let them type it again
+      if(authMode!=='confirm'||document.getElementById('authModal').classList.contains('hidden')) openAccount('confirm',source);
+      authMsg('err','That isn\'t the email this link was sent to. Enter the same email you typed before.');
+    } else if(code==='auth/invalid-action-code'||code==='auth/expired-action-code'){
+      // Used or expired: one tap sends a fresh link to the same address
+      pendingLink=null;
+      openAccount('signup',source);
+      document.getElementById('authEmail').value=email;
+      authMsg('err','That sign-in link expired or was already used. Tap below and we\'ll send a new one.',[ACT.emailLink]);
+    } else {
+      if(document.getElementById('authModal').classList.contains('hidden')) openAccount('confirm',source);
+      document.getElementById('authEmail').value=email;
+      authMsg('err',friendlyAuthError(err),[{label:'Try again',fn:()=>submitAuth()}]);
+    }
   }finally{ finishSignIn(); }
-})();
+}
 // Every successful sign-in or sign-up, whatever the method
 async function onSignedIn(cred, method, source, car){
   const user=cred.user;
@@ -1119,20 +1236,21 @@ async function onSignedIn(cred, method, source, car){
   authDone=true; closeAccount();
   store.set('gmc_has_account','1');
   if(isNew){
-    // Same user record index.html creates on signup, with 1 free credit
-    // (database rules allow a new record to start at 0 or 1 credits, never more)
-    await rtdb.ref(`users/${user.uid}`).set({
-      email:user.email||'', createdAt:firebase.database.ServerValue.TIMESTAMP,
-      reportCredits:1, totalSearches:0, totalPurchases:0, totalSpent:0
-    }).catch(e=>console.warn('[GMC] user record create failed',e));
     // sign_up fires once per account: only when Firebase reports a brand-new user,
-    // and the per-account flag stops a double tap or reload from sending it again
+    // and the per-account flag stops a double tap or reload from sending it again.
+    // Sent before the database write so a slow or failed write can't lose it.
     if(!store.get('gmc_su_'+user.uid)){
       store.set('gmc_su_'+user.uid,'1');
       const p=Object.assign({method,source},window.GMCAttribution?GMCAttribution.params():{});
       track('sign_up',p);
       track('signup_completed',p);
     }
+    // Same user record index.html creates on signup, with 1 free credit
+    // (database rules allow a new record to start at 0 or 1 credits, never more)
+    await rtdb.ref(`users/${user.uid}`).set({
+      email:user.email||'', createdAt:firebase.database.ServerValue.TIMESTAMP,
+      reportCredits:1, totalSearches:0, totalPurchases:0, totalSpent:0
+    }).catch(e=>console.warn('[GMC] user record create failed',e));
     toast('Account created. Your first report is free!');
   } else {
     track('login',{method});
@@ -1165,17 +1283,21 @@ function initials(user){
 function headerAccount(){ if(currentUser) openMore(); else openAccount(null,'header'); }
 function friendlyAuthError(err){
   switch(err&&err.code){
-    case 'auth/invalid-email': return 'That email address looks invalid.';
-    case 'auth/email-already-in-use': return 'An account with that email already exists. Try signing in.';
-    case 'auth/weak-password': return 'Password must be at least 6 characters.';
+    case 'auth/invalid-email': return 'That email address doesn\'t look right. Check for typos, like gmial.com.';
+    case 'auth/missing-email': return 'Enter your email address.';
+    case 'auth/email-already-in-use': return 'That email already has an account. Sign in instead, or get a sign-in link by email.';
+    case 'auth/weak-password': return 'Use at least 6 characters for your password.';
     case 'auth/user-not-found': case 'auth/wrong-password': case 'auth/invalid-credential': case 'auth/invalid-login-credentials':
-      return 'Incorrect email or password.';
-    case 'auth/too-many-requests': return 'Too many attempts. Please wait a minute and try again.';
-    case 'auth/network-request-failed': return 'No connection. Check your internet and try again.';
-    case 'auth/operation-not-allowed': return 'That sign-in method is not available right now. Try email instead.';
+      return 'That password doesn\'t match this email. Get a sign-in link by email instead, or reset your password.';
+    case 'auth/user-disabled': return 'This account is turned off. Email support@grademycar.com and we\'ll sort it out.';
+    case 'auth/too-many-requests': return 'Too many tries in a row. Wait a minute, then try again.';
+    case 'auth/quota-exceeded': return 'We can\'t send more sign-in emails right now. Use a password instead.';
+    case 'auth/network-request-failed': return 'No connection. Check your signal, then try again. Nothing you typed was lost.';
+    case 'auth/internal-error': return 'Our sign-in service didn\'t answer. Try again in a moment.';
+    case 'auth/operation-not-allowed': return 'That sign-in option isn\'t available right now. Use a password instead.';
     case 'auth/popup-blocked': return 'Your browser blocked the Google window. Use your email instead.';
-    case 'auth/unauthorized-domain': return 'Sign-in is not available on this address. Use grademycar.com.';
-    case 'auth/account-exists-with-different-credential': return 'That email already has an account. Sign in with your email instead.';
+    case 'auth/unauthorized-domain': return 'Sign-in only works on grademycar.com. Open the site there and try again.';
+    case 'auth/account-exists-with-different-credential': return 'That email already has an account. Get a sign-in link by email instead.';
     case 'auth/invalid-action-code': case 'auth/expired-action-code': return 'That sign-in link expired or was already used. Request a new one.';
     default: return 'Something went wrong. Please try again.';
   }
@@ -1573,22 +1695,31 @@ function signupPromptSubmit(){
   if(btn.disabled) return;
   const email=document.getElementById('spEmail').value.trim();
   errEl.textContent='';
-  if(!/^\S+@\S+\.\S+$/.test(email)){ errEl.textContent='Enter your email address.'; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('email_link','client/invalid-email'); errEl.textContent='Enter your email address, like name@gmail.com.'; return; }
   btn.disabled=true; btn.textContent='…';
+  track('signup_submitted',{method:'email_link',source:'post_grade'});
   track('signup_started',Object.assign({method:'email_link',source:'post_grade'},gradeParams()));
   sendSignInLink(email,'post_grade',currentResult).then(()=>{
     document.getElementById('spForm').classList.add('hidden');
     const sent=document.getElementById('spSent');
-    sent.innerHTML=`✓ Check your email. Tap the link we sent to <b style="display:inline;font-size:13px;color:inherit;margin:0">${esc(email)}</b>. This car will be in your Saved list with your free report credit ready to use. The link may open in your browser instead of this app.`;
+    sent.innerHTML=`✓ Check your email. Tap the link we sent to <b style="display:inline;font-size:13px;color:inherit;margin:0">${esc(email)}</b>. This car will be in your Saved list with your free report credit ready to use. The link may open in your browser instead of this app.`
+      +`<br><br>Not there after a minute? Check spam or Promotions, or <button type="button" onclick="signupPromptResend()">send it again</button> · <button type="button" onclick="signupPromptMore(true)">use a password</button>`;
     sent.classList.remove('hidden');
   }).catch(err=>{
-    // Email links switched off in Firebase: fall back to the full sign-up form
-    if(err&&err.code==='auth/operation-not-allowed'){ signupPromptMore(); return; }
+    trackAuthError('email_link',err);
+    // Email links switched off or out of quota: fall back to the full sign-up form with a password
+    if(err&&(err.code==='auth/operation-not-allowed'||err.code==='auth/quota-exceeded')){ signupPromptMore(true); return; }
     errEl.textContent=friendlyAuthError(err);
   }).finally(()=>{ btn.disabled=false; btn.textContent='Get it free'; });
 }
-function signupPromptMore(){
+function signupPromptResend(){
+  document.getElementById('spSent').classList.add('hidden');
+  document.getElementById('spForm').classList.remove('hidden');
+  signupPromptSubmit();
+}
+function signupPromptMore(withPassword){
   saveAfterSignup=currentResult;
+  if(withPassword===true) usePassword=true;
   openAccount('signup','post_grade');
   const email=document.getElementById('spEmail').value.trim();
   if(email) document.getElementById('authEmail').value=email;
