@@ -99,7 +99,7 @@ const SEGMENTS = [
     ['subaru', 'wrx', 'Subaru', 'WRX'],
   ]},
   { id: 'luxury', name: 'Luxury Vehicle', plural: 'luxury vehicles', cars: [
-    ['lexus', 'rx', 'Lexus', 'RX'], ['lexus', 'es', 'Lexus', 'ES'], ['lexus', 'nx', 'Lexus', 'NX'],
+    ['lexus', 'rx', 'Lexus', 'RX'], ['lexus', 'es', 'Lexus', 'ES'], ['lexus', 'gs', 'Lexus', 'GS'], ['lexus', 'nx', 'Lexus', 'NX'],
     ['bmw', '3 series', 'BMW', '3 Series'], ['bmw', '5 series', 'BMW', '5 Series'],
     ['bmw', 'x3', 'BMW', 'X3'], ['bmw', 'x5', 'BMW', 'X5'],
     ['mercedes-benz', 'c-class', 'Mercedes-Benz', 'C-Class'], ['mercedes-benz', 'e-class', 'Mercedes-Benz', 'E-Class'],

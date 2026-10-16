@@ -7,7 +7,8 @@
 //         into a rate so popular cars aren't punished for being popular. Either one
 //         number, or [[fromYear, thousands], ...] steps for models whose sales moved a
 //         lot (sedans collapsed after ~2018, crossovers boomed). Rough is fine: good
-//         and bad years differ 10-50x.
+//         and bad years differ 10-50x. Steps before 2005 were added when grading was
+//         extended back to 2000; 2005-on figures were left as they were.
 // from/to: model years this nameplate is the same vehicle line (optional)
 // ev:     electric; engine/transmission become motor & battery / drivetrain
 
@@ -22,7 +23,7 @@ const MODELS = [
   { key: 'toyota/tacoma', src: [['toyota', /^TACOMA/]], sales: 220 },
   { key: 'toyota/tundra', src: [['toyota', /^TUNDRA/]], sales: 110 },
   { key: 'toyota/4runner', src: [['toyota', /^4RUNNER$/]], sales: 110 },
-  { key: 'toyota/sequoia', src: [['toyota', /^SEQUOIA/]], sales: 15 },
+  { key: 'toyota/sequoia', src: [['toyota', /^SEQUOIA/]], sales: [[2000, 60], [2005, 15]] },
   { key: 'toyota/venza', src: [['toyota', /^VENZA/]], sales: 30 },
   { key: 'toyota/c-hr', src: [['toyota', /^C-HR$/]], sales: 45, from: 2018 },
   // Honda
@@ -36,13 +37,13 @@ const MODELS = [
   { key: 'honda/ridgeline', src: [['honda', /^RIDGELINE$/]], sales: 35 },
   // Ford
   { key: 'ford/f-150', src: [['ford', /^F-?150/]], sales: 650 },
-  { key: 'ford/explorer', src: [['ford', /^EXPLORER( HYBRID| HEV)?$/]], sales: [[2005, 240], [2008, 130], [2011, 170], [2014, 210], [2016, 250], [2020, 230], [2022, 200]] },
+  { key: 'ford/explorer', src: [['ford', /^EXPLORER( HYBRID| HEV)?$/]], sales: [[2000, 400], [2005, 240], [2008, 130], [2011, 170], [2014, 210], [2016, 250], [2020, 230], [2022, 200]] },
   { key: 'ford/escape', src: [['ford', /^ESCAPE( HYBRID| HEV| PHEV)?$/]], sales: [[2005, 170], [2008, 190], [2013, 300], [2020, 180], [2022, 150]] },
   { key: 'ford/bronco', src: [['ford', /^BRONCO$/]], sales: 90, from: 2021 },
-  { key: 'ford/mustang', src: [['ford', /^MUSTANG(?! MACH)/]], sales: 75 },
-  { key: 'ford/ranger', src: [['ford', /^RANGER/]], sales: 70 },
+  { key: 'ford/mustang', src: [['ford', /^MUSTANG(?! MACH)/]], sales: [[2000, 150], [2005, 75]] },
+  { key: 'ford/ranger', src: [['ford', /^RANGER/]], sales: [[2000, 230], [2003, 160], [2005, 70]] },
   { key: 'ford/edge', src: [['ford', /^EDGE$/]], sales: 120 },
-  { key: 'ford/expedition', src: [['ford', /^EXPEDITION/]], sales: 60 },
+  { key: 'ford/expedition', src: [['ford', /^EXPEDITION/]], sales: [[2000, 200], [2003, 150], [2005, 60]] },
   { key: 'ford/fusion', src: [['ford', /^FUSION/]], sales: [[2006, 150], [2010, 220], [2013, 300], [2017, 210], [2019, 160], [2020, 100]], to: 2020 },
   { key: 'ford/focus', src: [['ford', /^FOCUS( RS| ST)?$/]], sales: [[2005, 200], [2012, 240], [2015, 200], [2017, 160], [2018, 60]], to: 2018 },
   { key: 'ford/fiesta', src: [['ford', /^FIESTA$/]], sales: [[2011, 60], [2017, 40], [2019, 25]], from: 2011, to: 2019 },
@@ -50,10 +51,10 @@ const MODELS = [
   { key: 'chevrolet/silverado', src: [['chevrolet', /^SILVERADO( 1500.*)?$/]], sales: 550 },
   { key: 'chevrolet/equinox', src: [['chevrolet', /^EQUINOX$/]], sales: [[2005, 100], [2010, 200], [2015, 280], [2018, 300], [2021, 190]] },
   { key: 'chevrolet/malibu', src: [['chevrolet', /^MALIBU/]], sales: [[2005, 150], [2008, 180], [2013, 200], [2016, 220], [2018, 150], [2020, 110]] },
-  { key: 'chevrolet/tahoe', src: [['chevrolet', /^TAHOE/]], sales: 100 },
+  { key: 'chevrolet/tahoe', src: [['chevrolet', /^TAHOE/]], sales: [[2000, 200], [2005, 100]] },
   { key: 'chevrolet/traverse', src: [['chevrolet', /^TRAVERSE( LIMITED)?$/]], sales: 120, from: 2009 },
   { key: 'chevrolet/colorado', src: [['chevrolet', /^COLORADO/]], sales: 110 },
-  { key: 'chevrolet/suburban', src: [['chevrolet', /^SUBURBAN( 1500)?$/]], sales: 50 },
+  { key: 'chevrolet/suburban', src: [['chevrolet', /^SUBURBAN( 1500)?$/]], sales: [[2000, 130], [2005, 50]] },
   { key: 'chevrolet/blazer', src: [['chevrolet', /^BLAZER$/]], sales: 85, from: 2019 },
   { key: 'chevrolet/trailblazer', src: [['chevrolet', /^TRAILBLAZER$/]], sales: 70, from: 2021 },
   { key: 'chevrolet/camaro', src: [['chevrolet', /^CAMARO/]], sales: 70, from: 2010 },
@@ -69,7 +70,7 @@ const MODELS = [
   { key: 'nissan/maxima', src: [['nissan', /^MAXIMA$/]], sales: [[2005, 60], [2019, 35], [2021, 25]] },
   { key: 'nissan/versa', src: [['nissan', /^VERSA/]], sales: 110, from: 2007 },
   // Jeep
-  { key: 'jeep/grand cherokee', src: [['jeep', /^GRAND CHEROKEE/]], sales: [[2005, 200], [2008, 80], [2011, 140], [2014, 200], [2016, 220], [2020, 230]] },
+  { key: 'jeep/grand cherokee', src: [['jeep', /^GRAND CHEROKEE/]], sales: [[2000, 250], [2005, 200], [2008, 80], [2011, 140], [2014, 200], [2016, 220], [2020, 230]] },
   { key: 'jeep/wrangler', src: [['jeep', /^WRANGLER/]], sales: [[2005, 80], [2008, 100], [2012, 140], [2015, 200], [2018, 230], [2022, 180]] },
   { key: 'jeep/cherokee', src: [['jeep', /^CHEROKEE$/]], sales: [[2014, 180], [2016, 200], [2018, 170], [2020, 120], [2022, 40]], from: 2014 },
   { key: 'jeep/compass', src: [['jeep', /^COMPASS$/]], sales: [[2007, 30], [2012, 45], [2015, 60], [2017, 90], [2018, 135], [2022, 120]], from: 2007 },
@@ -91,7 +92,7 @@ const MODELS = [
   { key: 'kia/carnival', src: [['kia', /^CARNIVAL$/]], sales: 40, from: 2022 },
   // Subaru / Mazda
   { key: 'subaru/outback', src: [['subaru', /^OUTBACK/]], sales: 160 },
-  { key: 'subaru/forester', src: [['subaru', /^FORESTER/]], sales: 170 },
+  { key: 'subaru/forester', src: [['subaru', /^FORESTER/]], sales: [[2000, 50], [2005, 170]] },
   { key: 'subaru/crosstrek', src: [['subaru', /CROSSTREK/]], sales: 130, from: 2013 },
   { key: 'subaru/ascent', src: [['subaru', /^ASCENT$/]], sales: 65, from: 2019 },
   { key: 'subaru/impreza', src: [['subaru', /^IMPREZA( WAGON)?$/]], sales: 70 },
@@ -109,14 +110,14 @@ const MODELS = [
   { key: 'dodge/ram', src: [['dodge', /^RAM 1500/], ['ram', /^(RAM )?1500/]], sales: 450 },
   { key: 'dodge/charger', src: [['dodge', /^CHARGER( SRT)?$/]], sales: 85, from: 2006 },
   { key: 'dodge/challenger', src: [['dodge', /^CHALLENGER/]], sales: 55, from: 2008 },
-  { key: 'dodge/durango', src: [['dodge', /^DURANGO( SRT)?$/]], sales: 65 },
+  { key: 'dodge/durango', src: [['dodge', /^DURANGO( SRT)?$/]], sales: [[2000, 150], [2005, 65]] },
   { key: 'dodge/grand caravan', src: [['dodge', /^GRAND CARAVAN(?! CARGO)/]], sales: 120, to: 2020 },
   { key: 'dodge/journey', src: [['dodge', /^JOURNEY$/]], sales: 90, from: 2009, to: 2020 },
   { key: 'chrysler/200', src: [['chrysler', /^200$/]], sales: 120, from: 2011, to: 2017 },
   { key: 'chrysler/pacifica', src: [['chrysler', /^PACIFICA/]], sales: 100, from: 2017 },
   // GM trucks & SUVs
   { key: 'gmc/sierra', src: [['gmc', /^SIERRA( 1500.*| HYBRID)?$/]], sales: 200 },
-  { key: 'gmc/yukon', src: [['gmc', /^YUKON/]], sales: 75 },
+  { key: 'gmc/yukon', src: [['gmc', /^YUKON/]], sales: [[2000, 120], [2005, 75]] },
   { key: 'gmc/acadia', src: [['gmc', /^ACADIA/]], sales: 90, from: 2007 },
   { key: 'gmc/terrain', src: [['gmc', /^TERRAIN$/]], sales: 90, from: 2010 },
   { key: 'buick/enclave', src: [['buick', /^ENCLAVE$/]], sales: 50, from: 2008 },
@@ -133,6 +134,7 @@ const MODELS = [
   // Luxury
   { key: 'lexus/rx', src: [['lexus', /^RX/]], sales: 105 },
   { key: 'lexus/es', src: [['lexus', /^ES/]], sales: 60 },
+  { key: 'lexus/gs', src: [['lexus', /^GS/]], sales: [[2000, 25], [2003, 15], [2006, 25], [2008, 12], [2010, 6], [2013, 18], [2016, 8], [2018, 4]], to: 2020 },
   { key: 'lexus/nx', src: [['lexus', /^NX/]], sales: 60, from: 2015 },
   { key: 'bmw/3 series', src: [['bmw', /^(3\d\d[A-Z]*|3 SERIES|M3)\b/]], sales: 60 },
   { key: 'bmw/5 series', src: [['bmw', /^(5\d\d[A-Z]*|5 SERIES|M5)\b/]], sales: 45 },
@@ -147,7 +149,7 @@ const MODELS = [
   { key: 'acura/tlx', src: [['acura', /^TLX/]], sales: 30, from: 2015 },
 ];
 
-const FIRST_YEAR = 2005;
+const FIRST_YEAR = 2000;
 const LAST_YEAR = 2024; // newer model years haven't had time to collect complaints
 
 // Sales (thousands) for a model in a given model year

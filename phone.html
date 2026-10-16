@@ -884,7 +884,7 @@ if(USE_EMU){
 }
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.16-a';
+const APP_VERSION='2026.10.16-b';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -2035,7 +2035,7 @@ function renderGradeSource(rating, year){
     if(top) html+=`<div class="top-issue">${esc(top.heading)}: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}${topMi?`<br>Usually reported around <b>${topMi[1]}k miles</b>`:''}</div>`;
     html+='<button class="why-link" onclick="toggleWhy()">Why this grade? ›</button>';
   } else if(rating?.source==='nhtsa'){
-    const why=Number(year)<2005?`We grade model years from 2005 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
+    const why=Number(year)<2000?`We grade model years from 2000 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
     html=`${why}, so this is the model's grade across the ${esc(rating.years||'recent')} model years, from NHTSA owner complaints.`;
   } else if(rating?.overall){
     html='Model-level estimate across model years.';
