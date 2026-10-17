@@ -276,6 +276,19 @@
     body.sheet-open::after{content:""; position:fixed; inset:0; background:rgba(15,23,42,.35); z-index:35;}
     .bar-label{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   }
+  /* ---------------- Dealers ---------------- */
+  .kan{display:grid; grid-template-columns:repeat(5,minmax(190px,1fr)); gap:.8rem; overflow-x:auto; padding-bottom:.4rem;}
+  .kan-col{background:var(--line-soft); border-radius:14px; padding:.6rem; min-height:220px;}
+  .kan-col h4{font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin:0 0 .6rem; padding:.2rem .3rem; display:flex; justify-content:space-between;}
+  .lead{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:.6rem .7rem; margin-bottom:.5rem;}
+  .lead b{display:block; font-size:.85rem;}
+  .lead .sub{font-size:.75rem; color:var(--ink-soft);}
+  .lead .note{font-size:.75rem; margin-top:.3rem; white-space:pre-wrap;}
+  .lead .acts{display:flex; gap:.3rem; margin-top:.5rem; flex-wrap:wrap;}
+  .lead .acts .btn{padding:.15rem .5rem; font-size:.7rem;}
+  .lead-form{display:grid; grid-template-columns:1.2fr 1fr 1fr 1.6fr auto; gap:.5rem; align-items:center;}
+  .lead-form input{font:inherit; font-size:.82rem; padding:.45rem .6rem; border:1px solid var(--line); border-radius:8px; min-width:0;}
+  @media (max-width:760px){ .lead-form{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -328,6 +341,10 @@
           <button class="navitem" data-view="users">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.7-3 2.9-4.7 5.5-4.7s4.8 1.7 5.5 4.7M16 8.3a3 3 0 1 1 3.6 2.9M15 14.4c2.3.2 4.3 1.7 4.9 4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             Users
+          </button>
+          <button class="navitem" data-view="dealers">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 10.5 5 5h14l2 5.5M3 10.5h18v6.5H3v-6.5Zm3 6.5v2m12-2v2M7 13.7h.01M17 13.7h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Dealers
           </button>
         </nav>
       </div>
@@ -458,6 +475,43 @@
         </div>
       </section>
 
+      <!-- ============ DEALERS ============ -->
+      <section class="view" id="view-dealers">
+        <div class="topbar">
+          <div><h1>Dealers</h1><div class="topbar-sub" id="dealers-sub">Dealer subscriptions (<span class="num">users/*/dealer</span>, written by the Stripe webhook) and your sales pipeline (<span class="num">dealer_pipeline</span>).</div></div>
+          <button class="btn" id="dealers-refresh">↻ Refresh</button>
+        </div>
+        <div id="dealers-banner"></div>
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-label">Paying</div><div class="kpi-value" id="kpi-d-active">—</div><div class="kpi-sub">active subscriptions</div></div>
+          <div class="kpi"><div class="kpi-label">In trial</div><div class="kpi-value" id="kpi-d-trial">—</div><div class="kpi-sub">14-day trials</div></div>
+          <div class="kpi"><div class="kpi-label">MRR</div><div class="kpi-value" id="kpi-d-mrr">—</div><div class="kpi-sub">paying plans only</div></div>
+          <div class="kpi"><div class="kpi-label">Pipeline</div><div class="kpi-value" id="kpi-d-pipe">—</div><div class="kpi-sub">open leads</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Subscribers</h2><div class="sub">Everyone who has started dealer checkout</div></div></div>
+          <div class="panel-body table-wrap">
+            <table>
+              <thead><tr><th>Dealership</th><th>Account</th><th>Plan</th><th>Status</th><th>Trial ends</th><th>Next charge</th><th class="num">Cars on list</th></tr></thead>
+              <tbody id="dealers-tbody"><tr><td colspan="7" class="empty-note">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Sales pipeline</h2><div class="sub">Dealers you're talking to. Only you can see this.</div></div></div>
+          <div class="panel-body">
+            <div class="lead-form" id="lead-form">
+              <input id="lead-name" placeholder="Dealership" maxlength="80">
+              <input id="lead-city" placeholder="City, State" maxlength="60">
+              <input id="lead-contact" placeholder="Contact (name, phone or email)" maxlength="100">
+              <input id="lead-note" placeholder="Note, e.g. met in dealer FB group" maxlength="300">
+              <button class="btn primary" id="lead-add">Add lead</button>
+            </div>
+            <div class="kan" id="kan" style="margin-top:1rem;"><div class="empty-note">Loading…</div></div>
+          </div>
+        </div>
+      </section>
+
       <!-- ============ OWNER REPORTS ============ -->
       <section class="view" id="view-owners">
         <div class="topbar">
@@ -561,6 +615,18 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
+// Local testing against the emulators (same switch as phone.html and dealers.html):
+// `firebase emulators:start --only auth,database --project demo-grademycar`, then ?emu=1
+if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+  try {
+    const q = new URLSearchParams(location.search).get("emu");
+    if (q === "1") localStorage.setItem("gmc_emu", "1"); else if (q === "0") localStorage.removeItem("gmc_emu");
+    if (localStorage.getItem("gmc_emu") === "1") {
+      auth.useEmulator("http://127.0.0.1:9099", { disableWarnings: true });
+      db.useEmulator("127.0.0.1", 9000);
+    }
+  } catch (e) {}
+}
 
 // Thin shims so the rest of this script can stay written against the
 // modular-style calls (ref/get/update/set) used throughout below.
@@ -614,6 +680,8 @@ onAuthStateChanged(auth, (user) => {
     $("app").style.display = "none";
     ref(db, "users").off(); // the next sign-in re-attaches the live user list
     usersListening = false;
+    ref(db, "dealer_pipeline").off();
+    pipelineListening = false;
   }
 });
 
@@ -663,6 +731,109 @@ document.querySelectorAll(".navitem").forEach(btn => {
 
 $("refresh-all").addEventListener("click", loadEverything);
 $("owners-refresh").addEventListener("click", loadOwnerReports);
+
+/* ---------------- Dealers ---------------- */
+// Subscriptions come from users/{uid}/dealer (Stripe webhook). The pipeline is
+// dealer_pipeline/{id} = {name, city, contact, note, stage, createdAt, updatedAt}, admin only.
+const DEALER_PRICE = { dealer: 149, pro: 249 };
+const DEALER_STAGES = ["Contacted", "Demo booked", "Trial", "Paying", "Lost"];
+const DEALER_STATUS_PILL = { active: "good", trialing: "accent", past_due: "warn", canceled: "neutral", unpaid: "bad", incomplete: "warn", incomplete_expired: "neutral" };
+let dealerListCounts = {};
+let pipeline = {};
+const fmtDay = ms => ms ? new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
+
+async function loadDealerLists() {
+  try {
+    const snap = await get(ref(db, "dealer_lists"));
+    dealerListCounts = {};
+    Object.entries(snap.val() || {}).forEach(([uid, list]) => dealerListCounts[uid] = Object.keys(list || {}).length);
+  } catch (e) { dealerListCounts = {}; }
+  renderDealers();
+}
+
+function renderDealers() {
+  if (!$("dealers-tbody")) return;
+  const rows = Object.entries(usersCache).filter(([, u]) => u && u.dealer).map(([uid, u]) => ({ uid, email: u.email, ...u.dealer }));
+  rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const paying = rows.filter(r => r.status === "active" || r.status === "past_due");
+  $("kpi-d-active").textContent = paying.length;
+  $("kpi-d-trial").textContent = rows.filter(r => r.status === "trialing").length;
+  $("kpi-d-mrr").textContent = "$" + paying.reduce((s, r) => s + (DEALER_PRICE[r.plan] || 0), 0).toLocaleString();
+  $("dealers-tbody").innerHTML = rows.length ? rows.map(r => `<tr>
+      <td><b>${esc(r.business || "—")}</b></td>
+      <td>${esc(r.email || r.uid)}</td>
+      <td>${r.plan === "pro" ? "Pro · $249" : "Dealer · $149"}</td>
+      <td><span class="pill ${DEALER_STATUS_PILL[r.status] || "neutral"}">${esc(r.status || "—")}</span>${r.cancelAtPeriodEnd ? ' <span class="pill warn">cancels</span>' : ""}</td>
+      <td>${r.status === "trialing" ? fmtDay(r.trialEnd) : "—"}</td>
+      <td>${r.status === "canceled" ? "—" : fmtDay(r.currentPeriodEnd)}</td>
+      <td class="num">${dealerListCounts[r.uid] || 0}</td>
+    </tr>`).join("") : `<tr><td colspan="7" class="empty-note">No dealer subscriptions yet. They show up here when someone finishes checkout on dealers.html.</td></tr>`;
+}
+
+let pipelineListening = false;
+function loadPipeline() {
+  if (pipelineListening) return Promise.resolve();
+  return new Promise(resolve => {
+    ref(db, "dealer_pipeline").on("value", snap => {
+      pipelineListening = true;
+      $("dealers-banner").innerHTML = "";
+      pipeline = snap.val() || {};
+      renderPipeline();
+      resolve();
+    }, e => {
+      permissionBanner($("dealers-banner"), e);
+      $("kan").innerHTML = `<div class="empty-note">Couldn't load the pipeline. Add the dealer_pipeline rule (AI/add-dealer-rules.js).</div>`;
+      resolve();
+    });
+  });
+}
+
+function renderPipeline() {
+  const leads = Object.entries(pipeline).map(([id, l]) => ({ id, ...l }));
+  $("kpi-d-pipe").textContent = leads.filter(l => l.stage < 3).length;
+  $("kan").innerHTML = DEALER_STAGES.map((name, i) => {
+    const col = leads.filter(l => (l.stage || 0) === i).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    return `<div class="kan-col"><h4>${name}<span class="num">${col.length}</span></h4>${col.map(l => `
+      <div class="lead">
+        <b>${esc(l.name)}</b>
+        <div class="sub">${esc([l.city, l.contact].filter(Boolean).join(" · "))}</div>
+        ${l.note ? `<div class="note">${esc(l.note)}</div>` : ""}
+        <div class="sub" style="margin-top:.3rem;">Updated ${fmtDay(l.updatedAt)}</div>
+        <div class="acts">
+          ${i > 0 ? `<button class="btn" data-lead="${esc(l.id)}" data-move="-1">←</button>` : ""}
+          ${i < DEALER_STAGES.length - 1 ? `<button class="btn" data-lead="${esc(l.id)}" data-move="1">→</button>` : ""}
+          <button class="btn" data-lead="${esc(l.id)}" data-edit>Note</button>
+          <button class="btn danger" data-lead="${esc(l.id)}" data-del>Delete</button>
+        </div>
+      </div>`).join("")}</div>`;
+  }).join("");
+}
+
+$("kan").addEventListener("click", async e => {
+  const b = e.target.closest("[data-lead]"); if (!b) return;
+  const id = b.dataset.lead, l = pipeline[id]; if (!l) return;
+  const r = ref(db, "dealer_pipeline/" + id);
+  try {
+    if (b.dataset.move) await update(r, { stage: Math.max(0, Math.min(DEALER_STAGES.length - 1, (l.stage || 0) + Number(b.dataset.move))), updatedAt: Date.now() });
+    else if ("edit" in b.dataset) {
+      const note = prompt(`Note for ${l.name}`, l.note || "");
+      if (note !== null) await update(r, { note: note.slice(0, 300), updatedAt: Date.now() });
+    } else if ("del" in b.dataset && confirm(`Delete ${l.name} from the pipeline?`)) await r.remove();
+  } catch (err) { alert("Couldn't save: " + (err.message || err)); }
+});
+$("lead-add").addEventListener("click", async () => {
+  const name = $("lead-name").value.trim();
+  if (!name) { $("lead-name").focus(); return; }
+  const now = Date.now();
+  try {
+    await ref(db, "dealer_pipeline").push({ name, city: $("lead-city").value.trim(), contact: $("lead-contact").value.trim(),
+      note: $("lead-note").value.trim(), stage: 0, createdAt: now, updatedAt: now });
+    ["lead-name", "lead-city", "lead-contact", "lead-note"].forEach(k => $(k).value = "");
+    $("lead-name").focus();
+  } catch (err) { alert("Couldn't add: " + (err.message || err)); }
+});
+$("lead-form").addEventListener("keydown", e => { if (e.key === "Enter") $("lead-add").click(); });
+$("dealers-refresh").addEventListener("click", loadDealerLists);
 
 /* ---------------- Owner reports ---------------- */
 // Written only by the submitOwnerReport Cloud Function. Removing goes through
@@ -714,7 +885,7 @@ function permissionBanner(target, err) {
 
 /* ---------------- Load everything ---------------- */
 async function loadEverything() {
-  await Promise.all([loadUsers(), loadSearches(), loadFlags(), loadOwnerReports()]);
+  await Promise.all([loadUsers(), loadSearches(), loadFlags(), loadOwnerReports(), loadPipeline(), loadDealerLists()]);
   loadReliability(); // fire and forget, has its own UI
 }
 
@@ -733,6 +904,7 @@ function loadUsers() {
       usersCache = snap.exists() ? snap.val() : {};
       renderOverview();
       renderUsers();
+      renderDealers();
       resolve();
     }, e => {
       usersListening = false;

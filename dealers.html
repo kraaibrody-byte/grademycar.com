@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GradeMyCar for Dealers</title>
+<meta name="description" content="Reliability grades for every car on your auction run list, from 800,000+ NHTSA owner complaints. See which cars sit in their known failure mileage before you bid.">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://grademycar-default-rtdb.firebaseio.com">
+<script src="/attribution.js"></script>
+<style>
+:root {
+  --ink: #0B1220; --night: #070B16; --text: #1E293B; --muted: #64748B; --line: #E2E8F0; --bg: #F8FAFC; --card: #fff;
+  --accent: #4F46E5; --accent-bg: #EEF2FF;
+  --good: #16A34A; --good-bg: #DCFCE7; --ok: #B45309; --ok-bg: #FEF3C7; --bad: #DC2626; --bad-bg: #FEE2E2;
+}
+* { box-sizing: border-box; margin: 0; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-size: 14px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+.hide { display: none !important; }
+.btn { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 14px; font-weight: 650; cursor: pointer; text-decoration: none; display: inline-block; color: var(--text); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.big { padding: 13px 20px; font-size: 15px; border-radius: 12px; }
+.btn:hover { filter: brightness(.97); }
+.btn:disabled { opacity: .55; cursor: default; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.sub { color: var(--muted); }
+.err { color: var(--bad); }
+input.f, select.f, textarea.f { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; width: 100%; }
+input.f:focus, select.f:focus, textarea.f:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
+
+/* ---- landing / plans ---- */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--night); color: #fff; }
+.logo { color: #fff; font-weight: 800; font-size: 17px; text-decoration: none; }
+.logo small { color: #818CF8; font-weight: 700; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-left: 6px; }
+.topbar .who { font-size: 13px; color: #CBD5E1; display: flex; gap: 12px; align-items: center; }
+.topbar .who button { background: none; border: 1px solid #334155; color: #CBD5E1; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+.hero { background: var(--night); color: #fff; padding: 56px 24px 72px; }
+.hero .in { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; }
+.hero h1 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
+.hero p.lead { color: #CBD5E1; font-size: 17px; line-height: 1.55; margin-top: 16px; }
+.hero ul { margin-top: 22px; padding: 0; list-style: none; display: grid; gap: 10px; color: #E2E8F0; }
+.hero li::before { content: '✓'; color: #818CF8; font-weight: 800; margin-right: 10px; }
+.authcard { background: #fff; color: var(--text); border-radius: 20px; padding: 24px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+.authcard h2 { font-size: 19px; color: var(--ink); }
+.authcard form { display: grid; gap: 10px; margin-top: 14px; }
+.gbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+.or { text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 0; }
+.authcard .links { display: flex; justify-content: space-between; font-size: 13px; margin-top: 4px; }
+.authcard .links button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; }
+.amsg { font-size: 13px; line-height: 1.45; }
+.amsg.ok { color: var(--good); }
+.amsg.err { color: var(--bad); }
+.wrap { max-width: 1060px; margin: 0 auto; padding: 48px 24px; }
+.wrap h2.s { font-size: 26px; color: var(--ink); font-weight: 800; letter-spacing: -.01em; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+.how .card { padding: 20px; }
+.how b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
+.plans { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 22px; max-width: 760px; }
+.plan { padding: 24px; display: flex; flex-direction: column; }
+.plan.featured { border: 2px solid var(--accent); }
+.plan h3 { font-size: 17px; color: var(--ink); }
+.plan .p { font-size: 34px; font-weight: 800; color: var(--ink); margin: 8px 0 2px; }
+.plan .p small { font-size: 14px; color: var(--muted); font-weight: 600; }
+.plan ul { padding-left: 18px; line-height: 1.8; margin: 12px 0 18px; flex: 1; }
+.planmsg { margin-top: 14px; }
+.notice { background: var(--accent-bg); color: #3730A3; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+.notice.warn { background: var(--ok-bg); color: #92400E; }
+
+/* ---- app ---- */
+.app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+nav.side { background: var(--ink); color: #CBD5E1; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
+nav.side .logo { padding: 4px 10px 18px; display: block; }
+nav.side .logo small { display: block; margin: 2px 0 0; }
+nav.side button.nv { background: none; border: 0; text-align: left; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; color: #CBD5E1; }
+nav.side button.nv:hover { background: rgba(255,255,255,.06); }
+nav.side button.nv.on { background: rgba(99,102,241,.22); color: #fff; }
+nav.side .foot { margin-top: auto; padding: 12px; font-size: 12px; color: #64748B; line-height: 1.5; word-break: break-all; }
+nav.side .foot button { background: none; border: 0; color: #94A3B8; cursor: pointer; padding: 0; margin-top: 6px; text-decoration: underline; }
+main { padding: 28px 32px 60px; min-width: 0; }
+main h1 { font-size: 22px; font-weight: 800; color: var(--ink); }
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat { padding: 14px 16px; }
+.stat b { display: block; font-size: 24px; font-weight: 800; color: var(--ink); }
+.stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.add { padding: 14px 16px; display: grid; grid-template-columns: 1.6fr .7fr .6fr auto auto; gap: 10px; margin-bottom: 16px; align-items: center; }
+.add .row { grid-column: 1 / -1; display: grid; gap: 10px; }
+.add .msg { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.add .msg.err { color: var(--bad); }
+.filters { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; align-items: center; }
+.filters .sp { flex: 1; }
+.chip { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 12px; cursor: pointer; }
+.chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr.row { cursor: pointer; }
+tr.row:hover td { background: #FAFAFF; }
+.car b { color: var(--ink); white-space: nowrap; }
+.car small { display: block; color: var(--muted); font-size: 12px; }
+.g { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; font-weight: 800; font-size: 15px; }
+.g.sm { width: 28px; height: 28px; font-size: 12px; border-radius: 8px; }
+.g.good { background: var(--good-bg); color: var(--good); }
+.g.ok { background: var(--ok-bg); color: var(--ok); }
+.g.bad { background: var(--bad-bg); color: var(--bad); }
+.g.na { background: #EEF2F7; color: var(--muted); }
+.verdict { font-weight: 750; font-size: 12px; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.verdict.Bid { background: var(--good-bg); color: var(--good); }
+.verdict.Caution { background: var(--ok-bg); color: var(--ok); }
+.verdict.Pass { background: var(--bad-bg); color: var(--bad); }
+.verdict.Unknown { background: #EEF2F7; color: var(--muted); }
+.risk { max-width: 340px; }
+.risk .t { font-weight: 600; font-size: 13px; }
+.win { position: relative; height: 6px; background: #EEF2F7; border-radius: 3px; margin-top: 7px; width: 220px; }
+.win .band { position: absolute; top: 0; bottom: 0; background: #FCA5A5; border-radius: 3px; }
+.win .pin { position: absolute; top: -4px; width: 3px; height: 14px; background: var(--ink); border-radius: 2px; }
+.rec { font-size: 12px; font-weight: 700; color: var(--bad); }
+.x { border: 0; background: none; color: #94A3B8; cursor: pointer; font-size: 18px; }
+.x:hover { color: var(--bad); }
+.empty { text-align: center; color: var(--muted); padding: 34px !important; }
+.scrim { position: fixed; inset: 0; background: rgba(11,18,32,.4); display: none; z-index: 10; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100%); background: #fff; z-index: 11; transform: translateX(100%); transition: transform .2s; overflow-y: auto; padding: 24px; box-shadow: -20px 0 60px rgba(0,0,0,.15); }
+body.open .scrim { display: block; }
+body.open .drawer { transform: none; }
+.dh { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+.tile { border: 1px solid var(--line); border-radius: 14px; padding: 12px; text-align: center; }
+.tile span:not(.g) { display: block; font-size: 11px; color: var(--muted); font-weight: 650; margin-top: 6px; text-transform: uppercase; letter-spacing: .05em; }
+.sec { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; margin: 20px 0 10px; }
+.prob { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; }
+.prob .h { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; }
+.prob .h small { color: var(--muted); font-weight: 500; white-space: nowrap; }
+.prob .win { width: 100%; }
+.prob .scale { display: flex; justify-content: space-between; font-size: 11px; color: #94A3B8; margin-top: 4px; }
+.prob .tip { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+.badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: var(--bad-bg); color: var(--bad); margin-left: 6px; text-transform: uppercase; }
+.sheet { width: 100%; max-width: 560px; padding: 32px; border: 2px solid var(--ink); border-radius: 18px; background: #fff; }
+.sheet .hd { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 18px; gap: 12px; }
+.sheet h2 { font-size: 24px; color: var(--ink); }
+.sheet .big { display: flex; gap: 18px; align-items: center; }
+.sheet .big .g { width: 84px; height: 84px; font-size: 36px; border-radius: 18px; }
+.sheet ul { padding-left: 18px; line-height: 1.7; margin-top: 6px; }
+.sheet .fine { font-size: 11px; color: var(--muted); margin-top: 18px; line-height: 1.5; }
+.pick { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+.pick select { width: auto; min-width: 280px; }
+.billing { padding: 22px; max-width: 620px; }
+.billing dl { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; margin: 16px 0 20px; }
+.billing dt { color: var(--muted); font-weight: 600; }
+.billing dd { margin: 0; font-weight: 600; color: var(--ink); }
+
+@media (max-width: 900px) {
+  .hero .in { grid-template-columns: 1fr; gap: 28px; }
+  .hero h1 { font-size: 32px; }
+  .how, .plans { grid-template-columns: 1fr; }
+  .app { grid-template-columns: 1fr; }
+  nav.side { flex-direction: row; overflow-x: auto; padding: 10px; align-items: center; }
+  nav.side .logo { padding: 0 10px 0 4px; white-space: nowrap; }
+  nav.side .logo small, nav.side .foot { display: none; }
+  nav.side button.nv { white-space: nowrap; }
+  main { padding: 18px 16px 40px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .add { grid-template-columns: 1fr 1fr; }
+  .billing dl { grid-template-columns: 1fr; gap: 2px; }
+  .billing dd { margin-bottom: 8px; }
+}
+@media print {
+  body * { visibility: hidden; }
+  #sheetout, #sheetout * { visibility: visible; }
+  #sheetout { position: absolute; left: 0; top: 0; width: 100%; }
+  .sheet { max-width: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGNED OUT / NO PLAN ============ -->
+<div id="outside" class="hide">
+  <div class="topbar">
+    <a class="logo" href="/">GradeMyCar<small>for Dealers</small></a>
+    <div class="who hide" id="whoOut"><span id="whoEmail"></span><button id="signOut1">Sign out</button></div>
+  </div>
+  <section class="hero" id="hero">
+    <div class="in">
+      <div>
+        <h1>Know which auction cars to pass on before you bid.</h1>
+        <p class="lead">Paste your run list. Every car gets its model-year reliability grade from NHTSA owner complaints, and a check on whether its mileage sits where owners report that model's big failures.</p>
+        <ul>
+          <li>Grades for 121 popular models, 2000–2024, from 800,000+ complaints</li>
+          <li>Engine and transmission graded separately</li>
+          <li>Bid, Caution or Pass on every car in the list</li>
+          <li>14-day free trial, cancel anytime</li>
+        </ul>
+      </div>
+      <div class="authcard" id="authCard">
+        <h2 id="authTitle">Start your free trial</h2>
+        <div class="sub" id="authSub" style="margin-top:4px">Create an account, then pick a plan. You won't be charged for 14 days.</div>
+        <button class="btn gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+        <div class="or">or with email</div>
+        <form id="authForm" novalidate>
+          <input class="f" id="authEmail" type="email" placeholder="Work email" autocomplete="email">
+          <input class="f" id="authPass" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
+          <button class="btn primary big" id="authSubmit" type="submit">Create account</button>
+          <div class="links"><button type="button" id="authToggle">Have an account? Sign in</button><button type="button" id="authReset" class="hide">Forgot password?</button></div>
+          <div class="amsg" id="authMsg"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="howSec">
+    <h2 class="s">How it works</h2>
+    <div class="how">
+      <div class="card"><b>1. Add your run list</b><span class="sub">Paste VINs with miles, one per line, or add cars one at a time. VINs are decoded with NHTSA's free decoder.</span></div>
+      <div class="card"><b>2. See the grade and the risk</b><span class="sub">Each car shows its model year's grade, its most-reported problems, and where its mileage sits against the mileages owners report those failures at.</span></div>
+      <div class="card"><b>3. Bid on the right cars</b><span class="sub">Cars are sorted into Bid, Caution and Pass so you can skip the ones most likely to come back as recon headaches.</span></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="plansSec" style="padding-top:0">
+    <h2 class="s" id="plansTitle">Plans</h2>
+    <div class="notice hide" id="planNotice" style="margin-top:14px;max-width:760px"></div>
+    <div id="bizRow" class="hide" style="max-width:760px;margin-top:16px">
+      <label class="sub" for="bizName" style="font-weight:600;font-size:13px">Dealership name</label>
+      <input class="f" id="bizName" maxlength="80" placeholder="e.g. Main Street Auto Sales" style="margin-top:6px">
+    </div>
+    <div class="plans">
+      <div class="card plan featured">
+        <h3>Dealer</h3><div class="p">$149<small> / month</small></div>
+        <ul><li>Unlimited VIN checks</li><li>Run list with Bid / Caution / Pass</li><li>Failure-mileage check on every car</li><li>Recall flags on reported problems</li></ul>
+        <button class="btn primary big" data-plan="dealer">Start free trial</button>
+      </div>
+      <div class="card plan">
+        <h3>Dealer Pro</h3><div class="p">$249<small> / month</small></div>
+        <ul><li>Everything in Dealer</li><li>Printable reliability lot sheets for your front line</li><li>Show buyers an independent grade on the cars you sell</li></ul>
+        <button class="btn big" data-plan="pro">Start free trial</button>
+      </div>
+    </div>
+    <div class="amsg planmsg" id="planMsg"></div>
+    <p class="sub" style="margin-top:18px;font-size:12px;max-width:760px">Grades describe a model year from NHTSA owner complaints, not the condition of a specific car. Always read the condition report.</p>
+  </section>
+</div>
+
+<!-- ============ DEALER APP ============ -->
+<div class="app hide" id="inside">
+  <nav class="side">
+    <a class="logo" href="/">GradeMyCar<small>for Dealers</small></a>
+    <button class="nv on" data-view="run">Run list</button>
+    <button class="nv" data-view="sheet">Lot sheets</button>
+    <button class="nv" data-view="billing">Plan &amp; billing</button>
+    <div class="foot"><span id="footBiz"></span><br><span id="footEmail"></span><br><button id="signOut2">Sign out</button></div>
+  </nav>
+  <main>
+    <section id="v-run">
+      <div class="notice warn hide" id="pastDue" style="margin-bottom:14px"></div>
+      <div class="notice hide" id="welcome" style="margin-bottom:14px"></div>
+      <div class="head">
+        <div><h1>Run list</h1><div class="sub">Each car gets its model-year grade and where its mileage sits against reported failure mileages.</div></div>
+      </div>
+      <div class="stats">
+        <div class="card stat"><b id="s-n">0</b><span>Cars on list</span></div>
+        <div class="card stat"><b id="s-bid" style="color:var(--good)">0</b><span>Bid</span></div>
+        <div class="card stat"><b id="s-cau" style="color:var(--ok)">0</b><span>Caution</span></div>
+        <div class="card stat"><b id="s-pass" style="color:var(--bad)">0</b><span>Pass</span></div>
+      </div>
+      <div class="card add">
+        <input class="f" id="vin" placeholder="VIN (17 characters)" maxlength="17" autocomplete="off" spellcheck="false">
+        <input class="f" id="miles" placeholder="Miles" inputmode="numeric">
+        <input class="f" id="lot" placeholder="Lot # (optional)" maxlength="12">
+        <button class="btn primary" id="addVin">Add VIN</button>
+        <button class="btn" id="toggleMore">More ways to add</button>
+        <div class="row hide" id="moreRow">
+          <div style="display:grid;grid-template-columns:.6fr 1fr 1fr auto;gap:10px">
+            <select class="f" id="mYear"></select><select class="f" id="mMake"></select><select class="f" id="mModel"></select><button class="btn primary" id="addPick">Add without VIN</button>
+          </div>
+          <textarea class="f" id="pasteBox" rows="4" placeholder="Paste a run list, one car per line: VIN, miles, lot (lot optional)&#10;1HGCV1F34JA000000, 92000, 1043"></textarea>
+          <div><button class="btn primary" id="addPaste">Add all</button></div>
+        </div>
+        <div class="msg" id="msg">Miles are needed for the failure-mileage check.</div>
+      </div>
+      <div class="card">
+        <div class="filters" id="filters">
+          <button class="chip on" data-f="all">All</button><button class="chip" data-f="Bid">Bid</button><button class="chip" data-f="Caution">Caution</button><button class="chip" data-f="Pass">Pass</button>
+          <span class="sp"></span><button class="btn" id="clearList" style="font-size:12px;padding:6px 10px">Clear list</button>
+        </div>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Lot</th><th>Vehicle</th><th>Grade</th><th>Eng / Trans</th><th>Biggest risk at this mileage</th><th>Recalls</th><th>Call</th><th></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section id="v-sheet" class="hide">
+      <div class="head"><div><h1>Lot sheets</h1><div class="sub">A printable reliability sheet for the window or the deal jacket.</div></div></div>
+      <div id="sheetLocked" class="card billing hide">
+        <h2 style="font-size:17px;color:var(--ink)">Lot sheets are on Dealer Pro</h2>
+        <p class="sub" style="margin:8px 0 16px">Print an independent reliability grade for the cars on your front line. Switch plans in billing; Stripe prorates the difference.</p>
+        <button class="btn primary" data-portal>Upgrade in billing</button>
+      </div>
+      <div id="sheetOpen">
+        <div class="pick"><select class="f" id="sheetCar"></select><button class="btn primary" id="printSheet">Print</button></div>
+        <div id="sheetout"></div>
+      </div>
+    </section>
+
+    <section id="v-billing" class="hide">
+      <div class="head"><div><h1>Plan &amp; billing</h1></div></div>
+      <div class="card billing">
+        <dl id="billDl"></dl>
+        <button class="btn primary" data-portal>Manage billing</button>
+        <div class="sub" style="font-size:12px;margin-top:10px">Change card, switch plan, download invoices or cancel on Stripe's secure page.</div>
+        <div class="amsg" id="portalMsg" style="margin-top:8px"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"></aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-database-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-functions-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-analytics-compat.min.js"></script>
+<script src="/issue-themes.js"></script>
+<script>
+// ── FIREBASE ─────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCsVQCXfyRFt7fpcE-5Xvm_P3bULlGYMIU",
+  authDomain: "grademycar.firebaseapp.com",
+  databaseURL: "https://grademycar-default-rtdb.firebaseio.com",
+  projectId: "grademycar",
+  storageBucket: "grademycar.firebasestorage.app",
+  messagingSenderId: "724919836813",
+  appId: "1:724919836813:web:ca0ccd5bfe7ae3de3502c4",
+  measurementId: "G-TT0RZ0WFN0"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const rtdb = firebase.database();
+const functions = firebase.functions();
+// Grades are public and always read from the live database over REST
+const DB_URL = firebaseConfig.databaseURL;
+// Local testing against the emulators (same switch as phone.html):
+// `firebase emulators:start --only auth,database --project demo-grademycar`, then ?emu=1
+const USE_EMU = (() => {
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return false;
+  try {
+    const q = new URLSearchParams(location.search).get('emu');
+    if (q === '1') localStorage.setItem('gmc_emu', '1'); else if (q === '0') localStorage.removeItem('gmc_emu');
+    return localStorage.getItem('gmc_emu') === '1';
+  } catch (e) { return false; }
+})();
+if (USE_EMU) {
+  auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
+  rtdb.useEmulator('127.0.0.1', 9000);
+}
+const GA = window.GMCAttribution || null;
+let analytics = null;
+try { if (!USE_EMU && !(GA && GA.analyticsOff())) analytics = firebase.analytics(); } catch (e) {}
+function track(name, params) { try { analytics && analytics.logEvent(name, { ...(GA ? GA.common() : {}), ...(params || {}), page: 'dealers' }); } catch (e) {} }
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+const cap = s => s.replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+const NAMES = { bmw: 'BMW', gmc: 'GMC', 'cr-v': 'CR-V', 'hr-v': 'HR-V', 'cx-5': 'CX-5', 'cx-9': 'CX-9', 'c-hr': 'C-HR', 'f-150': 'F-150', rx: 'RX', es: 'ES', gs: 'GS', nx: 'NX', mdx: 'MDX', rdx: 'RDX', tlx: 'TLX', a4: 'A4', q5: 'Q5', x3: 'X3', x5: 'X5', wrx: 'WRX', glc: 'GLC', gle: 'GLE', mazda3: 'Mazda3', mazda6: 'Mazda6' };
+const pretty = s => NAMES[s] || cap(s);
+const carName = c => `${c.year} ${pretty(c.make)} ${pretty(c.model)}`;
+const gClass = g => !g ? 'na' : /^[AB]/.test(g) ? 'good' : /^C/.test(g) ? 'ok' : 'bad';
+const fmtDate = ms => ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const DRIVETRAIN = new Set(Object.entries(GMCIssues.ISSUE_THEMES).filter(([, t]) => t.drivetrain).map(([k]) => k));
+const ACCESS = ['trialing', 'active', 'past_due'];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let user = null, dealer = null, cars = [], filter = 'all';
+let dealerRef = null, listRef = null;
+const params = new URLSearchParams(location.search);
+let waitingForWebhook = params.get('welcome') === '1';
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+let authMode = 'signup';
+function authMsg(type, text) { const el = $('#authMsg'); el.className = 'amsg' + (type ? ' ' + type : ''); el.textContent = text || ''; }
+function setAuthMode(m) {
+  authMode = m;
+  $('#authTitle').textContent = m === 'signup' ? 'Start your free trial' : 'Sign in';
+  $('#authSub').textContent = m === 'signup' ? 'Create an account, then pick a plan. You won\'t be charged for 14 days.' : 'Welcome back.';
+  $('#authSubmit').textContent = m === 'signup' ? 'Create account' : 'Sign in';
+  $('#authToggle').textContent = m === 'signup' ? 'Have an account? Sign in' : 'New here? Create an account';
+  $('#authPass').autocomplete = m === 'signup' ? 'new-password' : 'current-password';
+  $('#authReset').classList.toggle('hide', m === 'signup');
+  authMsg(null);
+}
+function friendlyAuthError(err) {
+  switch (err && err.code) {
+    case 'auth/invalid-email': return 'That email address doesn\'t look right.';
+    case 'auth/email-already-in-use': return 'That email already has a GradeMyCar account. Sign in instead.';
+    case 'auth/weak-password': return 'Use at least 6 characters for your password.';
+    case 'auth/user-not-found': case 'auth/wrong-password': case 'auth/invalid-credential': case 'auth/invalid-login-credentials':
+      return 'That email and password don\'t match. Try again or reset your password.';
+    case 'auth/too-many-requests': return 'Too many tries in a row. Wait a minute, then try again.';
+    case 'auth/network-request-failed': return 'No connection. Check your internet, then try again.';
+    case 'auth/popup-blocked': return 'Your browser blocked the Google window. Use your email instead.';
+    case 'auth/unauthorized-domain': return 'Sign-in only works on grademycar.com.';
+    case 'auth/account-exists-with-different-credential': return 'That email already has an account. Sign in with your email and password.';
+    default: return 'Something went wrong. Please try again.';
+  }
+}
+$('#authToggle').onclick = () => setAuthMode(authMode === 'signup' ? 'signin' : 'signup');
+$('#authForm').onsubmit = async e => {
+  e.preventDefault();
+  const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
+  if (!/^\S+@\S+\.\S+$/.test(email)) return authMsg('err', 'Enter your email address.');
+  if (pass.length < 6) return authMsg('err', authMode === 'signup' ? 'Choose a password with at least 6 characters.' : 'Enter your password.');
+  $('#authSubmit').disabled = true; authMsg(null);
+  try {
+    if (authMode === 'signup') { await auth.createUserWithEmailAndPassword(email, pass); track('sign_up', { method: 'password' }); }
+    else await auth.signInWithEmailAndPassword(email, pass);
+  } catch (err) { authMsg('err', friendlyAuthError(err)); }
+  $('#authSubmit').disabled = false;
+};
+$('#googleBtn').onclick = async () => {
+  authMsg(null);
+  try {
+    const cred = await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    if (cred.additionalUserInfo && cred.additionalUserInfo.isNewUser) track('sign_up', { method: 'google' });
+  } catch (err) { if (!/popup-closed|cancelled-popup/.test(err.code || '')) authMsg('err', friendlyAuthError(err)); }
+};
+$('#authReset').onclick = async () => {
+  const email = $('#authEmail').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return authMsg('err', 'Type your email above first, then tap Forgot password.');
+  try { await auth.sendPasswordResetEmail(email); authMsg('ok', `We sent a reset link to ${email}.`); }
+  catch (err) { authMsg('err', friendlyAuthError(err)); }
+};
+['#signOut1', '#signOut2'].forEach(s => $(s).onclick = () => auth.signOut());
+
+// Same record phone.html creates, so the account works in the consumer app too
+function ensureUserRecord(u) {
+  const r = rtdb.ref(`users/${u.uid}`);
+  r.child('email').once('value').then(snap => {
+    if (snap.exists()) return;
+    const isNew = Date.now() - Date.parse(u.metadata.creationTime) < 86400000;
+    return r.set({ email: u.email || '', createdAt: firebase.database.ServerValue.TIMESTAMP,
+      reportCredits: isNew ? 1 : 0, totalSearches: 0, totalPurchases: 0, totalSpent: 0 });
+  }).catch(e => console.warn('[GMC] user record check failed', e));
+}
+
+auth.onAuthStateChanged(u => {
+  if (dealerRef) dealerRef.off();
+  if (listRef) listRef.off();
+  user = u; dealer = null; cars = [];
+  if (!u) { dealerRef = listRef = null; return route(); }
+  try { analytics && analytics.setUserId(u.uid); } catch (e) {}
+  ensureUserRecord(u);
+  dealerRef = rtdb.ref(`users/${u.uid}/dealer`);
+  dealerRef.on('value', snap => {
+    dealer = snap.val();
+    if (dealer && ACCESS.includes(dealer.status)) waitingForWebhook = false;
+    route();
+  }, err => { console.warn('[GMC] dealer read failed', err); dealer = null; route(); });
+});
+
+// ── ROUTING ──────────────────────────────────────────────────────────────────
+const hasAccess = () => !!(dealer && ACCESS.includes(dealer.status));
+function route() {
+  const inside = !!user && hasAccess();
+  $('#outside').classList.toggle('hide', inside);
+  $('#inside').classList.toggle('hide', !inside);
+  if (inside) return enterApp();
+  $('#whoOut').classList.toggle('hide', !user);
+  $('#whoEmail').textContent = user ? user.email || '' : '';
+  $('#authCard').classList.toggle('hide', !!user);
+  $('#bizRow').classList.toggle('hide', !user);
+  $('#howSec').classList.toggle('hide', !!user);
+  $('#hero').classList.toggle('hide', !!user);
+  const note = $('#planNotice');
+  note.classList.add('hide');
+  if (user) {
+    $('#plansTitle').textContent = 'Pick your plan';
+    if (dealer && dealer.business && !$('#bizName').value) $('#bizName').value = dealer.business;
+    const trial = !(dealer && dealer.trialUsed);
+    document.querySelectorAll('[data-plan]').forEach(b => b.textContent = trial ? 'Start free trial' : 'Subscribe');
+    if (waitingForWebhook) { note.textContent = 'Payment received. Setting up your account… this takes a few seconds.'; note.classList.remove('hide'); }
+    else if (dealer && dealer.status) {
+      note.textContent = dealer.status === 'canceled' ? 'Your dealer plan has ended. Pick a plan to start again; your run list is still saved.'
+        : `Your last payment didn't go through (status: ${dealer.status}). Subscribe again or update your card in billing.`;
+      note.classList.remove('hide');
+    }
+    track('dealer_plans_view', { trial: trial ? 'yes' : 'no' });
+  } else $('#plansTitle').textContent = 'Plans';
+}
+
+// ── CHECKOUT ─────────────────────────────────────────────────────────────────
+function planMsg(type, t) { const el = $('#planMsg'); el.className = 'amsg planmsg' + (type ? ' ' + type : ''); el.textContent = t || ''; }
+document.querySelectorAll('[data-plan]').forEach(b => b.onclick = async () => {
+  const plan = b.dataset.plan;
+  track('select_plan', { plan });
+  if (!user) {
+    planMsg('err', 'Create an account first (top of the page), then pick your plan.');
+    window.scrollTo({ top: 0, behavior: 'smooth' }); $('#authEmail').focus(); return;
+  }
+  const business = $('#bizName').value.trim();
+  if (!business) { planMsg('err', 'Enter your dealership\'s name first.'); $('#bizName').focus(); return; }
+  document.querySelectorAll('[data-plan]').forEach(x => x.disabled = true);
+  planMsg(null, 'Opening secure checkout…');
+  try {
+    const internal = !!(GA && GA.internal());
+    const res = await functions.httpsCallable('createDealerCheckout')({ plan, business, internal });
+    track('begin_checkout', { plan, kind: 'dealer' });
+    location.href = res.data.url;
+  } catch (err) {
+    planMsg('err', err.message || 'Couldn\'t start checkout. Try again.');
+    document.querySelectorAll('[data-plan]').forEach(x => x.disabled = false);
+  }
+});
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-portal]'); if (!b) return;
+  b.disabled = true; $('#portalMsg').textContent = '';
+  try { const res = await functions.httpsCallable('createDealerPortal')(); location.href = res.data.url; }
+  catch (err) { $('#portalMsg').className = 'amsg err'; $('#portalMsg').textContent = err.message || 'Couldn\'t open billing.'; b.disabled = false; }
+});
+
+// ── APP ──────────────────────────────────────────────────────────────────────
+let appStarted = false;
+function enterApp() {
+  $('#footBiz').textContent = dealer.business || '';
+  $('#footEmail').textContent = user.email || '';
+  const pd = $('#pastDue');
+  pd.classList.toggle('hide', dealer.status !== 'past_due');
+  pd.textContent = 'Your last payment didn\'t go through. Update your card in Plan & billing to keep access.';
+  if (params.get('welcome') === '1') {
+    $('#welcome').classList.remove('hide');
+    $('#welcome').textContent = dealer.status === 'trialing'
+      ? `You're in. Your free trial runs until ${fmtDate(dealer.trialEnd)}. Add your first VIN below.`
+      : 'You\'re in. Add your first VIN below.';
+    history.replaceState(null, '', location.pathname);
+    track('dealer_welcome', { plan: dealer.plan, status: dealer.status });
+  }
+  renderBilling();
+  renderSheetGate();
+  if (!listRef) {
+    listRef = rtdb.ref(`dealer_lists/${user.uid}`);
+    listRef.on('value', snap => {
+      cars = Object.entries(snap.val() || {}).map(([id, c]) => ({ id, ...c })).sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+      cars.forEach(c => loadYear(c.make, c.model, c.year));
+      render();
+    }, err => { $('#rows').innerHTML = `<tr><td colspan="8" class="empty err">Couldn't load your list: ${esc(err.message)}</td></tr>`; });
+  }
+  if (!appStarted) { appStarted = true; loadModels(); }
+}
+
+// Graded models: reliability/{make}/grades/{model}. Years: reliability/{make}/years/{model}/{year}
+let MODELS = {};
+async function loadModels() {
+  try {
+    const makes = Object.keys(await (await fetch(`${DB_URL}/reliability.json?shallow=true`)).json() || {});
+    const lists = await Promise.all(makes.map(m => fetch(`${DB_URL}/reliability/${encodeURIComponent(m)}/grades.json?shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null)));
+    makes.forEach((m, i) => { if (lists[i]) MODELS[m] = Object.keys(lists[i]).sort(); });
+  } catch (e) { console.warn('[GMC] model list failed', e); }
+  const makes = Object.keys(MODELS).sort();
+  const thisYear = new Date().getFullYear();
+  $('#mYear').innerHTML = Array.from({ length: thisYear - 1999 }, (_, i) => thisYear - i).map(y => `<option>${y}</option>`).join('');
+  $('#mMake').innerHTML = makes.map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
+  fillModels();
+}
+function fillModels() { const mk = $('#mMake').value; $('#mModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
+$('#mMake').onchange = fillModels;
+
+const YEARS = {}; // "make/model/year" -> data | null, or a pending Promise
+function loadYear(make, model, year) {
+  const k = `${make}/${model}/${year}`;
+  if (k in YEARS) return YEARS[k];
+  return YEARS[k] = fetch(`${DB_URL}/reliability/${encodeURIComponent(make)}/years/${encodeURIComponent(model)}/${year}.json`)
+    .then(r => r.ok ? r.json() : null).catch(() => null)
+    .then(d => { YEARS[k] = d; render(); return d; });
+}
+
+// Grade, problems, and where this car's mileage sits in each problem's p25–p75
+// failure mileage (why.mi, in thousands). Verdict: D/F → Pass; C, or inside/near
+// an engine or transmission failure window → Caution; otherwise Bid.
+function analyze(c) {
+  const y = YEARS[`${c.make}/${c.model}/${c.year}`];
+  if (y instanceof Promise || y === undefined) return { loading: true, verdict: 'Unknown' };
+  if (!y || !y.o) return { known: false, verdict: 'Unknown' };
+  const mi = (y.x && y.x.mi) || {};
+  const k = (c.miles || 0) / 1000;
+  const probs = GMCIssues.parseIssues(y.i).map(p => {
+    const w = mi[p.key] || null;
+    let state = null;
+    if (w && c.miles) state = k >= w[0] && k <= w[2] ? 'in' : k < w[0] ? (w[0] - k <= 15 ? 'near' : 'before') : 'past';
+    return { ...p, win: w, state, drive: DRIVETRAIN.has(p.key) };
+  });
+  const rank = { in: 0, near: 1 };
+  const risk = probs.filter(p => p.state === 'in' || p.state === 'near')
+    .sort((a, b) => (b.drive - a.drive) || (rank[a.state] - rank[b.state]) || b.count - a.count)[0]
+    || probs.find(p => p.drive) || probs[0] || null;
+  let verdict = 'Bid';
+  if (/^[DF]/.test(y.o)) verdict = 'Pass';
+  else if (/^C/.test(y.o) || (risk && risk.drive && (risk.state === 'in' || risk.state === 'near'))) verdict = 'Caution';
+  return { known: true, o: y.o, e: y.e, t: y.t, n: y.n || 0, limited: !!y.l, why: y.x || null, probs, risk, verdict,
+           recalls: probs.filter(p => p.recall).length };
+}
+
+function winBar(w, miles) {
+  if (!w) return '';
+  const pct = v => Math.min(100, (v / 200) * 100);
+  return `<div class="win"><div class="band" style="left:${pct(w[0])}%;width:${pct(w[2]) - pct(w[0])}%"></div>${miles ? `<div class="pin" style="left:calc(${pct(miles / 1000)}% - 1px)"></div>` : ''}</div>`;
+}
+function riskText(r, miles) {
+  if (!r) return '<span class="sub">No common problems reported</span>';
+  if (!r.win) return `<div class="t">${esc(r.label)}</div><small class="sub">${r.count} complaints · not enough mileage reports</small>`;
+  const where = !miles ? 'Add miles to check' : { in: 'In the failure window', near: 'Approaching the window', before: 'Well before the window', past: 'Past the usual window' }[r.state];
+  return `<div class="t">${esc(r.label)}</div><small class="sub">${where}: owners report ${r.win[0]}–${r.win[2]}k (median ${r.win[1]}k)</small>${winBar(r.win, miles)}`;
+}
+
+function render() {
+  if (!user || !hasAccess()) return;
+  const rows = cars.map(c => ({ c, a: analyze(c) }));
+  const count = v => rows.filter(r => r.a.verdict === v).length;
+  $('#s-n').textContent = rows.length; $('#s-bid').textContent = count('Bid'); $('#s-cau').textContent = count('Caution'); $('#s-pass').textContent = count('Pass');
+  const shown = rows.filter(r => filter === 'all' || r.a.verdict === filter);
+  $('#rows').innerHTML = shown.map(({ c, a }) => `<tr class="row" data-id="${esc(c.id)}">
+      <td><b>${c.lot ? '#' + esc(c.lot) : '—'}</b></td>
+      <td class="car"><b>${esc(carName(c))}</b><small>${c.miles ? Number(c.miles).toLocaleString() + ' mi' : 'miles not set'}${c.vin ? ' · ' + esc(c.vin) : ''}</small></td>
+      <td><span class="g ${gClass(a.o)}">${a.loading ? '…' : esc(a.o || '–')}</span></td>
+      <td>${a.known ? `<span class="g sm ${gClass(a.e)}">${esc(a.e)}</span> <span class="g sm ${gClass(a.t)}">${esc(a.t)}</span>` : '—'}</td>
+      <td class="risk">${a.loading ? '<span class="sub">Loading…</span>' : a.known ? riskText(a.risk, c.miles) : '<span class="sub">This model year isn\'t graded</span>'}</td>
+      <td>${a.known ? (a.recalls ? `<span class="rec">${a.recalls}</span>` : '0') : '—'}</td>
+      <td><span class="verdict ${a.verdict}">${a.loading ? '…' : a.verdict === 'Unknown' ? 'No grade' : a.verdict}</span></td>
+      <td><button class="x" data-del="${esc(c.id)}" title="Remove">×</button></td></tr>`).join('')
+    || `<tr><td colspan="8" class="empty">${cars.length ? 'No cars match this filter.' : 'Your run list is empty. Add a VIN above to get started.'}</td></tr>`;
+  renderSheetPicker();
+}
+
+function openCar(id) {
+  const c = cars.find(x => x.id === id); if (!c) return;
+  const a = analyze(c);
+  const w = a.why;
+  $('#drawer').innerHTML = `
+    <div class="dh"><div><div class="sub">${c.lot ? 'Lot #' + esc(c.lot) + ' · ' : ''}${c.miles ? Number(c.miles).toLocaleString() + ' mi' : 'miles not set'}${c.vin ? ' · ' + esc(c.vin) : ''}</div><h1 style="font-size:22px;color:var(--ink)">${esc(carName(c))}</h1></div><button class="x" id="closeDrawer">×</button></div>
+    ${a.known ? `
+    <div class="tiles">
+      <div class="tile"><span class="g ${gClass(a.o)}">${esc(a.o)}</span><span>Overall</span></div>
+      <div class="tile"><span class="g ${gClass(a.e)}">${esc(a.e)}</span><span>Engine</span></div>
+      <div class="tile"><span class="g ${gClass(a.t)}">${esc(a.t)}</span><span>Transmission</span></div>
+    </div>
+    <div class="notice"><b>${a.verdict === 'Pass' ? 'Pass on this one.' : a.verdict === 'Caution' ? 'Bid with caution.' : 'Looks like a solid buy.'}</b>
+      ${w && w.ok && w.c ? ` Ranked #${w.ok} of ${w.c} ${esc(c.year)} vehicles for owner complaints per car sold (1 = fewest).` : ''}
+      Based on ${Number(a.n).toLocaleString()} NHTSA complaints.${a.limited ? ' This year has limited data so far.' : ''}</div>
+    <div class="sec">Reported problems · where this car's mileage sits</div>
+    ${a.probs.map(p => `<div class="prob"><div class="h"><span>${esc(p.label)}${p.recall ? '<span class="badge">Recall</span>' : ''}</span><small>${p.count} complaints</small></div>
+      ${p.win ? `${winBar(p.win, c.miles)}<div class="scale"><span>0</span><span>Owners report ${p.win[0]}–${p.win[2]}k${c.miles ? ' · this car ' + Math.round(c.miles / 1000) + 'k' : ''}</span><span>200k</span></div>` : '<div class="sub" style="font-size:12px;margin-top:4px">Not enough mileage reports for a window</div>'}
+      ${p.tip ? `<div class="tip">${esc(p.tip)}</div>` : ''}</div>`).join('') || '<div class="sub">No common problems reported.</div>'}
+    <div class="sec">Before you bid</div>
+    <ul style="padding-left:18px;line-height:1.7">
+      ${a.recalls ? `<li>Check open recalls: <a href="https://www.nhtsa.gov/recalls${c.vin ? '?vin=' + encodeURIComponent(c.vin) : ''}" target="_blank" rel="noopener">nhtsa.gov/recalls</a>. Unfinished recall work can hurt resale.</li>` : ''}
+      ${a.risk && a.risk.drive ? `<li>Look for ${esc(a.risk.label.toLowerCase())} on the condition report and budget recon for it.</li>` : ''}
+      <li>Red band = where the middle half of owner failure reports fall. Black pin = this car.</li>
+      <li>Grades describe the model year, not this specific car.</li>
+    </ul>
+    <div style="margin-top:18px"><button class="btn primary" id="toSheet">Make lot sheet</button></div>`
+    : `<div class="notice" style="margin-top:16px">${a.loading ? 'Loading…' : `We don't have a grade for the ${esc(c.year)} ${esc(pretty(c.model))}. GradeMyCar grades 121 popular models, 2000–2024; the newest years need more time on the road.`}</div>`}`;
+  document.body.classList.add('open');
+  $('#closeDrawer').onclick = closeCar;
+  const ts = $('#toSheet');
+  if (ts) ts.onclick = () => { closeCar(); show('sheet'); $('#sheetCar').value = id; renderSheet(); };
+  track('dealer_car_open', { verdict: a.verdict, grade: a.o || 'none' });
+}
+function closeCar() { document.body.classList.remove('open'); }
+$('#scrim').onclick = closeCar;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCar(); });
+
+// ── ADDING CARS ──────────────────────────────────────────────────────────────
+const msg = (t, err) => { $('#msg').textContent = t; $('#msg').className = 'msg' + (err ? ' err' : ''); };
+// vPIC names → our keys ("F-150" → f-150, "Grand Cherokee" → grand cherokee, "Model 3" → model 3, Ram → dodge/ram)
+function keyFor(make, model) {
+  let mk = String(make || '').toLowerCase().trim(), md = String(model || '').toLowerCase().trim();
+  if (mk === 'ram') { mk = 'dodge'; md = 'ram'; }
+  if (mk === 'mercedes benz') mk = 'mercedes-benz';
+  const list = MODELS[mk]; if (!list) return null;
+  if (list.includes(md)) return { make: mk, model: md };
+  if (mk === 'dodge' && /^ram|^\d500/.test(md)) return { make: mk, model: 'ram' };
+  if (mk === 'bmw') { const s = (md.match(/^(\d)/) || [])[1]; if (s && list.includes(s + ' series')) return { make: mk, model: s + ' series' }; const x = md.match(/^x\d/); if (x && list.includes(x[0])) return { make: mk, model: x[0] }; }
+  if (mk === 'mercedes-benz') { const cl = (md.match(/^([a-z]{1,3})\b/) || [])[1]; const hit = list.find(m => m.replace('-class', '') === cl); if (hit) return { make: mk, model: hit }; }
+  const hit = list.filter(m => md.startsWith(m) || md.replace(/[\s-]/g, '') === m.replace(/[\s-]/g, '')).sort((a, b) => b.length - a.length)[0];
+  return hit ? { make: mk, model: hit } : null;
+}
+function cleanMiles(s) { const n = parseInt(String(s || '').replace(/\D/g, ''), 10); return n >= 0 && n <= 999999 ? n : 0; }
+function cleanLot(s) { return String(s || '').trim().replace(/[^A-Za-z0-9-]/g, '').slice(0, 12); }
+function pushCar(car) {
+  return listRef.push({ ...car, addedAt: firebase.database.ServerValue.TIMESTAMP });
+}
+async function decode(vin) {
+  const r = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`);
+  if (!r.ok) throw new Error('NHTSA\'s VIN decoder didn\'t answer. Try again in a minute.');
+  const j = (await r.json()).Results[0] || {};
+  return { make: j.Make, model: j.Model, year: j.ModelYear };
+}
+async function addVin(vin, miles, lot) {
+  vin = String(vin || '').trim().toUpperCase();
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) throw new Error(`"${vin || 'blank'}" isn't a 17-character VIN`);
+  if (cars.some(c => c.vin === vin)) throw new Error(`${vin} is already on your list`);
+  const d = await decode(vin);
+  if (!d.make || !/^\d{4}$/.test(d.year || '')) throw new Error(`NHTSA couldn't decode ${vin}`);
+  const key = keyFor(d.make, d.model);
+  if (!key) throw new Error(`${d.year} ${cap(String(d.make).toLowerCase())} ${d.model || ''} isn't one of the models we grade yet`);
+  await pushCar({ vin, year: +d.year, make: key.make, model: key.model, miles: cleanMiles(miles), ...(cleanLot(lot) ? { lot: cleanLot(lot) } : {}) });
+  track('dealer_vin_added', { method: 'vin' });
+  return `${d.year} ${pretty(key.make)} ${pretty(key.model)}`;
+}
+$('#addVin').onclick = async () => {
+  const b = $('#addVin'); b.disabled = true; msg('Decoding VIN…');
+  try {
+    msg('Added ' + await addVin($('#vin').value, $('#miles').value, $('#lot').value) + '.');
+    $('#vin').value = ''; $('#miles').value = ''; $('#lot').value = ''; $('#vin').focus();
+  } catch (e) { msg(e.message || String(e), true); }
+  b.disabled = false;
+};
+['#vin', '#miles', '#lot'].forEach(s => $(s).onkeydown = e => { if (e.key === 'Enter') $('#addVin').click(); });
+$('#toggleMore').onclick = () => $('#moreRow').classList.toggle('hide');
+$('#addPick').onclick = async () => {
+  const miles = cleanMiles($('#miles').value);
+  if (!miles) { msg('Enter the miles first.', true); return $('#miles').focus(); }
+  if (!$('#mModel').value) return msg('Pick a make and model.', true);
+  try {
+    await pushCar({ year: +$('#mYear').value, make: $('#mMake').value, model: $('#mModel').value, miles, ...(cleanLot($('#lot').value) ? { lot: cleanLot($('#lot').value) } : {}) });
+    track('dealer_vin_added', { method: 'pick' });
+    msg('Added.'); $('#miles').value = ''; $('#lot').value = '';
+  } catch (e) { msg(e.message || String(e), true); }
+};
+$('#addPaste').onclick = async () => {
+  const lines = $('#pasteBox').value.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 200);
+  if (!lines.length) return msg('Paste at least one line: VIN, miles, lot.', true);
+  const b = $('#addPaste'); b.disabled = true;
+  let ok = 0; const bad = [];
+  for (const [i, l] of lines.entries()) {
+    msg(`Adding ${i + 1} of ${lines.length}…`);
+    const [v, m, lot] = l.split(/\s*[,\t;]\s*|\s+/);
+    try { await addVin(v, m, lot); ok++; } catch (e) { bad.push(e.message); }
+  }
+  msg(`Added ${ok} of ${lines.length}.` + (bad.length ? ' Skipped: ' + bad.join('; ') : ''), bad.length && !ok);
+  if (ok && !bad.length) $('#pasteBox').value = '';
+  b.disabled = false;
+};
+$('#rows').onclick = e => {
+  const del = e.target.closest('[data-del]');
+  if (del) { e.stopPropagation(); listRef.child(del.dataset.del).remove(); return; }
+  const tr = e.target.closest('tr.row'); if (tr) openCar(tr.dataset.id);
+};
+$('#clearList').onclick = () => {
+  if (!cars.length || !confirm(`Remove all ${cars.length} cars from your run list?`)) return;
+  const upd = {}; cars.forEach(c => upd[c.id] = null); listRef.update(upd);
+};
+$('#filters').onclick = e => {
+  const b = e.target.closest('.chip'); if (!b) return;
+  filter = b.dataset.f;
+  document.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b));
+  render();
+};
+
+// ── LOT SHEETS (Pro) ─────────────────────────────────────────────────────────
+function renderSheetGate() {
+  const pro = dealer && dealer.plan === 'pro';
+  $('#sheetLocked').classList.toggle('hide', pro);
+  $('#sheetOpen').classList.toggle('hide', !pro);
+}
+function renderSheetPicker() {
+  const sel = $('#sheetCar'), cur = sel.value;
+  sel.innerHTML = cars.filter(c => analyze(c).known).map(c => `<option value="${esc(c.id)}">${c.lot ? '#' + esc(c.lot) + ' · ' : ''}${esc(carName(c))}</option>`).join('') || '<option value="">Add a graded car to your run list first</option>';
+  if (cur && cars.some(c => c.id === cur)) sel.value = cur;
+  if (!$('#v-sheet').classList.contains('hide')) renderSheet();
+}
+function renderSheet() {
+  const c = cars.find(x => x.id === $('#sheetCar').value);
+  if (!c) { $('#sheetout').innerHTML = ''; return; }
+  const a = analyze(c); if (!a.known) { $('#sheetout').innerHTML = ''; return; }
+  const w = a.why;
+  $('#sheetout').innerHTML = `<div class="sheet">
+    <div class="hd"><div><div class="sub">Independent reliability report</div><h2>${esc(carName(c))}</h2></div><b style="color:var(--accent);white-space:nowrap">GradeMyCar</b></div>
+    <div class="big"><span class="g ${gClass(a.o)}">${esc(a.o)}</span><div>
+      <div style="font-weight:700;font-size:16px;color:var(--ink)">Overall reliability grade</div>
+      <div class="sub">Engine ${esc(a.e)} · Transmission ${esc(a.t)}${w && w.ok && w.c ? ` · #${w.ok} of ${w.c} ${esc(c.year)} vehicles` : ''}</div></div></div>
+    <div class="sec">What owners report most</div>
+    <ul>${a.probs.slice(0, 3).map(p => `<li>${esc(p.label)}${p.recall ? ' (recall issued)' : ''}</li>`).join('') || '<li>No common problems reported</li>'}</ul>
+    <div class="sec">This vehicle</div>
+    <div>${c.miles ? Number(c.miles).toLocaleString() + ' miles' : ''}${c.vin ? ' · VIN ' + esc(c.vin) : ''}${dealer.business ? ' · Offered by ' + esc(dealer.business) : ''}</div>
+    <div class="fine">Grades compare ${Number(a.n).toLocaleString()} NHTSA owner complaints for this model year with other ${esc(c.year)} vehicles, adjusted for sales. They describe the model year, not this specific car. Full report: grademycar.com</div>
+  </div>`;
+}
+$('#sheetCar').onchange = renderSheet;
+$('#printSheet').onclick = () => { track('dealer_sheet_print'); print(); };
+
+// ── BILLING ──────────────────────────────────────────────────────────────────
+function renderBilling() {
+  const d = dealer || {};
+  const status = { trialing: 'Free trial', active: 'Active', past_due: 'Payment failed, retrying' }[d.status] || d.status;
+  const rows = [
+    ['Dealership', esc(d.business || '—')],
+    ['Plan', d.plan === 'pro' ? 'Dealer Pro · $249/month' : 'Dealer · $149/month'],
+    ['Status', esc(status)],
+    d.status === 'trialing' ? ['Trial ends', fmtDate(d.trialEnd)] : null,
+    [d.cancelAtPeriodEnd ? 'Access ends' : 'Next charge', fmtDate(d.currentPeriodEnd)],
+    ['Account', esc(user.email || '')],
+  ].filter(Boolean);
+  $('#billDl').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+}
+
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function show(v) {
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'v-' + v));
+  document.querySelectorAll('nav.side .nv').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  if (v === 'sheet') renderSheet();
+}
+document.querySelectorAll('nav.side .nv').forEach(b => b.onclick = () => show(b.dataset.view));
+setAuthMode('signup');
+</script>
+</body>
+</html>
