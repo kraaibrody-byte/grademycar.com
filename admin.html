@@ -344,7 +344,7 @@
           </button>
           <button class="navitem" data-view="dealers">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 10.5 5 5h14l2 5.5M3 10.5h18v6.5H3v-6.5Zm3 6.5v2m12-2v2M7 13.7h.01M17 13.7h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Dealers
+            Dealers &amp; shops
           </button>
         </nav>
       </div>
@@ -478,14 +478,14 @@
       <!-- ============ DEALERS ============ -->
       <section class="view" id="view-dealers">
         <div class="topbar">
-          <div><h1>Dealers</h1><div class="topbar-sub" id="dealers-sub">Dealer subscriptions (<span class="num">users/*/dealer</span>, written by the Stripe webhook) and your sales pipeline (<span class="num">dealer_pipeline</span>).</div></div>
+          <div><h1>Dealers &amp; shops</h1><div class="topbar-sub" id="dealers-sub">Dealer and shop subscriptions (<span class="num">users/*/dealer</span>, written by the Stripe webhook) and your sales pipeline (<span class="num">dealer_pipeline</span>).</div></div>
           <button class="btn" id="dealers-refresh">↻ Refresh</button>
         </div>
         <div id="dealers-banner"></div>
         <div class="kpi-row">
           <div class="kpi"><div class="kpi-label">Paying</div><div class="kpi-value" id="kpi-d-active">—</div><div class="kpi-sub">active subscriptions</div></div>
           <div class="kpi"><div class="kpi-label">In trial</div><div class="kpi-value" id="kpi-d-trial">—</div><div class="kpi-sub">14-day trials</div></div>
-          <div class="kpi"><div class="kpi-label">MRR</div><div class="kpi-value" id="kpi-d-mrr">—</div><div class="kpi-sub">paying plans only</div></div>
+          <div class="kpi"><div class="kpi-label">MRR</div><div class="kpi-value" id="kpi-d-mrr">—</div><div class="kpi-sub" id="kpi-d-mrr-sub">paying plans only</div></div>
           <div class="kpi"><div class="kpi-label">Pipeline</div><div class="kpi-value" id="kpi-d-pipe">—</div><div class="kpi-sub">open leads</div></div>
         </div>
         <div class="panel">
@@ -494,6 +494,15 @@
             <table>
               <thead><tr><th>Dealership</th><th>Account</th><th>Plan</th><th>Status</th><th>Trial ends</th><th>Next charge</th><th class="num">Cars on list</th></tr></thead>
               <tbody id="dealers-tbody"><tr><td colspan="7" class="empty-note">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div><h2>Shops</h2><div class="sub">Mechanics on the $49 Shop plan (shops.html)</div></div></div>
+          <div class="panel-body table-wrap">
+            <table>
+              <thead><tr><th>Shop</th><th>Account</th><th>Phone</th><th>Status</th><th>Trial ends</th><th>Next charge</th><th class="num">Reports</th><th class="num">Opened</th></tr></thead>
+              <tbody id="shops-tbody"><tr><td colspan="8" class="empty-note">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -736,6 +745,8 @@ $("owners-refresh").addEventListener("click", loadOwnerReports);
 // Subscriptions come from users/{uid}/dealer (Stripe webhook). The pipeline is
 // dealer_pipeline/{id} = {name, city, contact, note, stage, createdAt, updatedAt}, admin only.
 const DEALER_PRICE = { dealer: 149, pro: 249 };
+const SHOP_PRICE = 49;
+let shopReportCounts = {}; // uid -> {n, opened}
 const DEALER_STAGES = ["Contacted", "Demo booked", "Trial", "Paying", "Lost"];
 const DEALER_STATUS_PILL = { active: "good", trialing: "accent", past_due: "warn", canceled: "neutral", unpaid: "bad", incomplete: "warn", incomplete_expired: "neutral" };
 let dealerListCounts = {};
@@ -743,6 +754,14 @@ let pipeline = {};
 const fmtDay = ms => ms ? new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—";
 
 async function loadDealerLists() {
+  try {
+    const shopSnap = await get(ref(db, "shop_report_list"));
+    shopReportCounts = {};
+    Object.entries(shopSnap.val() || {}).forEach(([uid, list]) => {
+      const rs = Object.values(list || {});
+      shopReportCounts[uid] = { n: rs.length, opened: rs.filter(r => r.opens > 0).length };
+    });
+  } catch (e) { shopReportCounts = {}; }
   try {
     const snap = await get(ref(db, "dealer_lists"));
     dealerListCounts = {};
@@ -756,9 +775,24 @@ function renderDealers() {
   const rows = Object.entries(usersCache).filter(([, u]) => u && u.dealer).map(([uid, u]) => ({ uid, email: u.email, ...u.dealer }));
   rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   const paying = rows.filter(r => r.status === "active" || r.status === "past_due");
-  $("kpi-d-active").textContent = paying.length;
-  $("kpi-d-trial").textContent = rows.filter(r => r.status === "trialing").length;
-  $("kpi-d-mrr").textContent = "$" + paying.reduce((s, r) => s + (DEALER_PRICE[r.plan] || 0), 0).toLocaleString();
+  const shops = Object.entries(usersCache).filter(([, u]) => u && u.shop).map(([uid, u]) => ({ uid, email: u.email, ...u.shop }));
+  shops.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  const payingShops = shops.filter(r => r.status === "active" || r.status === "past_due");
+  const dealerMrr = paying.reduce((s, r) => s + (DEALER_PRICE[r.plan] || 0), 0), shopMrr = payingShops.length * SHOP_PRICE;
+  $("kpi-d-mrr").textContent = "$" + (dealerMrr + shopMrr).toLocaleString();
+  $("kpi-d-mrr-sub").textContent = `dealers $${dealerMrr.toLocaleString()} · shops $${shopMrr.toLocaleString()}`;
+  $("kpi-d-active").textContent = paying.length + payingShops.length;
+  $("kpi-d-trial").textContent = rows.filter(r => r.status === "trialing").length + shops.filter(r => r.status === "trialing").length;
+  $("shops-tbody").innerHTML = shops.length ? shops.map(r => `<tr>
+      <td><b>${esc(r.business || "—")}</b></td>
+      <td>${esc(r.email || r.uid)}</td>
+      <td>${esc(r.phone || "—")}</td>
+      <td><span class="pill ${DEALER_STATUS_PILL[r.status] || "neutral"}">${esc(r.status || "—")}</span>${r.cancelAtPeriodEnd ? ' <span class="pill warn">cancels</span>' : ""}</td>
+      <td>${r.status === "trialing" ? fmtDay(r.trialEnd) : "—"}</td>
+      <td>${r.status === "canceled" ? "—" : fmtDay(r.currentPeriodEnd)}</td>
+      <td class="num">${(shopReportCounts[r.uid] || {}).n || 0}</td>
+      <td class="num">${(shopReportCounts[r.uid] || {}).opened || 0}</td>
+    </tr>`).join("") : `<tr><td colspan="8" class="empty-note">No shop subscriptions yet. They show up here when someone finishes checkout on shops.html.</td></tr>`;
   $("dealers-tbody").innerHTML = rows.length ? rows.map(r => `<tr>
       <td><b>${esc(r.business || "—")}</b></td>
       <td>${esc(r.email || r.uid)}</td>

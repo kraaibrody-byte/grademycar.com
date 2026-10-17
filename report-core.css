@@ -1,0 +1,43 @@
+/* The customer report page (report-core.js), used by r/index.html and the preview in shops.html */
+.rp { --rp-ink: #0B1220; --rp-text: #1E293B; --rp-muted: #64748B; --rp-line: #E2E8F0;
+  --rp-good: #16A34A; --rp-good-bg: #DCFCE7; --rp-ok: #B45309; --rp-ok-bg: #FEF3C7; --rp-bad: #DC2626; --rp-bad-bg: #FEE2E2;
+  background: #F8FAFC; color: var(--rp-text); font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding-bottom: 24px; }
+.rp a { color: #4F46E5; }
+.rp-shop { background: #070B16; color: #fff; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.rp-shop b { font-size: 15px; }
+.rp-shop small { display: block; color: #94A3B8; font-size: 12px; }
+.rp-shop .gm { font-weight: 800; font-size: 13px; color: #A5B4FC; white-space: nowrap; }
+.rp-body { padding: 16px; display: grid; gap: 12px; }
+.rp h2 { font-size: 22px; color: var(--rp-ink); line-height: 1.2; margin: 0; }
+.rp-sub { font-size: 12px; color: var(--rp-muted); }
+.rp .rcard { background: #fff; border: 1px solid var(--rp-line); border-radius: 18px; padding: 14px; }
+.rp .rsmall { font-size: 13px; line-height: 1.5; }
+.rp .rsmall b { color: var(--rp-ink); }
+.rp .circles { display: flex; justify-content: space-around; text-align: center; }
+.rp .circles div { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12px; color: var(--rp-muted); font-weight: 600; }
+.rp .gc { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 21px; font-weight: 800; border: 3px solid transparent; }
+.rp .gc.good { background: var(--rp-good-bg); color: var(--rp-good); border-color: #8FE0AE; }
+.rp .gc.ok { background: var(--rp-ok-bg); color: #92400E; border-color: #FCD34D; }
+.rp .gc.bad { background: var(--rp-bad-bg); color: var(--rp-bad); border-color: #FCA5A5; }
+.rp .gc.na { background: #F3F4F6; color: #9CA3AF; border-color: #E5E7EB; }
+.rp .rank { font-size: 12px; color: var(--rp-muted); text-align: center; margin-top: 12px; line-height: 1.45; }
+.rp .note-shop { background: #F1F5F9; border-left: 3px solid var(--rp-ink); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+.rp .note-shop small { display: block; font-weight: 700; color: var(--rp-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; white-space: normal; }
+.rp .rsec { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--rp-muted); font-weight: 700; margin-bottom: 6px; }
+.rp .rfine { font-size: 12px; color: #6B7280; line-height: 1.5; }
+.rp .legend { display: flex; gap: 14px; font-size: 11px; color: var(--rp-muted); margin: 8px 0 4px; flex-wrap: wrap; }
+.rp .legend i { display: inline-block; width: 14px; height: 6px; background: #FCA5A5; border-radius: 3px; margin-right: 5px; vertical-align: middle; }
+.rp .legend i.p { width: 3px; height: 12px; background: var(--rp-ink); }
+.rp .prob { border-top: 1px solid var(--rp-line); padding: 12px 0; }
+.rp .prob:first-of-type { border-top: 0; }
+.rp .prob .h { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; font-size: 14px; color: var(--rp-ink); }
+.rp .prob .h small { color: var(--rp-muted); font-weight: 500; white-space: nowrap; font-size: 11px; }
+.rp .where { font-size: 12px; margin-top: 4px; line-height: 1.4; color: var(--rp-muted); }
+.rp .where.in { color: var(--rp-ok); font-weight: 600; }
+.rp .where.near { color: var(--rp-text); font-weight: 600; }
+.rp .win { position: relative; height: 6px; background: #EEF2F7; border-radius: 3px; margin-top: 8px; }
+.rp .win .band { position: absolute; top: 0; bottom: 0; background: #FCA5A5; border-radius: 3px; }
+.rp .win .pin { position: absolute; top: -4px; width: 3px; height: 14px; background: var(--rp-ink); border-radius: 2px; }
+.rp .scale { display: flex; justify-content: space-between; font-size: 10px; color: #94A3B8; margin-top: 4px; }
+.rp .badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 5px; background: var(--rp-bad-bg); color: var(--rp-bad); margin-left: 6px; text-transform: uppercase; vertical-align: middle; }
+.rp .rp-call { display: block; text-align: center; background: #4F46E5; color: #fff; text-decoration: none; font-weight: 700; padding: 13px; border-radius: 12px; }

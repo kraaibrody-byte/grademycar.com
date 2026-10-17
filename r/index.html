@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reliability report · GradeMyCar</title>
+<meta name="robots" content="noindex">
+<meta name="description" content="A reliability report for your car from your mechanic, with the problems owners of this model commonly report to NHTSA.">
+<meta property="og:title" content="Your car's reliability report">
+<meta property="og:description" content="What owners of this model commonly report, and at what mileage. Sent by your mechanic through GradeMyCar.">
+<meta property="og:image" content="https://grademycar.com/favicon-192.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/report-core.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F8FAFC; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 560px; margin: 0 auto; min-height: 100vh; }
+  .msg { padding: 60px 24px; text-align: center; font-family: 'Inter', -apple-system, sans-serif; color: #64748B; line-height: 1.5; }
+  .msg b { display: block; color: #0B1220; font-size: 18px; margin-bottom: 6px; }
+  .msg a { color: #4F46E5; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap rp" id="out"><div class="msg">Loading your report…</div></div>
+<script src="/issue-themes.js"></script>
+<script src="/report-core.js"></script>
+<script>
+// grademycar.com/r/?ABC2345 opens report ABC2345. "&s" means the shop is previewing its
+// own link, so it isn't counted as the customer opening it.
+(async function () {
+  const out = document.getElementById('out');
+  const q = location.search.slice(1).split('&');
+  const id = (q[0] || '').toUpperCase();
+  const fail = (title, text) => { out.innerHTML = `<div class="msg"><b>${title}</b>${text}</div>`; };
+  if (!/^[2-9A-HJ-NP-Z]{7}$/.test(id)) return fail('Report not found', 'Check the link your mechanic texted you, or look up any car at <a href="/">grademycar.com</a>.');
+
+  // Local testing against the emulators (?emu=1 on localhost, same switch as the other pages)
+  let emu = false;
+  try { emu = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && localStorage.getItem('gmc_emu') === '1'; } catch (e) {}
+  const LIVE = 'https://grademycar-default-rtdb.firebaseio.com';
+  const reportUrl = emu ? `http://127.0.0.1:9000/shop_reports/${id}.json?ns=grademycar-default-rtdb` : `${LIVE}/shop_reports/${id}.json`;
+  const fnUrl = emu ? 'http://127.0.0.1:5001/grademycar/us-central1/shopReportOpened' : 'https://us-central1-grademycar.cloudfunctions.net/shopReportOpened';
+
+  let r;
+  try { r = await (await fetch(reportUrl)).json(); } catch (e) { r = undefined; }
+  if (r === undefined) return fail('Couldn\'t load your report', 'Check your connection and reload this page.');
+  if (!r || !r.make) return fail('Report not found', 'This link may have been mistyped. Ask your mechanic to send it again, or look up any car at <a href="/">grademycar.com</a>.');
+
+  // Grades are public and always come from the live database
+  let y = null;
+  try { y = await (await fetch(`${LIVE}/reliability/${encodeURIComponent(r.make)}/years/${encodeURIComponent(r.model)}/${r.year}.json`)).json(); } catch (e) {}
+  out.innerHTML = GMCReport.reportHTML(r, y);
+  document.title = `${GMCReport.carName(r)} · Report from ${r.shop || 'your mechanic'}`;
+
+  // Tell the shop the customer opened it, once per browser
+  if (q.includes('s')) return;
+  const seenKey = 'gmc_report_seen_' + id;
+  try { if (localStorage.getItem(seenKey)) return; localStorage.setItem(seenKey, '1'); } catch (e) {}
+  fetch(fnUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { id } }) }).catch(() => {});
+})();
+</script>
+</body>
+</html>

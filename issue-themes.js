@@ -112,7 +112,7 @@
     },
     suspension: {
       label: 'Suspension problems',
-      tip: 'Drive over bumps and at highway speed; listen for clunks and feel for shaking ("death wobble" on solid-axle Jeeps).',
+      tip: 'Drive over bumps and at highway speed; listen for clunks and feel for shaking or wandering in the steering wheel.',
       re: /suspension|death wobble|wobble|shock absorber|strut|control arm|ball joint|tie rod/,
     },
     leaks: {

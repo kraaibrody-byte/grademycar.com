@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GradeMyCar for Shops</title>
+<meta name="description" content="Text your customers a reliability report for their car, with the problems owners of that model commonly report to NHTSA and at what mileage.">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://grademycar-default-rtdb.firebaseio.com">
+<link rel="stylesheet" href="/report-core.css">
+<script src="/attribution.js"></script>
+<style>
+:root {
+  --ink: #0B1220; --night: #070B16; --text: #1E293B; --muted: #64748B; --line: #E2E8F0; --bg: #F8FAFC; --card: #fff;
+  --accent: #4F46E5; --accent-bg: #EEF2FF;
+  --good: #16A34A; --good-bg: #DCFCE7; --ok: #B45309; --ok-bg: #FEF3C7; --bad: #DC2626; --bad-bg: #FEE2E2;
+}
+* { box-sizing: border-box; margin: 0; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; font-size: 14px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--accent); }
+.hide { display: none !important; }
+.btn { border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 14px; font-weight: 650; cursor: pointer; text-decoration: none; display: inline-block; color: var(--text); text-align: center; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.big { padding: 13px 20px; font-size: 15px; border-radius: 12px; }
+.btn.sm { padding: 5px 10px; font-size: 12px; border-radius: 8px; }
+.btn:hover { filter: brightness(.97); }
+.btn:disabled { opacity: .55; cursor: default; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.sub { color: var(--muted); }
+input.f, select.f, textarea.f { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; width: 100%; }
+input.f:focus, select.f:focus, textarea.f:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
+label.l { display: grid; gap: 5px; font-size: 12px; font-weight: 650; color: var(--muted); }
+.amsg { font-size: 13px; line-height: 1.45; }
+.amsg.ok { color: var(--good); }
+.amsg.err { color: var(--bad); }
+
+/* ---- landing / plans ---- */
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--night); color: #fff; }
+.logo { color: #fff; font-weight: 800; font-size: 17px; text-decoration: none; }
+.logo small { color: #818CF8; font-weight: 700; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-left: 6px; }
+.topbar .who { font-size: 13px; color: #CBD5E1; display: flex; gap: 12px; align-items: center; }
+.topbar .who button { background: none; border: 1px solid #334155; color: #CBD5E1; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+.hero { background: var(--night); color: #fff; padding: 56px 24px 72px; }
+.hero .in { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; }
+.hero h1 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
+.hero p.lead { color: #CBD5E1; font-size: 17px; line-height: 1.55; margin-top: 16px; }
+.hero ul { margin-top: 22px; padding: 0; list-style: none; display: grid; gap: 10px; color: #E2E8F0; }
+.hero li::before { content: '✓'; color: #818CF8; font-weight: 800; margin-right: 10px; }
+.authcard { background: #fff; color: var(--text); border-radius: 20px; padding: 24px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+.authcard h2 { font-size: 19px; color: var(--ink); }
+.authcard form { display: grid; gap: 10px; margin-top: 14px; }
+.gbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
+.or { text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 0; }
+.authcard .links { display: flex; justify-content: space-between; font-size: 13px; margin-top: 4px; }
+.authcard .links button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; }
+.wrap { max-width: 1060px; margin: 0 auto; padding: 48px 24px; }
+.wrap h2.s { font-size: 26px; color: var(--ink); font-weight: 800; letter-spacing: -.01em; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+.how .card { padding: 20px; }
+.how b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
+.plan { padding: 24px; max-width: 420px; border: 2px solid var(--accent); margin-top: 18px; }
+.plan h3 { font-size: 17px; color: var(--ink); }
+.plan .p { font-size: 34px; font-weight: 800; color: var(--ink); margin: 8px 0 2px; }
+.plan .p small { font-size: 14px; color: var(--muted); font-weight: 600; }
+.plan ul { padding-left: 18px; line-height: 1.8; margin: 12px 0 18px; }
+.bizrow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 620px; margin-top: 16px; }
+.notice { background: var(--accent-bg); color: #3730A3; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+.notice.warn { background: var(--ok-bg); color: #92400E; }
+
+/* ---- app ---- */
+.app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+nav.side { background: var(--ink); color: #CBD5E1; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
+nav.side .logo { padding: 4px 10px 18px; display: block; }
+nav.side .logo small { display: block; margin: 2px 0 0; }
+nav.side button.nv { background: none; border: 0; text-align: left; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; color: #CBD5E1; }
+nav.side button.nv:hover { background: rgba(255,255,255,.06); }
+nav.side button.nv.on { background: rgba(99,102,241,.22); color: #fff; }
+nav.side .foot { margin-top: auto; padding: 12px; font-size: 12px; color: #64748B; line-height: 1.5; word-break: break-all; }
+nav.side .foot button { background: none; border: 0; color: #94A3B8; cursor: pointer; padding: 0; margin-top: 6px; text-decoration: underline; }
+main { padding: 28px 32px 60px; min-width: 0; }
+main h1 { font-size: 22px; font-weight: 800; color: var(--ink); }
+.head { margin-bottom: 18px; }
+.compose { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+.form { padding: 18px; display: grid; gap: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: .7fr 1fr 1fr; gap: 10px; }
+.seg { display: inline-flex; background: #EEF2F7; border-radius: 10px; padding: 3px; gap: 2px; justify-self: start; }
+.seg button { border: 0; background: none; padding: 6px 12px; border-radius: 8px; font-weight: 650; font-size: 13px; cursor: pointer; color: var(--muted); }
+.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.msg { font-size: 12px; color: var(--muted); }
+.msg.err { color: var(--bad); }
+.done { padding: 16px; display: grid; gap: 10px; border-color: #C7D2FE; background: #FAFAFF; }
+.done .link { font-family: ui-monospace, Menlo, monospace; font-size: 14px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; word-break: break-all; }
+.done .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.phone { position: sticky; top: 20px; border: 10px solid var(--ink); border-radius: 36px; overflow: hidden; background: #fff; height: 720px; display: flex; flex-direction: column; }
+.phone .cap { text-align: center; font-size: 11px; color: var(--muted); padding: 6px; background: #F1F5F9; border-bottom: 1px solid var(--line); }
+.phone .scr { overflow-y: auto; flex: 1; }
+.bay { padding: 16px 18px; margin-top: 16px; }
+.bay h3 { font-size: 15px; color: var(--ink); }
+.chk { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.45; }
+.chk:first-of-type { border-top: 0; }
+.chk input { margin-top: 3px; }
+.chk b { color: var(--ink); }
+.pill { font-weight: 700; font-size: 10px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; background: #EEF2F7; color: var(--muted); }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.good { background: var(--good-bg); color: var(--good); }
+.badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 5px; background: var(--bad-bg); color: var(--bad); margin-left: 4px; text-transform: uppercase; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.stat { padding: 14px 16px; }
+.stat b { display: block; font-size: 24px; font-weight: 800; color: var(--ink); }
+.stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.car b { color: var(--ink); white-space: nowrap; }
+.car small { display: block; color: var(--muted); font-size: 12px; }
+.g { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; font-weight: 800; font-size: 12px; }
+.g.good { background: var(--good-bg); color: var(--good); }
+.g.ok { background: var(--ok-bg); color: var(--ok); }
+.g.bad { background: var(--bad-bg); color: var(--bad); }
+.g.na { background: #EEF2F7; color: var(--muted); }
+.empty { text-align: center; color: var(--muted); padding: 34px !important; }
+.settings { padding: 22px; max-width: 620px; display: grid; gap: 14px; }
+.settings h2 { font-size: 16px; color: var(--ink); }
+.settings dl { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; }
+.settings dt { color: var(--muted); font-weight: 600; }
+.settings dd { margin: 0; font-weight: 600; color: var(--ink); }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 20; }
+
+@media (max-width: 1100px) {
+  .compose { grid-template-columns: 1fr; }
+  .phone { position: static; height: 640px; max-width: 400px; }
+}
+@media (max-width: 900px) {
+  .hero .in { grid-template-columns: 1fr; gap: 28px; }
+  .hero h1 { font-size: 32px; }
+  .how, .bizrow { grid-template-columns: 1fr; }
+  .app { grid-template-columns: 1fr; }
+  nav.side { flex-direction: row; overflow-x: auto; padding: 10px; align-items: center; }
+  nav.side .logo { padding: 0 10px 0 4px; white-space: nowrap; }
+  nav.side .logo small, nav.side .foot { display: none; }
+  nav.side button.nv { white-space: nowrap; }
+  main { padding: 18px 16px 40px; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .settings dl { grid-template-columns: 1fr; gap: 2px; }
+  .settings dd { margin-bottom: 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SIGNED OUT / NO PLAN ============ -->
+<div id="outside" class="hide">
+  <div class="topbar">
+    <a class="logo" href="/">GradeMyCar<small>for Shops</small></a>
+    <div class="who hide" id="whoOut"><span id="whoEmail"></span><button id="signOut1">Sign out</button></div>
+  </div>
+  <section class="hero" id="hero">
+    <div class="in">
+      <div>
+        <h1>Show customers the pattern behind your advice.</h1>
+        <p class="lead">Text a customer a report for their car: its reliability grade from NHTSA owner complaints, the problems owners of that model report most, and at what mileage. Your note sits on top, from your shop.</p>
+        <ul>
+          <li>Grades for 121 popular models, 2000–2024, from 800,000+ complaints</li>
+          <li>Unlimited reports with your shop's name and phone</li>
+          <li>See when a customer opens the report</li>
+          <li>A check sheet for your tech with what to look at on that model</li>
+          <li>14-day free trial, cancel anytime</li>
+        </ul>
+      </div>
+      <div class="authcard" id="authCard">
+        <h2 id="authTitle">Start your free trial</h2>
+        <div class="sub" id="authSub" style="margin-top:4px">Create an account, then set up your shop. You won't be charged for 14 days.</div>
+        <button class="btn gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+        <div class="or">or with email</div>
+        <form id="authForm" novalidate>
+          <input class="f" id="authEmail" type="email" placeholder="Work email" autocomplete="email">
+          <input class="f" id="authPass" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
+          <button class="btn primary big" id="authSubmit" type="submit">Create account</button>
+          <div class="links"><button type="button" id="authToggle">Have an account? Sign in</button><button type="button" id="authReset" class="hide">Forgot password?</button></div>
+          <div class="amsg" id="authMsg"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="howSec">
+    <h2 class="s">How it works</h2>
+    <div class="how">
+      <div class="card"><b>1. Enter the car</b><span class="sub">Type or scan the VIN, or pick the year, make and model, then the miles. Add a note in your own words if you like.</span></div>
+      <div class="card"><b>2. Text the link</b><span class="sub">One tap opens a text to your customer from your own phone. The page shows your shop's name and a button to call you.</span></div>
+      <div class="card"><b>3. They see the pattern</b><span class="sub">The customer sees what owners of their model commonly report and at what mileage, so your estimate isn't just your word.</span></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="planSec" style="padding-top:0">
+    <h2 class="s" id="planTitle">Pricing</h2>
+    <div class="notice hide" id="planNotice" style="margin-top:14px;max-width:620px"></div>
+    <div class="bizrow hide" id="bizRow">
+      <label class="l">Shop name<input class="f" id="bizName" maxlength="80" placeholder="e.g. Main Street Auto Repair"></label>
+      <label class="l">Shop phone (shown on reports)<input class="f" id="bizPhone" maxlength="25" inputmode="tel" placeholder="(555) 010-0100"></label>
+    </div>
+    <div class="card plan">
+      <h3>Shop</h3><div class="p">$49<small> / month</small></div>
+      <ul><li>Unlimited customer reports</li><li>Your shop's name, note and phone on every report</li><li>See when customers open them</li><li>Tech check sheet for every car</li></ul>
+      <button class="btn primary big" id="subscribe" style="width:100%">Start free trial</button>
+      <div class="amsg" id="planMsg" style="margin-top:10px"></div>
+    </div>
+    <p class="sub" style="margin-top:18px;font-size:12px;max-width:620px">Reports show what owners of a model year commonly report to NHTSA. They are not a diagnosis of a specific car. Shops can't pay to change grades.</p>
+  </section>
+</div>
+
+<!-- ============ SHOP APP ============ -->
+<div class="app hide" id="inside">
+  <nav class="side">
+    <a class="logo" href="/">GradeMyCar<small>for Shops</small></a>
+    <button class="nv on" data-view="new">New report</button>
+    <button class="nv" data-view="sent">Sent reports</button>
+    <button class="nv" data-view="settings">Shop &amp; billing</button>
+    <div class="foot"><span id="footBiz"></span><br><span id="footEmail"></span><br><button id="signOut2">Sign out</button></div>
+  </nav>
+  <main>
+    <section id="v-new">
+      <div class="notice warn hide" id="pastDue" style="margin-bottom:14px"></div>
+      <div class="notice hide" id="welcome" style="margin-bottom:14px"></div>
+      <div class="head"><h1>New customer report</h1><div class="sub">Enter the car. GradeMyCar builds a page you can text the customer that shows the pattern behind your advice.</div></div>
+      <div class="compose">
+        <div>
+          <div class="card form">
+            <div class="seg" id="mode"><button class="on" data-m="vin">VIN</button><button data-m="pick">Year / make / model</button></div>
+            <label class="l" id="byVin">VIN<input class="f" id="vin" maxlength="17" placeholder="17 characters" autocomplete="off" spellcheck="false"></label>
+            <div class="grid3 hide" id="byPick">
+              <label class="l">Year<select class="f" id="mYear"></select></label>
+              <label class="l">Make<select class="f" id="mMake"></select></label>
+              <label class="l">Model<select class="f" id="mModel"></select></label>
+            </div>
+            <div class="grid2">
+              <label class="l">Odometer (miles)<input class="f" id="miles" inputmode="numeric" placeholder="e.g. 78,400"></label>
+              <label class="l">Reason for visit<select class="f" id="reason"><option value="repair">Repair estimate</option><option value="ppi">Pre-purchase inspection</option><option value="service">Routine service</option></select></label>
+              <label class="l">Customer first name (optional)<input class="f" id="cname" maxlength="40" placeholder="Only you see this"></label>
+              <label class="l">Customer mobile (optional)<input class="f" id="cphone" inputmode="tel" maxlength="25" placeholder="To start the text; not saved"></label>
+            </div>
+            <label class="l">Your note to the customer (optional, shown as from your shop)<textarea class="f" id="cnote" rows="3" maxlength="600" placeholder="e.g. The shudder you feel pulling away matches what a lot of owners of this model report with the transmission."></textarea></label>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn primary" id="preview">Preview report</button><button class="btn primary hide" id="create">Create link</button><span class="msg" id="msg">Enter a VIN or pick the car, plus the miles.</span></div>
+          </div>
+          <div class="card done hide" id="done" style="margin-top:14px">
+            <b style="color:var(--ink)">Report link ready</b>
+            <div class="link" id="doneLink"></div>
+            <div class="acts"><a class="btn primary" id="textIt">Text it to the customer</a><button class="btn" id="copyIt">Copy link</button><a class="btn" id="openIt" target="_blank" rel="noopener">Open page</a><button class="btn" id="another">New report</button></div>
+            <div class="sub" style="font-size:12px">"Text it" opens a message from your own phone. On a computer, copy the link instead.</div>
+          </div>
+          <div class="card bay hide" id="bayCard">
+            <h3>Bay check sheet <span class="sub" style="font-weight:500;font-size:12px">· for your tech, not sent to the customer</span></h3>
+            <div class="sub" style="font-size:12px;margin:4px 0 8px" id="bayIntro"></div>
+            <div id="bay"></div>
+          </div>
+        </div>
+        <div class="phone"><div class="cap">What your customer sees</div><div class="scr rp" id="pv"><div class="sub" style="padding:40px 20px;text-align:center">Your report preview shows here.</div></div></div>
+      </div>
+    </section>
+
+    <section id="v-sent" class="hide">
+      <div class="head"><h1>Sent reports</h1><div class="sub">Every report link you've made, and whether the customer opened it.</div></div>
+      <div class="stats">
+        <div class="card stat"><b id="s-30">0</b><span>Reports, last 30 days</span></div>
+        <div class="card stat"><b id="s-open">0</b><span>Opened by the customer</span></div>
+        <div class="card stat"><b id="s-rate">—</b><span>Open rate</span></div>
+      </div>
+      <div class="card"><div class="tablewrap"><table>
+        <thead><tr><th>Made</th><th>Customer</th><th>Vehicle</th><th>Grade</th><th>Opened</th><th></th></tr></thead>
+        <tbody id="sentRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+      </table></div></div>
+    </section>
+
+    <section id="v-settings" class="hide">
+      <div class="head"><h1>Shop &amp; billing</h1></div>
+      <div class="card settings">
+        <h2>Shown on your reports</h2>
+        <div class="grid2">
+          <label class="l">Shop name<input class="f" id="setName" maxlength="80"></label>
+          <label class="l">Shop phone<input class="f" id="setPhone" maxlength="25" inputmode="tel"></label>
+        </div>
+        <div><button class="btn primary" id="saveProfile">Save</button> <span class="amsg" id="profileMsg"></span></div>
+        <div class="sub" style="font-size:12px">Changes apply to reports you make from now on.</div>
+      </div>
+      <div class="card settings" style="margin-top:16px">
+        <h2>Plan</h2>
+        <dl id="billDl"></dl>
+        <div><button class="btn primary" data-portal>Manage billing</button></div>
+        <div class="sub" style="font-size:12px">Change card, download invoices or cancel on Stripe's secure page.</div>
+        <div class="amsg" id="portalMsg"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-database-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-functions-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-analytics-compat.min.js"></script>
+<script src="/issue-themes.js"></script>
+<script src="/report-core.js"></script>
+<script>
+// ── FIREBASE ─────────────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCsVQCXfyRFt7fpcE-5Xvm_P3bULlGYMIU",
+  authDomain: "grademycar.firebaseapp.com",
+  databaseURL: "https://grademycar-default-rtdb.firebaseio.com",
+  projectId: "grademycar",
+  storageBucket: "grademycar.firebasestorage.app",
+  messagingSenderId: "724919836813",
+  appId: "1:724919836813:web:ca0ccd5bfe7ae3de3502c4",
+  measurementId: "G-TT0RZ0WFN0"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const rtdb = firebase.database();
+const functions = firebase.functions();
+// Grades are public and always read from the live database over REST
+const DB_URL = firebaseConfig.databaseURL;
+// Local testing against the emulators (same switch as the other pages):
+// `firebase emulators:start --only auth,database,functions --project demo-grademycar`, then ?emu=1
+const USE_EMU = (() => {
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return false;
+  try {
+    const q = new URLSearchParams(location.search).get('emu');
+    if (q === '1') localStorage.setItem('gmc_emu', '1'); else if (q === '0') localStorage.removeItem('gmc_emu');
+    return localStorage.getItem('gmc_emu') === '1';
+  } catch (e) { return false; }
+})();
+if (USE_EMU) {
+  auth.useEmulator('http://127.0.0.1:9099', { disableWarnings: true });
+  rtdb.useEmulator('127.0.0.1', 9000);
+  functions.useEmulator('127.0.0.1', 5001);
+}
+const GA = window.GMCAttribution || null;
+let analytics = null;
+try { if (!USE_EMU && !(GA && GA.analyticsOff())) analytics = firebase.analytics(); } catch (e) {}
+function track(name, params) { try { analytics && analytics.logEvent(name, { ...(GA ? GA.common() : {}), ...(params || {}), page: 'shops' }); } catch (e) {} }
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+const $ = s => document.querySelector(s);
+const { esc, pretty, carName, gClass } = GMCReport;
+const fmtDate = ms => ms ? new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+const fmtWhen = ms => {
+  if (!ms) return '—';
+  const d = new Date(ms), now = new Date();
+  const t = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  if (d.toDateString() === now.toDateString()) return 'Today ' + t;
+  if (d.toDateString() === new Date(now - 86400000).toDateString()) return 'Yesterday ' + t;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+};
+const toast = t => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); };
+const ACCESS = ['trialing', 'active', 'past_due'];
+const reportUrl = id => `https://grademycar.com/r/?${id}`;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let user = null, shop = null, reports = [];
+let shopRef = null, listRef = null;
+const params = new URLSearchParams(location.search);
+let waitingForWebhook = params.get('welcome') === '1';
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+let authMode = 'signup';
+function authMsg(type, text) { const el = $('#authMsg'); el.className = 'amsg' + (type ? ' ' + type : ''); el.textContent = text || ''; }
+function setAuthMode(m) {
+  authMode = m;
+  $('#authTitle').textContent = m === 'signup' ? 'Start your free trial' : 'Sign in';
+  $('#authSub').textContent = m === 'signup' ? 'Create an account, then set up your shop. You won\'t be charged for 14 days.' : 'Welcome back.';
+  $('#authSubmit').textContent = m === 'signup' ? 'Create account' : 'Sign in';
+  $('#authToggle').textContent = m === 'signup' ? 'Have an account? Sign in' : 'New here? Create an account';
+  $('#authPass').autocomplete = m === 'signup' ? 'new-password' : 'current-password';
+  $('#authReset').classList.toggle('hide', m === 'signup');
+  authMsg(null);
+}
+function friendlyAuthError(err) {
+  switch (err && err.code) {
+    case 'auth/invalid-email': return 'That email address doesn\'t look right.';
+    case 'auth/email-already-in-use': return 'That email already has a GradeMyCar account. Sign in instead.';
+    case 'auth/weak-password': return 'Use at least 6 characters for your password.';
+    case 'auth/user-not-found': case 'auth/wrong-password': case 'auth/invalid-credential': case 'auth/invalid-login-credentials':
+      return 'That email and password don\'t match. Try again or reset your password.';
+    case 'auth/too-many-requests': return 'Too many tries in a row. Wait a minute, then try again.';
+    case 'auth/network-request-failed': return 'No connection. Check your internet, then try again.';
+    case 'auth/popup-blocked': return 'Your browser blocked the Google window. Use your email instead.';
+    case 'auth/unauthorized-domain': return 'Sign-in only works on grademycar.com.';
+    case 'auth/account-exists-with-different-credential': return 'That email already has an account. Sign in with your email and password.';
+    default: return 'Something went wrong. Please try again.';
+  }
+}
+$('#authToggle').onclick = () => setAuthMode(authMode === 'signup' ? 'signin' : 'signup');
+$('#authForm').onsubmit = async e => {
+  e.preventDefault();
+  const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
+  if (!/^\S+@\S+\.\S+$/.test(email)) return authMsg('err', 'Enter your email address.');
+  if (pass.length < 6) return authMsg('err', authMode === 'signup' ? 'Choose a password with at least 6 characters.' : 'Enter your password.');
+  $('#authSubmit').disabled = true; authMsg(null);
+  try {
+    if (authMode === 'signup') { await auth.createUserWithEmailAndPassword(email, pass); track('sign_up', { method: 'password' }); }
+    else await auth.signInWithEmailAndPassword(email, pass);
+  } catch (err) { authMsg('err', friendlyAuthError(err)); }
+  $('#authSubmit').disabled = false;
+};
+$('#googleBtn').onclick = async () => {
+  authMsg(null);
+  try {
+    const cred = await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    if (cred.additionalUserInfo && cred.additionalUserInfo.isNewUser) track('sign_up', { method: 'google' });
+  } catch (err) { if (!/popup-closed|cancelled-popup/.test(err.code || '')) authMsg('err', friendlyAuthError(err)); }
+};
+$('#authReset').onclick = async () => {
+  const email = $('#authEmail').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(email)) return authMsg('err', 'Type your email above first, then tap Forgot password.');
+  try { await auth.sendPasswordResetEmail(email); authMsg('ok', `We sent a reset link to ${email}.`); }
+  catch (err) { authMsg('err', friendlyAuthError(err)); }
+};
+['#signOut1', '#signOut2'].forEach(s => $(s).onclick = () => auth.signOut());
+
+// Same record phone.html creates, so the account works in the consumer app too
+function ensureUserRecord(u) {
+  const r = rtdb.ref(`users/${u.uid}`);
+  r.child('email').once('value').then(snap => {
+    if (snap.exists()) return;
+    const isNew = Date.now() - Date.parse(u.metadata.creationTime) < 86400000;
+    return r.set({ email: u.email || '', createdAt: firebase.database.ServerValue.TIMESTAMP,
+      reportCredits: isNew ? 1 : 0, totalSearches: 0, totalPurchases: 0, totalSpent: 0 });
+  }).catch(e => console.warn('[GMC] user record check failed', e));
+}
+
+auth.onAuthStateChanged(u => {
+  if (shopRef) shopRef.off();
+  if (listRef) listRef.off();
+  user = u; shop = null; reports = []; shopRef = listRef = null;
+  if (!u) return route();
+  try { analytics && analytics.setUserId(u.uid); } catch (e) {}
+  ensureUserRecord(u);
+  shopRef = rtdb.ref(`users/${u.uid}/shop`);
+  shopRef.on('value', snap => {
+    shop = snap.val();
+    if (shop && ACCESS.includes(shop.status)) waitingForWebhook = false;
+    route();
+  }, err => { console.warn('[GMC] shop read failed', err); shop = null; route(); });
+});
+
+// ── ROUTING ──────────────────────────────────────────────────────────────────
+const hasAccess = () => !!(shop && ACCESS.includes(shop.status));
+function route() {
+  const inside = !!user && hasAccess();
+  $('#outside').classList.toggle('hide', inside);
+  $('#inside').classList.toggle('hide', !inside);
+  if (inside) return enterApp();
+  $('#whoOut').classList.toggle('hide', !user);
+  $('#whoEmail').textContent = user ? user.email || '' : '';
+  ['#hero', '#howSec'].forEach(s => $(s).classList.toggle('hide', !!user));
+  $('#bizRow').classList.toggle('hide', !user);
+  const note = $('#planNotice');
+  note.classList.add('hide');
+  if (user) {
+    $('#planTitle').textContent = 'Set up your shop';
+    if (shop && shop.business && !$('#bizName').value) $('#bizName').value = shop.business;
+    if (shop && shop.phone && !$('#bizPhone').value) $('#bizPhone').value = shop.phone;
+    const trial = !(shop && shop.trialUsed);
+    $('#subscribe').textContent = trial ? 'Start free trial' : 'Subscribe';
+    if (waitingForWebhook) { note.textContent = 'Payment received. Setting up your account… this takes a few seconds.'; note.classList.remove('hide'); }
+    else if (shop && shop.status) {
+      note.textContent = shop.status === 'canceled' ? 'Your shop plan has ended. Subscribe again to send reports; your sent reports are still saved.'
+        : `Your last payment didn't go through (status: ${shop.status}). Subscribe again or update your card in billing.`;
+      note.classList.remove('hide');
+    }
+    track('shop_plan_view', { trial: trial ? 'yes' : 'no' });
+  } else $('#planTitle').textContent = 'Pricing';
+}
+
+// ── CHECKOUT ─────────────────────────────────────────────────────────────────
+function planMsg(type, t) { const el = $('#planMsg'); el.className = 'amsg' + (type ? ' ' + type : ''); el.textContent = t || ''; }
+$('#subscribe').onclick = async () => {
+  track('select_plan', { plan: 'shop' });
+  if (!user) {
+    planMsg('err', 'Create an account first (top of the page), then set up your shop.');
+    window.scrollTo({ top: 0, behavior: 'smooth' }); $('#authEmail').focus(); return;
+  }
+  const business = $('#bizName').value.trim();
+  if (!business) { planMsg('err', 'Enter your shop\'s name first.'); $('#bizName').focus(); return; }
+  $('#subscribe').disabled = true;
+  planMsg(null, 'Opening secure checkout…');
+  try {
+    const res = await functions.httpsCallable('createShopCheckout')({ plan: 'shop', business, phone: $('#bizPhone').value.trim(), internal: !!(GA && GA.internal()) });
+    track('begin_checkout', { plan: 'shop', kind: 'shop' });
+    location.href = res.data.url;
+  } catch (err) {
+    planMsg('err', err.message || 'Couldn\'t start checkout. Try again.');
+    $('#subscribe').disabled = false;
+  }
+};
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-portal]'); if (!b) return;
+  b.disabled = true; $('#portalMsg').textContent = '';
+  try { const res = await functions.httpsCallable('createShopPortal')(); location.href = res.data.url; }
+  catch (err) { $('#portalMsg').className = 'amsg err'; $('#portalMsg').textContent = err.message || 'Couldn\'t open billing.'; b.disabled = false; }
+});
+
+// ── APP ──────────────────────────────────────────────────────────────────────
+let appStarted = false;
+function enterApp() {
+  $('#footBiz').textContent = shop.business || '';
+  $('#footEmail').textContent = user.email || '';
+  $('#pastDue').classList.toggle('hide', shop.status !== 'past_due');
+  $('#pastDue').textContent = 'Your last payment didn\'t go through. Update your card in Shop & billing to keep sending reports.';
+  if (params.get('welcome') === '1') {
+    $('#welcome').classList.remove('hide');
+    $('#welcome').textContent = shop.status === 'trialing'
+      ? `You're in. Your free trial runs until ${fmtDate(shop.trialEnd)}. Make your first report below.`
+      : 'You\'re in. Make your first report below.';
+    history.replaceState(null, '', location.pathname);
+    track('shop_welcome', { status: shop.status });
+  }
+  if (document.activeElement !== $('#setName')) $('#setName').value = shop.business || '';
+  if (document.activeElement !== $('#setPhone')) $('#setPhone').value = shop.phone || '';
+  renderBilling();
+  if (draft) renderPreview();
+  if (!listRef) {
+    listRef = rtdb.ref(`shop_report_list/${user.uid}`).orderByChild('createdAt').limitToLast(200);
+    listRef.on('value', snap => {
+      reports = [];
+      snap.forEach(c => { reports.push({ id: c.key, ...c.val() }); });
+      reports.reverse();
+      reports.forEach(r => loadYear(r.make, r.model, r.year));
+      renderSent();
+    }, err => { $('#sentRows').innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--bad)">Couldn't load your reports: ${esc(err.message)}</td></tr>`; });
+  }
+  if (!appStarted) { appStarted = true; loadModels(); }
+}
+
+// Graded models: reliability/{make}/grades/{model}. Years: reliability/{make}/years/{model}/{year}
+let MODELS = {};
+async function loadModels() {
+  try {
+    const makes = Object.keys(await (await fetch(`${DB_URL}/reliability.json?shallow=true`)).json() || {});
+    const lists = await Promise.all(makes.map(m => fetch(`${DB_URL}/reliability/${encodeURIComponent(m)}/grades.json?shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null)));
+    makes.forEach((m, i) => { if (lists[i]) MODELS[m] = Object.keys(lists[i]).sort(); });
+  } catch (e) { console.warn('[GMC] model list failed', e); }
+  const thisYear = new Date().getFullYear();
+  $('#mYear').innerHTML = Array.from({ length: thisYear - 1999 }, (_, i) => thisYear - i).map(y => `<option>${y}</option>`).join('');
+  $('#mMake').innerHTML = Object.keys(MODELS).sort().map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
+  fillModels();
+}
+function fillModels() { const mk = $('#mMake').value; $('#mModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
+$('#mMake').onchange = fillModels;
+
+const YEARS = {}; // "make/model/year" -> data | null, or a pending Promise
+function loadYear(make, model, year) {
+  const k = `${make}/${model}/${year}`;
+  if (k in YEARS) return Promise.resolve(YEARS[k]);
+  return YEARS[k] = fetch(`${DB_URL}/reliability/${encodeURIComponent(make)}/years/${encodeURIComponent(model)}/${year}.json`)
+    .then(r => r.ok ? r.json() : null).catch(() => null)
+    .then(d => { YEARS[k] = d; renderSent(); return d; });
+}
+const yearData = r => { const y = YEARS[`${r.make}/${r.model}/${r.year}`]; return y instanceof Promise ? undefined : y; };
+
+// ── NEW REPORT ───────────────────────────────────────────────────────────────
+let mode = 'vin', draft = null; // draft: {make, model, year, miles, vin}
+const msg = (t, err) => { $('#msg').textContent = t; $('#msg').className = 'msg' + (err ? ' err' : ''); };
+$('#mode').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  mode = b.dataset.m;
+  $('#mode').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  $('#byVin').classList.toggle('hide', mode !== 'vin');
+  $('#byPick').classList.toggle('hide', mode !== 'pick');
+};
+// vPIC names → our keys ("F-150" → f-150, "Grand Cherokee" → grand cherokee, Ram → dodge/ram)
+function keyFor(make, model) {
+  let mk = String(make || '').toLowerCase().trim(), md = String(model || '').toLowerCase().trim();
+  if (mk === 'ram') { mk = 'dodge'; md = 'ram'; }
+  if (mk === 'mercedes benz') mk = 'mercedes-benz';
+  const list = MODELS[mk]; if (!list) return null;
+  if (list.includes(md)) return { make: mk, model: md };
+  if (mk === 'dodge' && /^ram|^\d500/.test(md)) return { make: mk, model: 'ram' };
+  if (mk === 'bmw') { const s = (md.match(/^(\d)/) || [])[1]; if (s && list.includes(s + ' series')) return { make: mk, model: s + ' series' }; const x = md.match(/^x\d/); if (x && list.includes(x[0])) return { make: mk, model: x[0] }; }
+  if (mk === 'mercedes-benz') { const cl = (md.match(/^([a-z]{1,3})\b/) || [])[1]; const hit = list.find(m => m.replace('-class', '') === cl); if (hit) return { make: mk, model: hit }; }
+  const hit = list.filter(m => md.startsWith(m) || md.replace(/[\s-]/g, '') === m.replace(/[\s-]/g, '')).sort((a, b) => b.length - a.length)[0];
+  return hit ? { make: mk, model: hit } : null;
+}
+async function decode(vin) {
+  const r = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`);
+  if (!r.ok) throw new Error('NHTSA\'s VIN decoder didn\'t answer. Try again, or pick the year, make and model.');
+  const j = (await r.json()).Results[0] || {};
+  return { make: j.Make, model: j.Model, year: j.ModelYear };
+}
+const cleanMiles = s => { const n = parseInt(String(s || '').replace(/\D/g, ''), 10); return n > 0 && n < 1000000 ? n : 0; };
+
+$('#preview').onclick = async () => {
+  const miles = cleanMiles($('#miles').value);
+  if (!miles) { msg('Enter the odometer reading.', true); return $('#miles').focus(); }
+  let car;
+  if (mode === 'pick') {
+    if (!$('#mModel').value) return msg('Pick a make and model.', true);
+    car = { make: $('#mMake').value, model: $('#mModel').value, year: +$('#mYear').value, miles, vin: '' };
+  } else {
+    const vin = $('#vin').value.trim().toUpperCase();
+    if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) return msg('That isn\'t a valid 17-character VIN.', true);
+    msg('Decoding VIN…');
+    try {
+      const d = await decode(vin);
+      if (!d.make || !/^\d{4}$/.test(d.year || '')) return msg('NHTSA couldn\'t decode that VIN. Pick the year, make and model instead.', true);
+      const key = keyFor(d.make, d.model);
+      if (!key) return msg(`${d.year} ${pretty(String(d.make).toLowerCase())} ${d.model || ''} isn't one of the models we grade yet.`, true);
+      car = { ...key, year: +d.year, miles, vin };
+    } catch (e) { return msg(e.message || 'Couldn\'t reach NHTSA. Pick the year, make and model instead.', true); }
+  }
+  const y = await loadYear(car.make, car.model, car.year);
+  if (!y || !y.o) return msg(`We don't have a grade for the ${carName(car)} yet, so there's no report to send.`, true);
+  draft = car;
+  $('#done').classList.add('hide');
+  $('#create').classList.remove('hide');
+  msg(`Previewing the ${carName(car)}. Check it, then create the link.`);
+  renderPreview();
+  track('shop_report_preview', { grade: y.o });
+};
+// Editing the car means previewing again; the note and reason update the preview live
+['#vin', '#miles', '#mYear', '#mMake', '#mModel'].forEach(s => $(s).addEventListener('input', () => { if (draft) { draft = null; $('#create').classList.add('hide'); msg('Car changed. Preview again.'); } }));
+['#cnote'].forEach(s => $(s).addEventListener('input', () => draft && renderPreview()));
+
+function draftReport() {
+  return { shop: shop.business, shopPhone: shop.phone, make: draft.make, model: draft.model, year: draft.year,
+           miles: draft.miles, vin6: draft.vin ? draft.vin.slice(-6) : '', note: $('#cnote').value.trim() };
+}
+function renderPreview() {
+  if (!draft) return;
+  const r = draftReport(), y = yearData(r);
+  $('#pv').innerHTML = GMCReport.reportHTML(r, y);
+  $('#bayCard').classList.remove('hide');
+  $('#bayIntro').textContent = `What owners of the ${carName(r)} report most, in order, with what to look at.`;
+  $('#bay').innerHTML = GMCReport.bayHTML(r, y);
+}
+
+$('#create').onclick = async () => {
+  if (!draft) return;
+  const b = $('#create'); b.disabled = true; msg('Creating link…');
+  try {
+    const res = await functions.httpsCallable('createShopReport')({
+      make: draft.make, model: draft.model, year: draft.year, miles: draft.miles, vin: draft.vin,
+      firstName: $('#cname').value.trim(), note: $('#cnote').value.trim(), reason: $('#reason').value,
+    });
+    showDone(res.data.id);
+    track('shop_report_sent', { reason: $('#reason').value, has_note: $('#cnote').value.trim() ? 'yes' : 'no' });
+    msg('Link created.');
+    b.classList.add('hide');
+  } catch (err) { msg(err.message || 'Couldn\'t create the link. Try again.', true); }
+  b.disabled = false;
+};
+function smsHref(phone, body) {
+  const num = String(phone || '').replace(/[^\d+]/g, '');
+  return `sms:${num}${isIOS ? '&' : '?'}body=${encodeURIComponent(body)}`;
+}
+function smsBody(r, firstName, reason) {
+  const name = firstName || 'there';
+  const lead = reason === 'ppi' ? `here's the reliability report for the ${carName(r)} you're thinking of buying` : `here's the reliability report for your ${carName(r)}`;
+  return `Hi ${name}, ${lead}. It shows the problems other owners of this model commonly report, and at what mileage: ${reportUrl(r.id)}`;
+}
+function showDone(id) {
+  const r = { id, ...draft };
+  $('#done').classList.remove('hide');
+  $('#doneLink').textContent = reportUrl(id);
+  $('#textIt').href = smsHref($('#cphone').value, smsBody(r, $('#cname').value.trim(), $('#reason').value));
+  $('#openIt').href = reportUrl(id) + '&s';
+  $('#copyIt').onclick = () => copy(reportUrl(id));
+  $('#done').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast('Link copied'); }
+  catch (e) { prompt('Copy this link:', text); }
+}
+$('#another').onclick = () => {
+  draft = null;
+  ['#vin', '#miles', '#cname', '#cphone', '#cnote'].forEach(s => $(s).value = '');
+  $('#done').classList.add('hide'); $('#create').classList.add('hide'); $('#bayCard').classList.add('hide');
+  $('#pv').innerHTML = '<div class="sub" style="padding:40px 20px;text-align:center">Your report preview shows here.</div>';
+  msg('Enter a VIN or pick the car, plus the miles.');
+  (mode === 'vin' ? $('#vin') : $('#miles')).focus();
+};
+
+// ── SENT REPORTS ─────────────────────────────────────────────────────────────
+function renderSent() {
+  if (!user || !hasAccess()) return;
+  const month = reports.filter(r => r.createdAt > Date.now() - 30 * 86400000);
+  const opened = month.filter(r => r.opens > 0).length;
+  $('#s-30').textContent = month.length;
+  $('#s-open').textContent = opened;
+  $('#s-rate').textContent = month.length ? Math.round(opened / month.length * 100) + '%' : '—';
+  $('#sentRows').innerHTML = reports.map(r => {
+    const y = yearData(r);
+    return `<tr>
+      <td class="sub" style="white-space:nowrap">${fmtWhen(r.createdAt)}</td>
+      <td><b>${esc(r.firstName || '—')}</b><div class="sub" style="font-size:12px">${{ ppi: 'Pre-purchase', service: 'Service', repair: 'Repair' }[r.reason] || ''}</div></td>
+      <td class="car"><b>${esc(carName(r))}</b><small>${Number(r.miles).toLocaleString()} mi</small></td>
+      <td><span class="g ${gClass(y && y.o)}">${y ? esc(y.o || '–') : '…'}</span></td>
+      <td>${r.opens ? `<span class="pill good">Opened ${fmtWhen(r.firstOpenedAt)}</span>${r.opens > 1 ? ` <span class="sub" style="font-size:12px">${r.opens}×</span>` : ''}` : '<span class="pill">Not yet</span>'}</td>
+      <td style="white-space:nowrap"><button class="btn sm" data-copy="${esc(r.id)}">Copy link</button> <a class="btn sm" href="${reportUrl(r.id)}&s" target="_blank" rel="noopener">Open</a></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">No reports yet. Make your first one under New report.</td></tr>';
+}
+$('#sentRows').onclick = e => { const b = e.target.closest('[data-copy]'); if (b) copy(reportUrl(b.dataset.copy)); };
+
+// ── SHOP & BILLING ───────────────────────────────────────────────────────────
+$('#saveProfile').onclick = async () => {
+  const b = $('#saveProfile'); b.disabled = true;
+  $('#profileMsg').className = 'amsg'; $('#profileMsg').textContent = 'Saving…';
+  try {
+    await functions.httpsCallable('updateShopProfile')({ business: $('#setName').value.trim(), phone: $('#setPhone').value.trim() });
+    $('#profileMsg').className = 'amsg ok'; $('#profileMsg').textContent = 'Saved.';
+  } catch (err) { $('#profileMsg').className = 'amsg err'; $('#profileMsg').textContent = err.message || 'Couldn\'t save.'; }
+  b.disabled = false;
+};
+function renderBilling() {
+  const s = shop || {};
+  const status = { trialing: 'Free trial', active: 'Active', past_due: 'Payment failed, retrying' }[s.status] || s.status;
+  const rows = [
+    ['Plan', 'Shop · $49/month'],
+    ['Status', esc(status)],
+    s.status === 'trialing' ? ['Trial ends', fmtDate(s.trialEnd)] : null,
+    [s.cancelAtPeriodEnd ? 'Access ends' : 'Next charge', fmtDate(s.currentPeriodEnd)],
+    ['Account', esc(user.email || '')],
+  ].filter(Boolean);
+  $('#billDl').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+}
+
+// ── NAV ──────────────────────────────────────────────────────────────────────
+function show(v) {
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'v-' + v));
+  document.querySelectorAll('nav.side .nv').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  if (v === 'sent') renderSent();
+}
+document.querySelectorAll('nav.side .nv').forEach(b => b.onclick = () => show(b.dataset.view));
+setAuthMode('signup');
+</script>
+</body>
+</html>
