@@ -16,7 +16,9 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/home.css">
+<link rel="stylesheet" href="/biz.css">
 <link rel="preconnect" href="https://grademycar-default-rtdb.firebaseio.com">
 <link rel="stylesheet" href="/report-core.css">
 <script src="/attribution.js"></script>
@@ -46,44 +48,26 @@ label.l { display: grid; gap: 5px; font-size: 12px; font-weight: 650; color: var
 .amsg.ok { color: var(--good); }
 .amsg.err { color: var(--bad); }
 
-/* ---- landing / plans ---- */
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--night); color: #fff; }
-.logo { color: #fff; font-weight: 800; font-size: 17px; text-decoration: none; }
-.logo small { color: #818CF8; font-weight: 700; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-left: 6px; }
-.topbar .who { font-size: 13px; color: #CBD5E1; display: flex; gap: 12px; align-items: center; }
-.topbar .who button { background: none; border: 1px solid #334155; color: #CBD5E1; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
-.hero { background: var(--night); color: #fff; padding: 56px 24px 72px; }
-.hero .in { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; }
-.hero h1 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
-.hero p.lead { color: #CBD5E1; font-size: 17px; line-height: 1.55; margin-top: 16px; }
-.hero ul { margin-top: 22px; padding: 0; list-style: none; display: grid; gap: 10px; color: #E2E8F0; }
-.hero li::before { content: '✓'; color: #818CF8; font-weight: 800; margin-right: 10px; }
-.authcard { background: #fff; color: var(--text); border-radius: 20px; padding: 24px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
-.authcard h2 { font-size: 19px; color: var(--ink); }
-.authcard form { display: grid; gap: 10px; margin-top: 14px; }
-.gbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
-.or { text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 0; }
-.authcard .links { display: flex; justify-content: space-between; font-size: 13px; margin-top: 4px; }
-.authcard .links button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; }
-.wrap { max-width: 1060px; margin: 0 auto; padding: 48px 24px; }
-.wrap h2.s { font-size: 26px; color: var(--ink); font-weight: 800; letter-spacing: -.01em; }
-.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
-.how .card { padding: 20px; }
-.how b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
-.plan { padding: 24px; max-width: 420px; border: 2px solid var(--accent); margin-top: 18px; }
-.plan h3 { font-size: 17px; color: var(--ink); }
-.plan .p { font-size: 34px; font-weight: 800; color: var(--ink); margin: 8px 0 2px; }
-.plan .p small { font-size: 14px; color: var(--muted); font-weight: 600; }
-.plan ul { padding-left: 18px; line-height: 1.8; margin: 12px 0 18px; }
-.bizrow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 620px; margin-top: 16px; }
-.notice { background: var(--accent-bg); color: #3730A3; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
-.notice.warn { background: var(--ok-bg); color: #92400E; }
+/* ---- landing (biz.css + home.css) ---- */
+#outside { background: #fff; }
+#outside .sub { color: var(--muted); }
+.biz-split { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; max-width: 1000px; margin: 0 auto; align-items: start; }
+.biz-split .biz-demo { max-width: none; }
+.biz-demo .row3 { grid-template-columns: .7fr 1fr 1fr; }
+.biz-demo .row2 { grid-template-columns: 1fr 1fr; margin-top: 12px; }
+.biz-demo label.note { margin-top: 12px; }
 
 /* ---- app ---- */
 .app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
 nav.side { background: var(--ink); color: #CBD5E1; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
-nav.side .logo { padding: 4px 10px 18px; display: block; }
-nav.side .logo small { display: block; margin: 2px 0 0; }
+nav.side .app-logo { padding: 4px 10px 22px; font-size: 17px; align-items: flex-start; }
+nav.side .app-logo img { margin-top: 2px; }
+nav.side .app-logo small { display: block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #818CF8; font-weight: 700; margin-top: 2px; }
+.empty-state { text-align: center; padding: 44px 20px !important; }
+.empty-state .ei { width: 52px; height: 52px; border-radius: 14px; background: #EEF2FF; color: var(--accent); display: grid; place-items: center; margin: 0 auto 12px; }
+.empty-state .ei svg { width: 26px; height: 26px; }
+.empty-state b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.empty-state span { color: var(--muted); font-size: 14px; }
 nav.side button.nv { background: none; border: 0; text-align: left; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; color: #CBD5E1; }
 nav.side button.nv:hover { background: rgba(255,255,255,.06); }
 nav.side button.nv.on { background: rgba(99,102,241,.22); color: #fff; }
@@ -140,10 +124,6 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
 .settings dd { margin: 0; font-weight: 600; color: var(--ink); }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 20; }
 
-/* ---- see-it demo (signed out) ---- */
-.demo { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; margin-top: 22px; }
-.demo .form { position: sticky; top: 20px; }
-.demo .phone { height: 680px; position: static; }
 .vinrow { display: flex; gap: 8px; }
 .vinrow input { flex: 1; min-width: 0; }
 @media (max-width: 1100px) {
@@ -151,15 +131,12 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
   .phone { position: static; height: 640px; max-width: 400px; }
 }
 @media (max-width: 900px) {
-  .hero .in { grid-template-columns: 1fr; gap: 28px; }
-  .hero h1 { font-size: 32px; }
-  .how, .bizrow, .demo { grid-template-columns: 1fr; }
-  .demo .form { position: static; }
-  .demo .phone { max-width: 400px; height: 620px; }
+  .biz-split { grid-template-columns: 1fr; }
+  .biz-demo .row3, .biz-demo .row2 { grid-template-columns: 1fr 1fr; }
   .app { grid-template-columns: 1fr; }
   nav.side { flex-direction: row; overflow-x: auto; padding: 10px; align-items: center; }
-  nav.side .logo { padding: 0 10px 0 4px; white-space: nowrap; }
-  nav.side .logo small, nav.side .foot { display: none; }
+  nav.side .app-logo { padding: 0 10px 0 4px; white-space: nowrap; align-items: center; }
+  nav.side .app-logo small, nav.side .foot { display: none; }
   nav.side button.nv { white-space: nowrap; }
   main { padding: 18px 16px 40px; }
   .grid2, .grid3 { grid-template-columns: 1fr; }
@@ -173,90 +150,222 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
 
 <!-- ============ SIGNED OUT / NO PLAN ============ -->
 <div id="outside" class="hide">
-  <div class="topbar">
-    <a class="logo" href="/">GradeMyCar<small>for Shops</small></a>
-    <div class="who hide" id="whoOut"><span id="whoEmail"></span><button id="signOut1">Sign out</button></div>
+  <header class="lp-header biz-header" id="lpHeader">
+    <div class="lp-wrap lp-nav">
+      <a href="/" class="lp-logo"><img src="/reliability/logo.png" alt="" width="28" height="28"><span>Grade<b>MyCar</b></span><span class="biz-tag">Shops</span></a>
+      <ul class="lp-links" id="mktLinks">
+        <li><a href="#demoSec">See it</a></li>
+        <li><a href="#featSec">Features</a></li>
+        <li><a href="#start">Pricing</a></li>
+        <li><a href="#faqSec">FAQ</a></li>
+      </ul>
+      <div class="lp-nav-actions">
+        <span class="biz-who hide" id="whoOut"><span id="whoEmail"></span></span>
+        <button class="lp-btn lp-btn-ghost hide" id="signOut1">Sign out</button>
+        <a class="lp-btn lp-btn-ghost biz-signin" id="navSignIn" href="#start">Sign in</a>
+        <a class="lp-btn lp-btn-primary" id="navStart" href="#start">Start free trial</a>
+      </div>
+    </div>
+  </header>
+
+  <div id="mkt">
+    <section class="lp-hero biz-hero" id="hero">
+      <div class="lp-wrap lp-hero-grid">
+        <div>
+          <span class="lp-eyebrow"><span class="lp-dot"></span>For independent repair shops</span>
+          <h1>Show customers the <span class="lp-lemon">pattern</span> behind your advice.</h1>
+          <p class="lp-sub">Text a customer a report for their car: its reliability grade, the problems owners of that model report most, and the mileage they show up at. Your note sits on top, from your shop.</p>
+          <div class="biz-ctas">
+            <a class="lp-btn lp-btn-primary lp-btn-lg" href="#start" data-cta="hero">Start 14-day free trial</a>
+            <a class="lp-btn lp-btn-ghost lp-btn-lg" href="#demoSec">See a report</a>
+          </div>
+          <ul class="lp-facts">
+            <li><b>$49</b> a month</li>
+            <li><b>Unlimited</b> reports</li>
+            <li><b>No app</b> for your customer</li>
+          </ul>
+        </div>
+        <div class="biz-phone-wrap">
+          <div class="biz-phone"><div class="scr rp" id="heroPv"><div class="sub" style="padding:60px 20px;text-align:center">Loading a real report…</div></div></div>
+          <div class="biz-sms"><small>Text from Main Street Auto</small>Hi Sam, here's the reliability report for your 2018 Honda Accord: <a>grademycar.com/r/?7PHBVVR</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-stats">
+      <div class="lp-wrap lp-stats-grid" data-reveal-children>
+        <div><div class="lp-stat-num">800,000+</div><div class="lp-stat-label">owner complaints filed with <b>NHTSA</b>, sorted by problem</div></div>
+        <div><div class="lp-stat-num">2,183</div><div class="lp-stat-label">model years graded, <b>engine and transmission</b> separately</div></div>
+        <div><div class="lp-stat-num">1 tap</div><div class="lp-stat-label">to text the report from <b>your own phone</b></div></div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="demoSec">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">Try it now</div>
+          <h2>See what your customer gets.</h2>
+          <p>Pick a car, add your shop's name and a note. The phone shows the page your customer opens. No account needed.</p>
+        </div>
+        <div class="biz-split" data-reveal>
+          <div class="biz-demo">
+            <div class="row row3">
+              <label>Year<select id="dYear"></select></label>
+              <label>Make<select id="dMake"></select></label>
+              <label>Model<select id="dModel"></select></label>
+            </div>
+            <div class="row row2">
+              <label>Odometer (miles)<input id="dMiles" inputmode="numeric" value="78,400"></label>
+              <label>Your shop's name<input id="dShop" maxlength="80" value="Your Shop"></label>
+            </div>
+            <label class="note">Your note to the customer<textarea id="dNote" rows="4" maxlength="600">The shudder you feel pulling away matches what a lot of owners of this model report with the transmission. Estimate attached separately.</textarea></label>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="lp-btn lp-btn-dark" id="dStart">Start your free trial</button><span class="sub" style="font-size:13px">14 days free, then $49/month.</span></div>
+          </div>
+          <div class="biz-phone"><div class="scr rp" id="dPv"><div class="sub" style="padding:60px 20px;text-align:center">Loading a sample report…</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section" id="featSec">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">What you get</div>
+          <h2>Built for the service counter.</h2>
+          <p>Make a report in under a minute, from the bay or the front desk.</p>
+        </div>
+        <div class="biz-features" data-reveal-children>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>Your note, your name</h3><p>Every report shows your shop's name, your note in your own words, and a button to call you.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div><h3>Know when they've looked</h3><p>Sent reports shows which customers opened their report and when, so you know when to follow up.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><h3>Tech check sheet</h3><p>For each car, a checklist of what owners of that model report most, with what to look at. For your tech, not the customer.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M14 8v8M17 8v8"/></svg></div><h3>Scan the VIN</h3><p>Point your phone at the VIN barcode on the door jamb, or pick the year, make and model.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></div><h3>Text from your phone</h3><p>One tap opens a text with the link, sent from your own number. Customers don't need an app or an account.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Independent data</h3><p>Grades come from NHTSA owner complaints. Shops can't pay to change them, which is what makes them believable.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="howSec">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">How it works</div>
+          <h2>From estimate to approval.</h2>
+        </div>
+        <ol class="lp-steps" data-reveal-children>
+          <li><div class="lp-step-n">1</div><h3>Enter the car</h3><p>Scan or type the VIN, or pick the year, make and model, then the miles. Add a note if you like.</p></li>
+          <li><div class="lp-step-n">2</div><h3>Text the link</h3><p>Preview exactly what the customer sees, then send it from your phone with one tap, or copy the link.</p></li>
+          <li><div class="lp-step-n">3</div><h3>They see the pattern</h3><p>Your customer sees what owners of their model commonly report and at what mileage, so your estimate isn't just your word.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">Built on trust</div>
+          <h2>It backs up your advice. It doesn't sell for you.</h2>
+          <p>Customers believe it because it's careful about what it says.</p>
+        </div>
+        <div class="biz-compare" data-reveal-children>
+          <div class="biz-col us"><h3>Your customer sees</h3><p class="lead">On every report</p><ul><li>The reliability grade for their model year</li><li>Problems owners of that model report most</li><li>Where their car's miles fall for each one</li><li>Recalls issued, and that recall work is free</li></ul></div>
+          <div class="biz-col"><h3>What a report never does</h3><p class="lead">So it stays credible</p><ul><li>Claim to diagnose their specific car</li><li>Change a grade because a shop pays</li><li>Show the customer's name to anyone else</li><li>Need an app, an account or an email</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="faqSec">
+      <div class="lp-wrap lp-faq-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">Questions</div>
+          <h2>Good questions before you sign up.</h2>
+        </div>
+        <div class="lp-faq" data-reveal>
+          <details><summary>Where do the grades come from?</summary><p>From the complaints owners file with NHTSA, the federal agency that tracks vehicle defects and runs recalls. We've sorted more than 800,000 of them by problem and compared each model year with other cars from the same year, adjusted for how many were sold.</p></details>
+          <details><summary>Is the report a diagnosis?</summary><p>No, and it says so. It shows what's common on that model year and at what mileage. Your inspection and your note tell the customer what's going on with their car. The report shows the pattern behind it.</p></details>
+          <details><summary>How does texting work?</summary><p>On your phone, "Text it" opens your messages app with the customer's number and the link filled in, and it sends from your own number. On a computer, copy the link and send it however you like. We don't charge for texts.</p></details>
+          <details><summary>Does my customer need anything?</summary><p>No. The link opens a normal web page on any phone. No app, no account, no email.</p></details>
+          <details><summary>How does the free trial work?</summary><p>You get 14 days free. You add a card at sign-up and aren't charged until the trial ends. Cancel anytime from Shop &amp; billing, and you won't be charged.</p></details>
+        </div>
+      </div>
+    </section>
   </div>
-  <section class="hero" id="hero">
-    <div class="in">
-      <div>
-        <h1>Show customers the pattern behind your advice.</h1>
-        <p class="lead">Text a customer a report for their car: its reliability grade from NHTSA owner complaints, the problems owners of that model report most, and at what mileage. Your note sits on top, from your shop.</p>
-        <ul>
-          <li>Grades for 121 popular models, 2000–2024, from 800,000+ complaints</li>
-          <li>Unlimited reports with your shop's name and phone</li>
-          <li>See when a customer opens the report</li>
-          <li>A check sheet for your tech with what to look at on that model</li>
-          <li>14-day free trial, cancel anytime</li>
-        </ul>
-      </div>
-      <div class="authcard" id="authCard">
-        <h2 id="authTitle">Start your free trial</h2>
-        <div class="sub" id="authSub" style="margin-top:4px">Create an account, then set up your shop. You won't be charged for 14 days.</div>
-        <button class="btn gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
-        <div class="or">or with email</div>
-        <form id="authForm" novalidate>
-          <input class="f" id="authEmail" type="email" placeholder="Work email" autocomplete="email">
-          <input class="f" id="authPass" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
-          <button class="btn primary big" id="authSubmit" type="submit">Create account</button>
-          <div class="links"><button type="button" id="authToggle">Have an account? Sign in</button><button type="button" id="authReset" class="hide">Forgot password?</button></div>
-          <div class="amsg" id="authMsg"></div>
-        </form>
-      </div>
-    </div>
-  </section>
 
-  <section class="wrap" id="demoSec" style="padding-bottom:0">
-    <h2 class="s">See what your customer gets</h2>
-    <p class="sub" style="margin-top:6px;font-size:15px">No account needed. Pick a car, add your note, and the phone shows the page your customer opens.</p>
-    <div class="demo">
-      <div class="card form">
-        <div class="grid3">
-          <label class="l">Year<select class="f" id="dYear"></select></label>
-          <label class="l">Make<select class="f" id="dMake"></select></label>
-          <label class="l">Model<select class="f" id="dModel"></select></label>
+  <section class="lp-section lp-pricing" id="start">
+    <div class="lp-wrap">
+      <div class="lp-section-head" id="startHead">
+        <div class="lp-kicker" id="startKicker">Pricing</div>
+        <h2 id="planTitle">One plan. Unlimited reports.</h2>
+        <p id="startSub">14 days free. Cancel anytime.</p>
+      </div>
+      <div class="notice hide" id="planNotice" style="max-width:920px;margin:0 auto 18px"></div>
+      <div class="biz-start" style="--plans:1">
+        <div>
+          <div class="biz-setup hide" id="bizRow">
+            <label for="bizName">Shop name<input id="bizName" maxlength="80" placeholder="e.g. Main Street Auto Repair"></label>
+            <label for="bizPhone">Shop phone (shown on reports)<input id="bizPhone" maxlength="25" inputmode="tel" placeholder="(555) 010-0100"></label>
+          </div>
+          <div class="lp-plans">
+            <div class="lp-plan lp-plan-pop">
+              <div class="lp-plan-name">Shop</div>
+              <div class="lp-plan-price"><span>$</span>49</div>
+              <div class="lp-plan-desc">per month, after a 14-day free trial</div>
+              <ul><li>Unlimited customer reports</li><li>Your shop's name, note and phone on every report</li><li>See when customers open them</li><li>Tech check sheet for every car</li><li>VIN scan from your phone</li></ul>
+              <button class="lp-btn lp-btn-primary" id="subscribe">Start free trial</button>
+              <div class="amsg" id="planMsg" style="margin-top:12px"></div>
+            </div>
+          </div>
         </div>
-        <div class="grid2">
-          <label class="l">Odometer (miles)<input class="f" id="dMiles" inputmode="numeric" value="78,400"></label>
-          <label class="l">Your shop's name<input class="f" id="dShop" maxlength="80" value="Your Shop"></label>
+        <div class="biz-auth" id="authCard">
+          <h3 id="authTitle">Create your account</h3>
+          <div class="sub" id="authSub" style="margin-top:4px;font-size:14px">Then set up your shop. You won't be charged for 14 days.</div>
+          <button class="lp-btn lp-btn-ghost-dark gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+          <div class="or">or with email</div>
+          <form id="authForm" novalidate>
+            <input id="authEmail" type="email" placeholder="Work email" autocomplete="email">
+            <input id="authPass" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
+            <button class="lp-btn lp-btn-primary" id="authSubmit" type="submit" style="height:48px">Create account</button>
+            <div class="links"><button type="button" id="authToggle">Have an account? Sign in</button><button type="button" id="authReset" class="hide">Forgot password?</button></div>
+            <div class="amsg" id="authMsg"></div>
+          </form>
+          <div class="trust"><span>14 days free, then $49/month</span><span>Cancel anytime in two clicks</span><span>Secure checkout by Stripe</span></div>
         </div>
-        <label class="l">Your note to the customer<textarea class="f" id="dNote" rows="3" maxlength="600">The shudder you feel pulling away matches what a lot of owners of this model report with the transmission. Estimate attached separately.</textarea></label>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn primary" id="dStart">Start your free trial</button><span class="sub" style="font-size:13px">14 days free, then $49/month.</span></div>
       </div>
-      <div class="phone"><div class="cap">What your customer sees</div><div class="scr rp" id="dPv"><div class="sub" style="padding:40px 20px;text-align:center">Loading a sample report…</div></div></div>
+      <p class="sub" style="margin:22px auto 0;font-size:12.5px;max-width:760px;text-align:center">Reports show what owners of a model year commonly report to NHTSA. They are not a diagnosis of a specific car. Shops can't pay to change grades.</p>
     </div>
   </section>
 
-  <section class="wrap" id="howSec">
-    <h2 class="s">How it works</h2>
-    <div class="how">
-      <div class="card"><b>1. Enter the car</b><span class="sub">Type or scan the VIN, or pick the year, make and model, then the miles. Add a note in your own words if you like.</span></div>
-      <div class="card"><b>2. Text the link</b><span class="sub">One tap opens a text to your customer from your own phone. The page shows your shop's name and a button to call you.</span></div>
-      <div class="card"><b>3. They see the pattern</b><span class="sub">The customer sees what owners of their model commonly report and at what mileage, so your estimate isn't just your word.</span></div>
+  <section class="lp-final" id="finalSec">
+    <div class="lp-wrap" data-reveal>
+      <h2>Make your next estimate easier to say yes to.</h2>
+      <p>Try it on your next customer, free for 14 days.</p>
+      <a class="lp-btn lp-btn-primary lp-btn-lg" href="#start" data-cta="final">Start free trial</a>
     </div>
   </section>
 
-  <section class="wrap" id="planSec" style="padding-top:0">
-    <h2 class="s" id="planTitle">Pricing</h2>
-    <div class="notice hide" id="planNotice" style="margin-top:14px;max-width:620px"></div>
-    <div class="bizrow hide" id="bizRow">
-      <label class="l">Shop name<input class="f" id="bizName" maxlength="80" placeholder="e.g. Main Street Auto Repair"></label>
-      <label class="l">Shop phone (shown on reports)<input class="f" id="bizPhone" maxlength="25" inputmode="tel" placeholder="(555) 010-0100"></label>
+  <footer class="lp-footer">
+    <div class="lp-wrap">
+      <div class="lp-footer-top">
+        <div>
+          <a href="/" class="lp-logo"><img src="/reliability/logo.png" alt="" width="28" height="28"><span>Grade<b>MyCar</b></span></a>
+          <p>Reliability grades for every used car, from what owners actually report.</p>
+        </div>
+        <div class="lp-footer-links">
+          <a href="/">Home</a>
+          <a href="/reliability/">Reliability by model</a>
+          <a href="/dealers.html?src=shops_footer">For dealers</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <p class="lp-footer-note">Grades are estimates based on owner complaints filed with NHTSA, adjusted for sales. They describe a model year, not a specific vehicle.</p>
+      <p class="lp-footer-note">© 2026 GradeMyCar</p>
     </div>
-    <div class="card plan">
-      <h3>Shop</h3><div class="p">$49<small> / month</small></div>
-      <ul><li>Unlimited customer reports</li><li>Your shop's name, note and phone on every report</li><li>See when customers open them</li><li>Tech check sheet for every car</li></ul>
-      <button class="btn primary big" id="subscribe" style="width:100%">Start free trial</button>
-      <div class="amsg" id="planMsg" style="margin-top:10px"></div>
-    </div>
-    <p class="sub" style="margin-top:18px;font-size:12px;max-width:620px">Reports show what owners of a model year commonly report to NHTSA. They are not a diagnosis of a specific car. Shops can't pay to change grades.</p>
-  </section>
+  </footer>
 </div>
 
 <!-- ============ SHOP APP ============ -->
 <div class="app hide" id="inside">
   <nav class="side">
-    <a class="logo" href="/">GradeMyCar<small>for Shops</small></a>
+    <a class="lp-logo app-logo" href="/"><img src="/reliability/logo.png" alt="" width="26" height="26"><span>Grade<b>MyCar</b><small>for Shops</small></span></a>
     <button class="nv on" data-view="new">New report</button>
     <button class="nv" data-view="sent">Sent reports</button>
     <button class="nv" data-view="settings">Shop &amp; billing</button>
@@ -411,8 +520,8 @@ let authMode = 'signup';
 function authMsg(type, text) { const el = $('#authMsg'); el.className = 'amsg' + (type ? ' ' + type : ''); el.textContent = text || ''; }
 function setAuthMode(m) {
   authMode = m;
-  $('#authTitle').textContent = m === 'signup' ? 'Start your free trial' : 'Sign in';
-  $('#authSub').textContent = m === 'signup' ? 'Create an account, then set up your shop. You won\'t be charged for 14 days.' : 'Welcome back.';
+  $('#authTitle').textContent = m === 'signup' ? 'Create your account' : 'Sign in';
+  $('#authSub').textContent = m === 'signup' ? 'Then set up your shop. You won\'t be charged for 14 days.' : 'Welcome back.';
   $('#authSubmit').textContent = m === 'signup' ? 'Create account' : 'Sign in';
   $('#authToggle').textContent = m === 'signup' ? 'Have an account? Sign in' : 'New here? Create an account';
   $('#authPass').autocomplete = m === 'signup' ? 'new-password' : 'current-password';
@@ -495,10 +604,15 @@ function route() {
   $('#outside').classList.toggle('hide', inside);
   $('#inside').classList.toggle('hide', !inside);
   if (inside) return enterApp();
+  // Signed out: the full landing page. Signed in without a plan: just the shop setup.
   $('#whoOut').classList.toggle('hide', !user);
   $('#whoEmail').textContent = user ? user.email || '' : '';
-  ['#hero', '#howSec', '#demoSec'].forEach(s => $(s).classList.toggle('hide', !!user));
+  $('#signOut1').classList.toggle('hide', !user);
+  ['#mkt', '#mktLinks', '#navSignIn', '#navStart', '#finalSec', '#authCard'].forEach(s => $(s).classList.toggle('hide', !!user));
   $('#bizRow').classList.toggle('hide', !user);
+  $('#startHead').classList.toggle('biz-signedin-head', !!user);
+  $('#startKicker').textContent = user ? 'Almost there' : 'Pricing';
+  $('#startSub').textContent = user ? 'Add your shop\'s name and phone. They show on every report. 14 days free, cancel anytime.' : '14 days free. Cancel anytime.';
   const note = $('#planNotice');
   note.classList.add('hide');
   if (user) {
@@ -514,7 +628,7 @@ function route() {
       note.classList.remove('hide');
     }
     track('shop_plan_view', { trial: trial ? 'yes' : 'no' });
-  } else $('#planTitle').textContent = 'Pricing';
+  } else $('#planTitle').textContent = 'One plan. Unlimited reports.';
 }
 
 // ── CHECKOUT ─────────────────────────────────────────────────────────────────
@@ -522,8 +636,8 @@ function planMsg(type, t) { const el = $('#planMsg'); el.className = 'amsg' + (t
 $('#subscribe').onclick = async () => {
   track('select_plan', { plan: 'shop' });
   if (!user) {
-    planMsg('err', 'Create an account first (top of the page), then set up your shop.');
-    window.scrollTo({ top: 0, behavior: 'smooth' }); $('#authEmail').focus(); return;
+    planMsg('err', 'Create your account first, then set up your shop.');
+    $('#authEmail').focus(); return;
   }
   const business = $('#bizName').value.trim();
   if (!business) { planMsg('err', 'Enter your shop\'s name first.'); $('#bizName').focus(); return; }
@@ -762,7 +876,38 @@ async function renderDemo(e) {
 $('#dMake').addEventListener('change', () => { fillDemoModels(); renderDemo(true); });
 ['#dYear', '#dModel'].forEach(s => $(s).addEventListener('change', () => renderDemo(true)));
 ['#dMiles', '#dShop', '#dNote'].forEach(s => $(s).addEventListener('input', () => renderDemo(true)));
-$('#dStart').onclick = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setAuthMode('signup'); $('#authEmail').focus(); track('shop_demo_cta'); };
+$('#dStart').onclick = () => { goStart('signup'); track('shop_demo_cta'); };
+
+// ── LANDING ──────────────────────────────────────────────────────────────────
+// Every "Start free trial" / "Sign in" goes to the plan and sign-up form
+function goStart(mode) {
+  setAuthMode(mode);
+  $('#start').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => { try { $('#authEmail').focus({ preventScroll: true }); } catch (e) {} }, 500);
+}
+document.querySelectorAll('a[href="#start"]').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  goStart(a.id === 'navSignIn' ? 'signin' : 'signup');
+  if (a.dataset.cta) track('shop_cta', { where: a.dataset.cta });
+}));
+// Header shadow once scrolled, like the homepage
+addEventListener('scroll', () => $('#lpHeader').classList.toggle('scrolled', scrollY > 8), { passive: true });
+// Scroll reveal (home.css hides [data-reveal] only under html.lp-js)
+(function reveal() {
+  const els = document.querySelectorAll('#outside [data-reveal], #outside [data-reveal-children]');
+  if (!('IntersectionObserver' in window)) return;
+  document.documentElement.classList.add('lp-js');
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(el => io.observe(el));
+})();
+// The hero phone: a real report, as a customer would get it
+async function renderHeroReport() {
+  const r = { shop: 'Main Street Auto', shopPhone: '(555) 010-0100', make: 'honda', model: 'accord', year: 2018, miles: 95000,
+              note: 'The coolant loss you mentioned matches what a lot of 2018 Accord owners report. Estimate attached separately.' };
+  const y = await loadYear(r.make, r.model, r.year);
+  if (y && y.o) $('#heroPv').innerHTML = GMCReport.reportHTML(r, y);
+}
+renderHeroReport();
 
 // ── SENT REPORTS ─────────────────────────────────────────────────────────────
 function renderSent() {
@@ -782,7 +927,7 @@ function renderSent() {
       <td>${r.opens ? `<span class="pill good">Opened ${fmtWhen(r.firstOpenedAt)}</span>${r.opens > 1 ? ` <span class="sub" style="font-size:12px">${r.opens}×</span>` : ''}` : '<span class="pill">Not yet</span>'}</td>
       <td style="white-space:nowrap"><button class="btn sm" data-copy="${esc(r.id)}">Copy link</button> <a class="btn sm" href="${reportUrl(r.id)}&s" target="_blank" rel="noopener">Open</a></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="6" class="empty">No reports yet. Make your first one under New report.</td></tr>';
+  }).join('') || `<tr><td colspan="6" class="empty-state"><div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><b>No reports yet</b><span>Make your first one under New report. It takes under a minute.</span></td></tr>`;
 }
 $('#sentRows').onclick = e => { const b = e.target.closest('[data-copy]'); if (b) copy(reportUrl(b.dataset.copy)); };
 

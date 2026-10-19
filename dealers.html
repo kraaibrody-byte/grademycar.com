@@ -16,7 +16,9 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/home.css">
+<link rel="stylesheet" href="/biz.css">
 <link rel="preconnect" href="https://grademycar-default-rtdb.firebaseio.com">
 <script src="/attribution.js"></script>
 <style>
@@ -41,49 +43,24 @@ a { color: var(--accent); }
 input.f, select.f, textarea.f { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; width: 100%; }
 input.f:focus, select.f:focus, textarea.f:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
 
-/* ---- landing / plans ---- */
-.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--night); color: #fff; }
-.logo { color: #fff; font-weight: 800; font-size: 17px; text-decoration: none; }
-.logo small { color: #818CF8; font-weight: 700; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-left: 6px; }
-.topbar .who { font-size: 13px; color: #CBD5E1; display: flex; gap: 12px; align-items: center; }
-.topbar .who button { background: none; border: 1px solid #334155; color: #CBD5E1; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
-.hero { background: var(--night); color: #fff; padding: 56px 24px 72px; }
-.hero .in { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; align-items: center; }
-.hero h1 { font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -.02em; }
-.hero p.lead { color: #CBD5E1; font-size: 17px; line-height: 1.55; margin-top: 16px; }
-.hero ul { margin-top: 22px; padding: 0; list-style: none; display: grid; gap: 10px; color: #E2E8F0; }
-.hero li::before { content: '✓'; color: #818CF8; font-weight: 800; margin-right: 10px; }
-.authcard { background: #fff; color: var(--text); border-radius: 20px; padding: 24px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
-.authcard h2 { font-size: 19px; color: var(--ink); }
-.authcard form { display: grid; gap: 10px; margin-top: 14px; }
-.gbtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; }
-.or { text-align: center; color: var(--muted); font-size: 12px; margin: 12px 0 0; }
-.authcard .links { display: flex; justify-content: space-between; font-size: 13px; margin-top: 4px; }
-.authcard .links button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; }
-.amsg { font-size: 13px; line-height: 1.45; }
-.amsg.ok { color: var(--good); }
-.amsg.err { color: var(--bad); }
-.wrap { max-width: 1060px; margin: 0 auto; padding: 48px 24px; }
-.wrap h2.s { font-size: 26px; color: var(--ink); font-weight: 800; letter-spacing: -.01em; }
-.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
-.how .card { padding: 20px; }
-.how b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
-.plans { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 22px; max-width: 760px; }
-.plan { padding: 24px; display: flex; flex-direction: column; }
-.plan.featured { border: 2px solid var(--accent); }
-.plan h3 { font-size: 17px; color: var(--ink); }
-.plan .p { font-size: 34px; font-weight: 800; color: var(--ink); margin: 8px 0 2px; }
-.plan .p small { font-size: 14px; color: var(--muted); font-weight: 600; }
-.plan ul { padding-left: 18px; line-height: 1.8; margin: 12px 0 18px; flex: 1; }
-.planmsg { margin-top: 14px; }
-.notice { background: var(--accent-bg); color: #3730A3; border-radius: 12px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
-.notice.warn { background: var(--ok-bg); color: #92400E; }
+/* ---- landing (biz.css + home.css) ---- */
+#outside { background: #fff; }
+#outside .sub { color: var(--muted); }
+.biz-demo .res { margin-top: 18px; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; display: grid; grid-template-columns: auto auto 1fr auto; gap: 18px; align-items: center; background: linear-gradient(180deg, #fff, #FBFCFE); }
+.biz-demo .res .car b { font-size: 16px; }
+.biz-demo .res .verdict { font-size: 13px; padding: 6px 14px; }
 
 /* ---- app ---- */
 .app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
 nav.side { background: var(--ink); color: #CBD5E1; padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
-nav.side .logo { padding: 4px 10px 18px; display: block; }
-nav.side .logo small { display: block; margin: 2px 0 0; }
+nav.side .app-logo { padding: 4px 10px 22px; font-size: 17px; align-items: flex-start; }
+nav.side .app-logo img { margin-top: 2px; }
+nav.side .app-logo small { display: block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: #818CF8; font-weight: 700; margin-top: 2px; }
+.empty-state { text-align: center; padding: 44px 20px !important; }
+.empty-state .ei { width: 52px; height: 52px; border-radius: 14px; background: #EEF2FF; color: var(--accent); display: grid; place-items: center; margin: 0 auto 12px; }
+.empty-state .ei svg { width: 26px; height: 26px; }
+.empty-state b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+.empty-state span { color: var(--muted); font-size: 14px; }
 nav.side button.nv { background: none; border: 0; text-align: left; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 600; color: #CBD5E1; }
 nav.side button.nv:hover { background: rgba(255,255,255,.06); }
 nav.side button.nv.on { background: rgba(99,102,241,.22); color: #fff; }
@@ -162,24 +139,13 @@ body.open .drawer { transform: none; }
 .billing dt { color: var(--muted); font-weight: 600; }
 .billing dd { margin: 0; font-weight: 600; color: var(--ink); }
 
-/* ---- try-it demo (signed out) ---- */
-.demo { padding: 20px; margin-top: 20px; }
-.demo .row3 { display: grid; grid-template-columns: .6fr 1fr 1fr .8fr auto; gap: 10px; align-items: end; }
-.demo label { display: grid; gap: 5px; font-size: 12px; font-weight: 650; color: var(--muted); }
-.demo .res { margin-top: 16px; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; grid-template-columns: auto auto 1fr auto; gap: 16px; align-items: center; }
-.demo .res .car b { font-size: 15px; }
-.demo .cta { margin-top: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .sortsel { border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 600; background: #fff; }
 @media (max-width: 900px) {
-  .demo .row3 { grid-template-columns: 1fr 1fr; }
-  .demo .res { grid-template-columns: auto 1fr; }
-  .hero .in { grid-template-columns: 1fr; gap: 28px; }
-  .hero h1 { font-size: 32px; }
-  .how, .plans { grid-template-columns: 1fr; }
+  .biz-demo .res { grid-template-columns: auto 1fr; }
   .app { grid-template-columns: 1fr; }
   nav.side { flex-direction: row; overflow-x: auto; padding: 10px; align-items: center; }
-  nav.side .logo { padding: 0 10px 0 4px; white-space: nowrap; }
-  nav.side .logo small, nav.side .foot { display: none; }
+  nav.side .app-logo { padding: 0 10px 0 4px; white-space: nowrap; align-items: center; }
+  nav.side .app-logo small, nav.side .foot { display: none; }
   nav.side button.nv { white-space: nowrap; }
   main { padding: 18px 16px 40px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
@@ -199,91 +165,225 @@ body.open .drawer { transform: none; }
 
 <!-- ============ SIGNED OUT / NO PLAN ============ -->
 <div id="outside" class="hide">
-  <div class="topbar">
-    <a class="logo" href="/">GradeMyCar<small>for Dealers</small></a>
-    <div class="who hide" id="whoOut"><span id="whoEmail"></span><button id="signOut1">Sign out</button></div>
+  <header class="lp-header biz-header" id="lpHeader">
+    <div class="lp-wrap lp-nav">
+      <a href="/" class="lp-logo"><img src="/reliability/logo.png" alt="" width="28" height="28"><span>Grade<b>MyCar</b></span><span class="biz-tag">Dealers</span></a>
+      <ul class="lp-links" id="mktLinks">
+        <li><a href="#demoSec">Try it</a></li>
+        <li><a href="#featSec">Features</a></li>
+        <li><a href="#start">Pricing</a></li>
+        <li><a href="#faqSec">FAQ</a></li>
+      </ul>
+      <div class="lp-nav-actions">
+        <span class="biz-who hide" id="whoOut"><span id="whoEmail"></span></span>
+        <button class="lp-btn lp-btn-ghost hide" id="signOut1">Sign out</button>
+        <a class="lp-btn lp-btn-ghost biz-signin" id="navSignIn" href="#start">Sign in</a>
+        <a class="lp-btn lp-btn-primary" id="navStart" href="#start">Start free trial</a>
+      </div>
+    </div>
+  </header>
+
+  <div id="mkt">
+    <section class="lp-hero biz-hero" id="hero">
+      <div class="lp-wrap lp-hero-grid">
+        <div>
+          <span class="lp-eyebrow"><span class="lp-dot"></span>For independent used-car dealers</span>
+          <h1>Know which auction cars to <span class="lp-lemon">pass on</span> before you bid.</h1>
+          <p class="lp-sub">Paste your run list. Every car gets its model-year reliability grade and a check on whether its mileage sits right where owners report that model's big failures.</p>
+          <div class="biz-ctas">
+            <a class="lp-btn lp-btn-primary lp-btn-lg" href="#start" data-cta="hero">Start 14-day free trial</a>
+            <a class="lp-btn lp-btn-ghost lp-btn-lg" href="#demoSec">Try it on a car</a>
+          </div>
+          <ul class="lp-facts">
+            <li><b>121</b> popular models</li>
+            <li><b>2000–2024</b> model years</li>
+            <li><b>Cancel</b> anytime</li>
+          </ul>
+        </div>
+        <div class="biz-window" aria-label="Example run list with live grades">
+          <div class="biz-window-bar"><i></i><i></i><i></i><span>Tuesday auction · run list</span><span class="live">Live grades</span></div>
+          <div class="biz-rl" id="heroRL"><div class="biz-rl-row"><div class="biz-rl-g lp-skel"></div><div class="biz-rl-car"><b>Loading live grades…</b></div><span></span></div></div>
+          <div class="biz-window-foot"><span id="heroCount">Bid · Caution · Pass on every car</span><span>Real grades from NHTSA data</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-stats">
+      <div class="lp-wrap lp-stats-grid" data-reveal-children>
+        <div><div class="lp-stat-num">800,000+</div><div class="lp-stat-label">owner complaints filed with <b>NHTSA</b>, read and sorted by problem</div></div>
+        <div><div class="lp-stat-num">2,183</div><div class="lp-stat-label">model years graded, <b>engine and transmission</b> separately</div></div>
+        <div><div class="lp-stat-num">1 scan</div><div class="lp-stat-label">reads the VIN barcode with your <b>phone's camera</b> at the auction</div></div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="demoSec">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">Try it now</div>
+          <h2>Check any car. No account needed.</h2>
+          <p>Pick a car and its miles to see exactly what your run list shows for it.</p>
+        </div>
+        <div class="biz-demo" data-reveal>
+          <div class="row">
+            <label>Year<select id="dYear"></select></label>
+            <label>Make<select id="dMake"></select></label>
+            <label>Model<select id="dModel"></select></label>
+            <label>Miles<input id="dMiles" inputmode="numeric" value="92,000"></label>
+            <button class="lp-btn lp-btn-primary" id="dGo">Check it</button>
+          </div>
+          <div id="dOut"></div>
+          <div class="lp-center" style="margin-top:20px"><button class="lp-btn lp-btn-dark" id="dStart">Start your free trial</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section" id="featSec">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">What you get</div>
+          <h2>Everything you need on auction day.</h2>
+          <p>Built for the five minutes you have between lots, on your phone or at your desk.</p>
+        </div>
+        <div class="biz-features" data-reveal-children>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><h3>Bid, Caution or Pass</h3><p>Every car gets a clear call from its grade and its mileage, so you can scan a 40-car list in a minute.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M7 8v8"/><path d="M17 8v8"/><circle cx="12" cy="12" r="2"/></svg></div><h3>The failure window</h3><p>See where owners report each problem, like head gaskets at 76–120k, and where this car's miles fall in it.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div><h3>Engine and transmission</h3><p>Graded separately, because a car with a great engine and a bad transmission is a different buy.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M14 8v8M17 8v8"/></svg></div><h3>Scan or paste VINs</h3><p>Scan the VIN barcode with your phone, or paste a whole run list with miles and lot numbers at once.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div><h3>Recalls flagged</h3><p>Problems with a recall issued are marked, so you know which repairs a dealer does for free.</p></div>
+          <div class="biz-feature"><div class="biz-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg></div><h3>Export and lot sheets</h3><p>Sort and export your list to a spreadsheet. On Pro, print an independent reliability sheet for the cars you sell.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="howSec">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">How it works</div>
+          <h2>From run list to bid list in three steps.</h2>
+        </div>
+        <ol class="lp-steps" data-reveal-children>
+          <li><div class="lp-step-n">1</div><h3>Add your run list</h3><p>Scan VINs, paste them with miles, or pick the year, make and model. VINs are decoded with NHTSA's own decoder.</p></li>
+          <li><div class="lp-step-n">2</div><h3>See the grade and the risk</h3><p>Each car shows its model year's grade, its most-reported problems, and where its mileage sits in each failure window.</p></li>
+          <li><div class="lp-step-n">3</div><h3>Bid on the right cars</h3><p>Sort by Pass first, check the condition report on the Cautions, and spend your money on the cars least likely to come back.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="lp-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">Works with what you use</div>
+          <h2>History tells you the past. This tells you what's next.</h2>
+          <p>Keep pulling history reports. GradeMyCar answers the question they can't.</p>
+        </div>
+        <div class="biz-compare" data-reveal-children>
+          <div class="biz-col"><h3>A vehicle history report</h3><p class="lead">What happened to this car</p><ul><li>Accidents and damage reported</li><li>Title brands and owners</li><li>Service records, when shops report them</li><li>Odometer readings</li></ul></div>
+          <div class="biz-col us"><h3>GradeMyCar</h3><p class="lead">What this model tends to do next</p><ul><li>Reliability grade for the exact model year</li><li>The problems owners report most</li><li>The mileage those problems usually show up at</li><li>Whether this car's miles are in that range</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-section-alt" id="faqSec">
+      <div class="lp-wrap lp-faq-wrap">
+        <div class="lp-section-head" data-reveal>
+          <div class="lp-kicker">Questions</div>
+          <h2>Good questions before you sign up.</h2>
+        </div>
+        <div class="lp-faq" data-reveal>
+          <details><summary>Where do the grades come from?</summary><p>From the complaints owners file with NHTSA, the federal agency that tracks vehicle defects and runs recalls. We've sorted more than 800,000 of them by problem and compared each model year with other cars from the same year, adjusted for how many were sold.</p></details>
+          <details><summary>Does it tell me if this specific car will break?</summary><p>No. Grades describe the model year, not one car's condition. They tell you what to look for and how much risk you're taking on, so you know which condition reports and inspections matter most.</p></details>
+          <details><summary>Which cars are covered?</summary><p>121 popular models from 2000 to 2024, including the trucks, SUVs and sedans that make up most auction lanes. Brand-new model years show up once there's enough owner data to grade them fairly.</p></details>
+          <details><summary>Does it work at the auction?</summary><p>Yes. It runs in your phone's browser. Scan the VIN barcode on the car or the auction label, add the miles, and the car is graded in seconds.</p></details>
+          <details><summary>How does the free trial work?</summary><p>You get 14 days free. You add a card at sign-up and aren't charged until the trial ends. Cancel anytime from Plan &amp; billing, and you won't be charged.</p></details>
+        </div>
+      </div>
+    </section>
   </div>
-  <section class="hero" id="hero">
-    <div class="in">
-      <div>
-        <h1>Know which auction cars to pass on before you bid.</h1>
-        <p class="lead">Paste your run list. Every car gets its model-year reliability grade from NHTSA owner complaints, and a check on whether its mileage sits where owners report that model's big failures.</p>
-        <ul>
-          <li>Grades for 121 popular models, 2000–2024, from 800,000+ complaints</li>
-          <li>Engine and transmission graded separately</li>
-          <li>Bid, Caution or Pass on every car in the list</li>
-          <li>14-day free trial, cancel anytime</li>
-        </ul>
+
+  <section class="lp-section lp-pricing" id="start">
+    <div class="lp-wrap">
+      <div class="lp-section-head" id="startHead">
+        <div class="lp-kicker" id="startKicker">Pricing</div>
+        <h2 id="planTitle">Start free. Pay when it's paying off.</h2>
+        <p id="startSub">14 days free on either plan. Cancel anytime.</p>
       </div>
-      <div class="authcard" id="authCard">
-        <h2 id="authTitle">Start your free trial</h2>
-        <div class="sub" id="authSub" style="margin-top:4px">Create an account, then pick a plan. You won't be charged for 14 days.</div>
-        <button class="btn gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
-        <div class="or">or with email</div>
-        <form id="authForm" novalidate>
-          <input class="f" id="authEmail" type="email" placeholder="Work email" autocomplete="email">
-          <input class="f" id="authPass" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
-          <button class="btn primary big" id="authSubmit" type="submit">Create account</button>
-          <div class="links"><button type="button" id="authToggle">Have an account? Sign in</button><button type="button" id="authReset" class="hide">Forgot password?</button></div>
-          <div class="amsg" id="authMsg"></div>
-        </form>
+      <div class="notice hide" id="planNotice" style="max-width:920px;margin:0 auto 18px"></div>
+      <div class="biz-start">
+        <div>
+          <div class="biz-setup hide" id="bizRow">
+            <label for="bizName">Dealership name<input id="bizName" maxlength="80" placeholder="e.g. Main Street Auto Sales"></label>
+          </div>
+          <div class="lp-plans">
+            <div class="lp-plan lp-plan-pop">
+              <span class="lp-plan-badge">Recommended</span>
+              <div class="lp-plan-name">Dealer</div>
+              <div class="lp-plan-price"><span>$</span>149</div>
+              <div class="lp-plan-desc">per month, after a 14-day free trial</div>
+              <ul><li>Unlimited VIN checks</li><li>Bid / Caution / Pass on every car</li><li>Failure-mileage check</li><li>Recall flags</li><li>VIN scan, sorting and CSV export</li></ul>
+              <button class="lp-btn lp-btn-primary" data-plan="dealer">Start free trial</button>
+            </div>
+            <div class="lp-plan">
+              <div class="lp-plan-name">Dealer Pro</div>
+              <div class="lp-plan-price"><span>$</span>249</div>
+              <div class="lp-plan-desc">per month, after a 14-day free trial</div>
+              <ul><li>Everything in Dealer</li><li>Printable reliability lot sheets</li><li>Show buyers an independent grade on the cars you sell</li></ul>
+              <button class="lp-btn lp-btn-outline" data-plan="pro">Start free trial</button>
+            </div>
+          </div>
+          <div class="amsg planmsg" id="planMsg" style="margin-top:12px"></div>
+        </div>
+        <div class="biz-auth" id="authCard">
+          <h3 id="authTitle">Create your account</h3>
+          <div class="sub" id="authSub" style="margin-top:4px;font-size:14px">Then pick a plan. You won't be charged for 14 days.</div>
+          <button class="lp-btn lp-btn-ghost-dark gbtn" id="googleBtn"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Continue with Google</button>
+          <div class="or">or with email</div>
+          <form id="authForm" novalidate>
+            <input id="authEmail" type="email" placeholder="Work email" autocomplete="email">
+            <input id="authPass" type="password" placeholder="Password (6+ characters)" autocomplete="new-password">
+            <button class="lp-btn lp-btn-primary" id="authSubmit" type="submit" style="height:48px">Create account</button>
+            <div class="links"><button type="button" id="authToggle">Have an account? Sign in</button><button type="button" id="authReset" class="hide">Forgot password?</button></div>
+            <div class="amsg" id="authMsg"></div>
+          </form>
+          <div class="trust"><span>14 days free, then pick your plan</span><span>Cancel anytime in two clicks</span><span>Secure checkout by Stripe</span></div>
+        </div>
       </div>
+      <p class="sub" style="margin:22px auto 0;font-size:12.5px;max-width:760px;text-align:center">Grades describe a model year from NHTSA owner complaints, not the condition of a specific car. Always read the condition report.</p>
     </div>
   </section>
 
-  <section class="wrap" id="demoSec" style="padding-bottom:0">
-    <h2 class="s">Try it on a car</h2>
-    <p class="sub" style="margin-top:6px;font-size:15px">No account needed. Pick a car and its miles to see what the run list shows for it.</p>
-    <div class="card demo">
-      <div class="row3">
-        <label>Year<select class="f" id="dYear"></select></label>
-        <label>Make<select class="f" id="dMake"></select></label>
-        <label>Model<select class="f" id="dModel"></select></label>
-        <label>Miles<input class="f" id="dMiles" inputmode="numeric" value="92,000"></label>
-        <button class="btn primary" id="dGo">Check it</button>
-      </div>
-      <div id="dOut"></div>
-      <div class="cta"><button class="btn primary" id="dStart">Start your free trial</button><span class="sub" style="font-size:13px">Then paste your whole run list at once.</span></div>
+  <section class="lp-final" id="finalSec">
+    <div class="lp-wrap" data-reveal>
+      <h2>Stop buying other dealers' problems.</h2>
+      <p>Try it on your next auction, free for 14 days.</p>
+      <a class="lp-btn lp-btn-primary lp-btn-lg" href="#start" data-cta="final">Start free trial</a>
     </div>
   </section>
 
-  <section class="wrap" id="howSec">
-    <h2 class="s">How it works</h2>
-    <div class="how">
-      <div class="card"><b>1. Add your run list</b><span class="sub">Paste VINs with miles, one per line, or add cars one at a time. VINs are decoded with NHTSA's free decoder.</span></div>
-      <div class="card"><b>2. See the grade and the risk</b><span class="sub">Each car shows its model year's grade, its most-reported problems, and where its mileage sits against the mileages owners report those failures at.</span></div>
-      <div class="card"><b>3. Bid on the right cars</b><span class="sub">Cars are sorted into Bid, Caution and Pass so you can skip the ones most likely to come back as recon headaches.</span></div>
-    </div>
-  </section>
-
-  <section class="wrap" id="plansSec" style="padding-top:0">
-    <h2 class="s" id="plansTitle">Plans</h2>
-    <div class="notice hide" id="planNotice" style="margin-top:14px;max-width:760px"></div>
-    <div id="bizRow" class="hide" style="max-width:760px;margin-top:16px">
-      <label class="sub" for="bizName" style="font-weight:600;font-size:13px">Dealership name</label>
-      <input class="f" id="bizName" maxlength="80" placeholder="e.g. Main Street Auto Sales" style="margin-top:6px">
-    </div>
-    <div class="plans">
-      <div class="card plan featured">
-        <h3>Dealer</h3><div class="p">$149<small> / month</small></div>
-        <ul><li>Unlimited VIN checks</li><li>Run list with Bid / Caution / Pass</li><li>Failure-mileage check on every car</li><li>Recall flags on reported problems</li></ul>
-        <button class="btn primary big" data-plan="dealer">Start free trial</button>
+  <footer class="lp-footer">
+    <div class="lp-wrap">
+      <div class="lp-footer-top">
+        <div>
+          <a href="/" class="lp-logo"><img src="/reliability/logo.png" alt="" width="28" height="28"><span>Grade<b>MyCar</b></span></a>
+          <p>Reliability grades for every used car, from what owners actually report.</p>
+        </div>
+        <div class="lp-footer-links">
+          <a href="/">Home</a>
+          <a href="/reliability/">Reliability by model</a>
+          <a href="/shops.html?src=dealers_footer">For repair shops</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
       </div>
-      <div class="card plan">
-        <h3>Dealer Pro</h3><div class="p">$249<small> / month</small></div>
-        <ul><li>Everything in Dealer</li><li>Printable reliability lot sheets for your front line</li><li>Show buyers an independent grade on the cars you sell</li></ul>
-        <button class="btn big" data-plan="pro">Start free trial</button>
-      </div>
+      <p class="lp-footer-note">Grades are estimates based on owner complaints filed with NHTSA, adjusted for sales. They describe a model year, not a specific vehicle.</p>
+      <p class="lp-footer-note">© 2026 GradeMyCar</p>
     </div>
-    <div class="amsg planmsg" id="planMsg"></div>
-    <p class="sub" style="margin-top:18px;font-size:12px;max-width:760px">Grades describe a model year from NHTSA owner complaints, not the condition of a specific car. Always read the condition report.</p>
-  </section>
+  </footer>
 </div>
 
 <!-- ============ DEALER APP ============ -->
 <div class="app hide" id="inside">
   <nav class="side">
-    <a class="logo" href="/">GradeMyCar<small>for Dealers</small></a>
+    <a class="lp-logo app-logo" href="/"><img src="/reliability/logo.png" alt="" width="26" height="26"><span>Grade<b>MyCar</b><small>for Dealers</small></span></a>
     <button class="nv on" data-view="run">Run list</button>
     <button class="nv" data-view="sheet">Lot sheets</button>
     <button class="nv" data-view="billing">Plan &amp; billing</button>
@@ -428,8 +528,8 @@ let authMode = 'signup';
 function authMsg(type, text) { const el = $('#authMsg'); el.className = 'amsg' + (type ? ' ' + type : ''); el.textContent = text || ''; }
 function setAuthMode(m) {
   authMode = m;
-  $('#authTitle').textContent = m === 'signup' ? 'Start your free trial' : 'Sign in';
-  $('#authSub').textContent = m === 'signup' ? 'Create an account, then pick a plan. You won\'t be charged for 14 days.' : 'Welcome back.';
+  $('#authTitle').textContent = m === 'signup' ? 'Create your account' : 'Sign in';
+  $('#authSub').textContent = m === 'signup' ? 'Then pick a plan. You won\'t be charged for 14 days.' : 'Welcome back.';
   $('#authSubmit').textContent = m === 'signup' ? 'Create account' : 'Sign in';
   $('#authToggle').textContent = m === 'signup' ? 'Have an account? Sign in' : 'New here? Create an account';
   $('#authPass').autocomplete = m === 'signup' ? 'new-password' : 'current-password';
@@ -512,17 +612,19 @@ function route() {
   $('#outside').classList.toggle('hide', inside);
   $('#inside').classList.toggle('hide', !inside);
   if (inside) return enterApp();
+  // Signed out: the full landing page. Signed in without a plan: just the plan picker.
   $('#whoOut').classList.toggle('hide', !user);
   $('#whoEmail').textContent = user ? user.email || '' : '';
-  $('#authCard').classList.toggle('hide', !!user);
+  $('#signOut1').classList.toggle('hide', !user);
+  ['#mkt', '#mktLinks', '#navSignIn', '#navStart', '#finalSec', '#authCard'].forEach(s => $(s).classList.toggle('hide', !!user));
   $('#bizRow').classList.toggle('hide', !user);
-  $('#howSec').classList.toggle('hide', !!user);
-  $('#demoSec').classList.toggle('hide', !!user);
-  $('#hero').classList.toggle('hide', !!user);
+  $('#startHead').classList.toggle('biz-signedin-head', !!user);
+  $('#startKicker').textContent = user ? 'Almost there' : 'Pricing';
+  $('#startSub').textContent = user ? 'Add your dealership\'s name, then pick a plan. 14 days free, cancel anytime.' : '14 days free on either plan. Cancel anytime.';
   const note = $('#planNotice');
   note.classList.add('hide');
   if (user) {
-    $('#plansTitle').textContent = 'Pick your plan';
+    $('#planTitle').textContent = 'Pick your plan';
     if (dealer && dealer.business && !$('#bizName').value) $('#bizName').value = dealer.business;
     const trial = !(dealer && dealer.trialUsed);
     document.querySelectorAll('[data-plan]').forEach(b => b.textContent = trial ? 'Start free trial' : 'Subscribe');
@@ -533,7 +635,7 @@ function route() {
       note.classList.remove('hide');
     }
     track('dealer_plans_view', { trial: trial ? 'yes' : 'no' });
-  } else $('#plansTitle').textContent = 'Plans';
+  } else $('#planTitle').textContent = 'Start free. Pay when it\'s paying off.';
 }
 
 // ── CHECKOUT ─────────────────────────────────────────────────────────────────
@@ -542,8 +644,8 @@ document.querySelectorAll('[data-plan]').forEach(b => b.onclick = async () => {
   const plan = b.dataset.plan;
   track('select_plan', { plan });
   if (!user) {
-    planMsg('err', 'Create an account first (top of the page), then pick your plan.');
-    window.scrollTo({ top: 0, behavior: 'smooth' }); $('#authEmail').focus(); return;
+    planMsg('err', 'Create your account first, then pick your plan.');
+    $('#authEmail').focus(); return;
   }
   const business = $('#bizName').value.trim();
   if (!business) { planMsg('err', 'Enter your dealership\'s name first.'); $('#bizName').focus(); return; }
@@ -610,6 +712,7 @@ async function loadModels() {
   $('#mMake').innerHTML = makes.map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
   fillModels();
   setupDemo();
+  renderHeroList();
 }
 function fillModels() { const mk = $('#mMake').value; $('#mModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
 $('#mMake').onchange = fillModels;
@@ -676,7 +779,8 @@ function render() {
       <td>${a.known ? (a.recalls ? `<span class="rec">${a.recalls}</span>` : '0') : '—'}</td>
       <td><span class="verdict ${a.verdict}">${a.loading ? '…' : a.verdict === 'Unknown' ? 'No grade' : a.verdict}</span></td>
       <td><button class="x" data-del="${esc(c.id)}" title="Remove">×</button></td></tr>`).join('')
-    || `<tr><td colspan="8" class="empty">${cars.length ? 'No cars match this filter.' : 'Your run list is empty. Add a VIN above to get started.'}</td></tr>`;
+    || (cars.length ? '<tr><td colspan="8" class="empty">No cars match this filter.</td></tr>'
+        : `<tr><td colspan="8" class="empty-state"><div class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M11 8v8M14 8v8M17 8v8"/></svg></div><b>Your run list is empty</b><span>Scan or type a VIN above, or use More ways to add to paste a whole list.</span></td></tr>`);
   renderSheetPicker();
 }
 
@@ -752,7 +856,54 @@ async function runDemo(byUser) {
 }
 $('#dGo').onclick = () => runDemo(true);
 $('#dMiles').onkeydown = e => { if (e.key === 'Enter') runDemo(true); };
-$('#dStart').onclick = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setAuthMode('signup'); $('#authEmail').focus(); track('dealer_demo_cta'); };
+$('#dStart').onclick = () => { goStart('signup'); track('dealer_demo_cta'); };
+
+// ── LANDING ──────────────────────────────────────────────────────────────────
+// Every "Start free trial" / "Sign in" goes to the plans and sign-up form
+function goStart(mode) {
+  setAuthMode(mode);
+  $('#start').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setTimeout(() => { try { $('#authEmail').focus({ preventScroll: true }); } catch (e) {} }, 500);
+}
+document.querySelectorAll('a[href="#start"]').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  goStart(a.id === 'navSignIn' ? 'signin' : 'signup');
+  if (a.dataset.cta) track('dealer_cta', { where: a.dataset.cta });
+}));
+// Header shadow once scrolled, like the homepage
+addEventListener('scroll', () => $('#lpHeader').classList.toggle('scrolled', scrollY > 8), { passive: true });
+// Scroll reveal (home.css hides [data-reveal] only under html.lp-js)
+(function reveal() {
+  const els = document.querySelectorAll('#outside [data-reveal], #outside [data-reveal-children]');
+  if (!('IntersectionObserver' in window)) return;
+  document.documentElement.classList.add('lp-js');
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+  els.forEach(el => io.observe(el));
+})();
+// The hero's run list: real grades for five common auction cars
+const HERO_CARS = [
+  { lot: '1040', year: 2014, make: 'nissan', model: 'altima', miles: 78000 },
+  { lot: '1043', year: 2018, make: 'honda', model: 'accord', miles: 92000 },
+  { lot: '1046', year: 2016, make: 'toyota', model: 'camry', miles: 88000 },
+  { lot: '1049', year: 2015, make: 'jeep', model: 'cherokee', miles: 66000 },
+  { lot: '1052', year: 2017, make: 'toyota', model: 'tacoma', miles: 70000 },
+];
+async function renderHeroList() {
+  await Promise.all(HERO_CARS.map(c => loadYear(c.make, c.model, c.year)));
+  const rows = HERO_CARS.map(c => ({ c, a: analyze(c) })).filter(r => r.a.known);
+  if (!rows.length) return;
+  const pct = v => Math.min(100, v / 2);
+  $('#heroRL').innerHTML = rows.map(({ c, a }) => {
+    const r = a.risk, w = r && r.win;
+    return `<div class="biz-rl-row">
+      <div class="biz-rl-g t-${gClass(a.o) === 'na' ? 'ok' : gClass(a.o)} lp-g" style="width:44px;height:44px;display:grid;place-items:center;font-size:18px;border-radius:12px">${esc(a.o)}</div>
+      <div class="biz-rl-car"><b>${esc(carName(c))}</b><small>Lot ${esc(c.lot)} · ${c.miles.toLocaleString()} mi${r ? ' · ' + esc(r.label) : ''}</small>
+        ${w ? `<div class="biz-rl-bar"><b style="left:${pct(w[0])}%;width:${pct(w[2]) - pct(w[0])}%"></b><i style="left:calc(${pct(c.miles / 1000)}% - 1px)"></i></div>` : ''}</div>
+      <span class="biz-call ${a.verdict}">${a.verdict}</span></div>`;
+  }).join('');
+  const n = v => rows.filter(r => r.a.verdict === v).length;
+  $('#heroCount').textContent = `${n('Bid')} Bid · ${n('Caution')} Caution · ${n('Pass')} Pass`;
+}
 
 function openCar(id) {
   const c = cars.find(x => x.id === id); if (!c) return;

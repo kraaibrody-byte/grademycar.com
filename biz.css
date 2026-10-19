@@ -1,0 +1,120 @@
+/* Landing pages for businesses (dealers.html, shops.html). Built on home.css (lp-*),
+   so they look like the homepage; biz-* adds what those pages need on top. */
+
+/* Header: product tag next to the logo, and a scrolled shadow like the homepage */
+.biz-tag { font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; color: #A5B4FC; border: 1px solid rgba(165,180,252,.35); border-radius: 999px; padding: 3px 9px; margin-left: 2px; }
+.biz-header .lp-links a { cursor: pointer; }
+.biz-who { color: #CBD5E1; font-size: 13.5px; }
+
+/* Hero */
+.biz-hero .lp-hero-grid { grid-template-columns: 1fr 1fr; }
+.biz-hero .lp-sub { margin-bottom: 26px; }
+.biz-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 26px; }
+.biz-fine { font-size: 13px; color: #8391A7; margin-top: -12px; margin-bottom: 26px; }
+
+/* A product window: a real run list or report, drawn from live grades */
+.biz-window { background: #fff; color: var(--lp-text); border-radius: 22px; box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06); overflow: hidden; }
+.biz-window-bar { display: flex; align-items: center; gap: 7px; padding: 12px 16px; border-bottom: 1px solid var(--lp-line); background: #F8FAFC; }
+.biz-window-bar i { width: 10px; height: 10px; border-radius: 50%; background: #E2E8F0; }
+.biz-window-bar span { margin-left: 8px; font-size: 12.5px; font-weight: 650; color: var(--lp-muted); }
+.biz-window-bar .live { margin-left: auto; font-size: 11px; font-weight: 750; color: var(--lp-good); background: var(--lp-good-bg); border-radius: 999px; padding: 3px 9px; }
+.biz-rl { padding: 6px 16px 14px; }
+.biz-rl-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-top: 1px solid #F1F5F9; }
+.biz-rl-row:first-child { border-top: 0; }
+.biz-rl-g { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-weight: 850; font-size: 18px; }
+.biz-rl-car b { display: block; color: var(--lp-ink); font-size: 14.5px; font-weight: 750; }
+.biz-rl-car small { display: block; color: var(--lp-muted); font-size: 12.5px; margin-top: 2px; line-height: 1.35; }
+.biz-rl-bar { position: relative; height: 5px; border-radius: 3px; background: #EEF2F7; margin-top: 7px; max-width: 240px; }
+.biz-rl-bar b { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: #FCA5A5; }
+.biz-rl-bar i { position: absolute; top: -4px; width: 3px; height: 13px; border-radius: 2px; background: var(--lp-ink); }
+.biz-call { font-size: 12px; font-weight: 750; padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+.biz-call.Bid { background: var(--lp-good-bg); color: var(--lp-good); }
+.biz-call.Caution { background: var(--lp-ok-bg); color: var(--lp-ok); }
+.biz-call.Pass { background: var(--lp-bad-bg); color: var(--lp-bad); }
+.biz-window-foot { padding: 12px 16px; background: #F8FAFC; border-top: 1px solid var(--lp-line); font-size: 12.5px; color: var(--lp-muted); display: flex; justify-content: space-between; gap: 10px; }
+
+/* Phone frame (shops hero) */
+.biz-phone { width: 330px; max-width: 100%; margin: 0 auto; border: 11px solid #0B1220; border-radius: 44px; background: #fff; height: 620px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.08); position: relative; }
+.biz-phone::before { content: ""; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 96px; height: 24px; border-radius: 14px; background: #0B1220; z-index: 2; }
+.biz-phone .scr { height: 100%; overflow-y: auto; padding-top: 38px; scrollbar-width: none; }
+.biz-phone .scr::-webkit-scrollbar { display: none; }
+.biz-sms { position: absolute; left: -36px; bottom: 70px; width: 240px; background: #fff; border-radius: 18px; padding: 12px 14px; box-shadow: 0 20px 50px rgba(0,0,0,.35); font-size: 13px; line-height: 1.45; color: var(--lp-text); z-index: 3; }
+.biz-sms small { display: block; font-size: 11px; font-weight: 700; color: var(--lp-muted); margin-bottom: 4px; }
+.biz-sms a { color: var(--lp-accent); font-weight: 650; text-decoration: none; }
+.biz-phone-wrap { position: relative; width: 330px; max-width: 100%; margin: 0 auto; }
+
+/* Feature cards */
+.biz-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.biz-feature { background: #fff; border: 1px solid var(--lp-line); border-radius: var(--lp-radius); padding: 26px; display: flex; flex-direction: column; gap: 10px; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.biz-feature:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(15,23,42,.07); border-color: #CBD5E1; }
+.biz-ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #EEF2FF; color: var(--lp-accent); margin-bottom: 6px; }
+.biz-ico svg { width: 22px; height: 22px; }
+.biz-feature h3 { font-size: 18px; font-weight: 750; margin: 0; color: var(--lp-ink); letter-spacing: -.2px; }
+.biz-feature p { margin: 0; color: var(--lp-muted); line-height: 1.6; font-size: 15px; }
+.biz-feature .biz-mini { margin-top: auto; padding-top: 12px; }
+
+/* Try-it demo card, in the homepage's grader style */
+.biz-demo { max-width: 920px; margin: 0 auto; background: #fff; border: 1px solid var(--lp-line); border-radius: 24px; padding: 24px; box-shadow: 0 20px 60px rgba(15,23,42,.06); }
+.biz-demo .row { display: grid; grid-template-columns: .7fr 1fr 1fr .8fr auto; gap: 10px; align-items: end; }
+.biz-demo label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 650; color: var(--lp-muted); }
+.biz-demo select, .biz-demo input, .biz-demo textarea { height: 46px; border: 1px solid var(--lp-line); border-radius: 12px; padding: 0 12px; font: 600 15px 'Inter', sans-serif; color: var(--lp-text); background: #fff; width: 100%; }
+.biz-demo textarea { height: auto; padding: 10px 12px; font-weight: 500; line-height: 1.5; resize: vertical; }
+.biz-demo select:focus, .biz-demo input:focus, .biz-demo textarea:focus { outline: none; border-color: var(--lp-accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
+.biz-demo .lp-btn { height: 46px; }
+
+/* Compare: what you have vs what this adds */
+.biz-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 920px; margin: 0 auto; }
+.biz-col { border: 1px solid var(--lp-line); border-radius: var(--lp-radius); padding: 26px; background: #fff; }
+.biz-col.us { border: 2px solid var(--lp-accent); box-shadow: 0 20px 50px rgba(79,70,229,.12); }
+.biz-col h3 { margin: 0 0 4px; font-size: 18px; color: var(--lp-ink); }
+.biz-col .lead { color: var(--lp-muted); font-size: 14.5px; margin: 0 0 16px; }
+.biz-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.biz-col li { font-size: 15px; color: #334155; line-height: 1.5; padding-left: 26px; position: relative; }
+.biz-col li::before { content: "•"; position: absolute; left: 8px; color: #94A3B8; font-weight: 800; }
+.biz-col.us li::before { content: "✓"; left: 2px; color: var(--lp-good); }
+
+/* Start: plans + sign-up side by side */
+.biz-start { display: grid; grid-template-columns: 1.25fr .85fr; gap: 28px; align-items: start; }
+.biz-start .lp-plans { grid-template-columns: repeat(var(--plans, 2), 1fr); }
+.biz-start .lp-plan { padding: 26px; }
+.biz-start .lp-plan ul { align-content: start; }
+.biz-auth { background: #fff; border: 1px solid var(--lp-line); border-radius: 24px; padding: 26px; box-shadow: 0 20px 60px rgba(15,23,42,.08); position: sticky; top: 88px; }
+.biz-auth h3 { margin: 0; font-size: 20px; color: var(--lp-ink); letter-spacing: -.3px; }
+.biz-auth form { display: grid; gap: 10px; margin-top: 14px; }
+.biz-auth input { height: 48px; border: 1px solid var(--lp-line); border-radius: 12px; padding: 0 14px; font: 500 15px 'Inter', sans-serif; width: 100%; }
+.biz-auth input:focus { outline: none; border-color: var(--lp-accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
+.biz-auth .gbtn { width: 100%; margin-top: 16px; height: 48px; }
+.biz-auth .or { display: flex; align-items: center; gap: 10px; color: #94A3B8; font-size: 12px; margin: 14px 0 0; }
+.biz-auth .or::before, .biz-auth .or::after { content: ""; flex: 1; height: 1px; background: var(--lp-line); }
+.biz-auth .links { display: flex; justify-content: space-between; font-size: 13px; margin-top: 2px; }
+.biz-auth .links button { background: none; border: 0; color: var(--lp-accent); font-weight: 650; cursor: pointer; padding: 0; font-size: 13px; }
+.biz-auth .trust { display: grid; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #F1F5F9; font-size: 13px; color: var(--lp-muted); }
+.biz-auth .trust span::before { content: "✓"; color: var(--lp-good); font-weight: 800; margin-right: 8px; }
+.biz-setup { display: grid; gap: 12px; margin-bottom: 18px; }
+.biz-setup label { display: grid; gap: 6px; font-size: 13px; font-weight: 650; color: var(--lp-muted); }
+.biz-setup input { height: 48px; border: 1px solid var(--lp-line); border-radius: 12px; padding: 0 14px; font: 500 15px 'Inter', sans-serif; }
+.biz-setup input:focus { outline: none; border-color: var(--lp-accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
+.biz-signedin-head { text-align: left; margin: 0 0 22px; max-width: none; }
+.biz-signedin-head h2 { margin-bottom: 6px; }
+
+@media (max-width: 980px) {
+  .biz-hero .lp-hero-grid, .biz-start { grid-template-columns: 1fr; }
+  .biz-features { grid-template-columns: 1fr 1fr; }
+  .biz-auth { position: static; }
+  .biz-demo .row { grid-template-columns: 1fr 1fr; }
+  .biz-sms { left: auto; right: -10px; bottom: 40px; width: 220px; }
+  .biz-header .lp-links { display: none; }
+}
+@media (max-width: 640px) {
+  .biz-features, .biz-compare, .biz-start .lp-plans { grid-template-columns: 1fr; }
+  .biz-demo { padding: 18px; }
+  .biz-phone { height: 560px; }
+  .biz-sms { display: none; }
+  .biz-header .biz-signin { display: none; }
+}
+/* home.css hides plan feature lists on small phones; businesses need them to decide */
+@media (max-width: 400px) {
+  .biz-start .lp-plans { grid-template-columns: 1fr; }
+  .biz-start .lp-plan ul { display: grid; }
+  .biz-start .lp-plan-desc { flex: none; }
+}
