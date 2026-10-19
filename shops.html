@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GradeMyCar for Shops</title>
 <meta name="description" content="Text your customers a reliability report for their car, with the problems owners of that model commonly report to NHTSA and at what mileage.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GradeMyCar">
+<meta property="og:title" content="GradeMyCar for Shops: show customers the pattern behind your advice">
+<meta property="og:description" content="Text customers a reliability report for their car, with the problems owners of that model commonly report and at what mileage. 14-day free trial.">
+<meta property="og:url" content="https://www.grademycar.com/shops.html">
+<meta property="og:image" content="https://www.grademycar.com/favicon-192.png">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://www.grademycar.com/shops.html">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -132,6 +140,12 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
 .settings dd { margin: 0; font-weight: 600; color: var(--ink); }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 20; }
 
+/* ---- see-it demo (signed out) ---- */
+.demo { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; margin-top: 22px; }
+.demo .form { position: sticky; top: 20px; }
+.demo .phone { height: 680px; position: static; }
+.vinrow { display: flex; gap: 8px; }
+.vinrow input { flex: 1; min-width: 0; }
 @media (max-width: 1100px) {
   .compose { grid-template-columns: 1fr; }
   .phone { position: static; height: 640px; max-width: 400px; }
@@ -139,7 +153,9 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
 @media (max-width: 900px) {
   .hero .in { grid-template-columns: 1fr; gap: 28px; }
   .hero h1 { font-size: 32px; }
-  .how, .bizrow { grid-template-columns: 1fr; }
+  .how, .bizrow, .demo { grid-template-columns: 1fr; }
+  .demo .form { position: static; }
+  .demo .phone { max-width: 400px; height: 620px; }
   .app { grid-template-columns: 1fr; }
   nav.side { flex-direction: row; overflow-x: auto; padding: 10px; align-items: center; }
   nav.side .logo { padding: 0 10px 0 4px; white-space: nowrap; }
@@ -190,6 +206,27 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
     </div>
   </section>
 
+  <section class="wrap" id="demoSec" style="padding-bottom:0">
+    <h2 class="s">See what your customer gets</h2>
+    <p class="sub" style="margin-top:6px;font-size:15px">No account needed. Pick a car, add your note, and the phone shows the page your customer opens.</p>
+    <div class="demo">
+      <div class="card form">
+        <div class="grid3">
+          <label class="l">Year<select class="f" id="dYear"></select></label>
+          <label class="l">Make<select class="f" id="dMake"></select></label>
+          <label class="l">Model<select class="f" id="dModel"></select></label>
+        </div>
+        <div class="grid2">
+          <label class="l">Odometer (miles)<input class="f" id="dMiles" inputmode="numeric" value="78,400"></label>
+          <label class="l">Your shop's name<input class="f" id="dShop" maxlength="80" value="Your Shop"></label>
+        </div>
+        <label class="l">Your note to the customer<textarea class="f" id="dNote" rows="3" maxlength="600">The shudder you feel pulling away matches what a lot of owners of this model report with the transmission. Estimate attached separately.</textarea></label>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn primary" id="dStart">Start your free trial</button><span class="sub" style="font-size:13px">14 days free, then $49/month.</span></div>
+      </div>
+      <div class="phone"><div class="cap">What your customer sees</div><div class="scr rp" id="dPv"><div class="sub" style="padding:40px 20px;text-align:center">Loading a sample report…</div></div></div>
+    </div>
+  </section>
+
   <section class="wrap" id="howSec">
     <h2 class="s">How it works</h2>
     <div class="how">
@@ -234,7 +271,7 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
         <div>
           <div class="card form">
             <div class="seg" id="mode"><button class="on" data-m="vin">VIN</button><button data-m="pick">Year / make / model</button></div>
-            <label class="l" id="byVin">VIN<input class="f" id="vin" maxlength="17" placeholder="17 characters" autocomplete="off" spellcheck="false"></label>
+            <label class="l" id="byVin">VIN<span class="vinrow"><input class="f" id="vin" maxlength="17" placeholder="17 characters" autocomplete="off" spellcheck="false"><button type="button" class="btn hide" id="scanVin" title="Scan the VIN barcode with your camera">Scan</button></span></label>
             <div class="grid3 hide" id="byPick">
               <label class="l">Year<select class="f" id="mYear"></select></label>
               <label class="l">Make<select class="f" id="mMake"></select></label>
@@ -307,6 +344,7 @@ td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: m
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-analytics-compat.min.js"></script>
 <script src="/issue-themes.js"></script>
 <script src="/report-core.js"></script>
+<script src="/vin-scan.js"></script>
 <script>
 // ── FIREBASE ─────────────────────────────────────────────────────────────────
 const firebaseConfig = {
@@ -459,7 +497,7 @@ function route() {
   if (inside) return enterApp();
   $('#whoOut').classList.toggle('hide', !user);
   $('#whoEmail').textContent = user ? user.email || '' : '';
-  ['#hero', '#howSec'].forEach(s => $(s).classList.toggle('hide', !!user));
+  ['#hero', '#howSec', '#demoSec'].forEach(s => $(s).classList.toggle('hide', !!user));
   $('#bizRow').classList.toggle('hide', !user);
   const note = $('#planNotice');
   note.classList.add('hide');
@@ -536,21 +574,23 @@ function enterApp() {
       renderSent();
     }, err => { $('#sentRows').innerHTML = `<tr><td colspan="6" class="empty" style="color:var(--bad)">Couldn't load your reports: ${esc(err.message)}</td></tr>`; });
   }
-  if (!appStarted) { appStarted = true; loadModels(); }
+  if (!appStarted) { appStarted = true; modelsReady.then(fillModels); }
 }
 
-// Graded models: reliability/{make}/grades/{model}. Years: reliability/{make}/years/{model}/{year}
+// Models with year grades (the NHTSA-graded ones): reliability/{make}/years/{model}/{year}
 let MODELS = {};
+let modelsReady = null;
 async function loadModels() {
   try {
     const makes = Object.keys(await (await fetch(`${DB_URL}/reliability.json?shallow=true`)).json() || {});
-    const lists = await Promise.all(makes.map(m => fetch(`${DB_URL}/reliability/${encodeURIComponent(m)}/grades.json?shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null)));
+    const lists = await Promise.all(makes.map(m => fetch(`${DB_URL}/reliability/${encodeURIComponent(m)}/years.json?shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null)));
     makes.forEach((m, i) => { if (lists[i]) MODELS[m] = Object.keys(lists[i]).sort(); });
   } catch (e) { console.warn('[GMC] model list failed', e); }
   const thisYear = new Date().getFullYear();
   $('#mYear').innerHTML = Array.from({ length: thisYear - 1999 }, (_, i) => thisYear - i).map(y => `<option>${y}</option>`).join('');
   $('#mMake').innerHTML = Object.keys(MODELS).sort().map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
   fillModels();
+  setupDemo();
 }
 function fillModels() { const mk = $('#mMake').value; $('#mModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
 $('#mMake').onchange = fillModels;
@@ -687,6 +727,43 @@ $('#another').onclick = () => {
   (mode === 'vin' ? $('#vin') : $('#miles')).focus();
 };
 
+// Camera VIN scan (vin-scan.js); fills the VIN and moves on to the miles
+if (window.GMCScanVin && GMCScanVin.supported()) $('#scanVin').classList.remove('hide');
+$('#scanVin').onclick = e => {
+  e.preventDefault();
+  GMCScanVin(vin => {
+    $('#vin').value = vin; $('#vin').dispatchEvent(new Event('input'));
+    $('#miles').focus();
+    msg(`Scanned ${vin}. Enter the miles, then Preview report.`);
+    track('shop_vin_scanned');
+  });
+};
+
+// ── SEE-IT DEMO (signed out) ─────────────────────────────────────────────────
+// The real report page for any graded car, with the visitor's own shop name and note
+function fillDemoModels() { const mk = $('#dMake').value; $('#dModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
+function setupDemo() {
+  const thisYear = new Date().getFullYear();
+  $('#dYear').innerHTML = Array.from({ length: thisYear - 1999 }, (_, i) => thisYear - i).map(y => `<option>${y}</option>`).join('');
+  $('#dMake').innerHTML = Object.keys(MODELS).sort().map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
+  if (MODELS.nissan) { $('#dMake').value = 'nissan'; fillDemoModels(); $('#dModel').value = 'altima'; $('#dYear').value = '2014'; } else fillDemoModels();
+  renderDemo();
+}
+let demoTracked = false;
+async function renderDemo(e) {
+  const r = { shop: $('#dShop').value.trim() || 'Your Shop', make: $('#dMake').value, model: $('#dModel').value,
+              year: +$('#dYear').value, miles: cleanMiles($('#dMiles').value) || 0, note: $('#dNote').value.trim() };
+  if (!r.model) return;
+  const y = await loadYear(r.make, r.model, r.year);
+  $('#dPv').innerHTML = y && y.o ? GMCReport.reportHTML(r, y)
+    : `<div class="sub" style="padding:40px 20px;text-align:center">We don't have a grade for the ${esc(carName(r))} yet. Try another year.</div>`;
+  if (e && !demoTracked) { demoTracked = true; track('shop_demo_edit'); }
+}
+$('#dMake').addEventListener('change', () => { fillDemoModels(); renderDemo(true); });
+['#dYear', '#dModel'].forEach(s => $(s).addEventListener('change', () => renderDemo(true)));
+['#dMiles', '#dShop', '#dNote'].forEach(s => $(s).addEventListener('input', () => renderDemo(true)));
+$('#dStart').onclick = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setAuthMode('signup'); $('#authEmail').focus(); track('shop_demo_cta'); };
+
 // ── SENT REPORTS ─────────────────────────────────────────────────────────────
 function renderSent() {
   if (!user || !hasAccess()) return;
@@ -740,6 +817,7 @@ function show(v) {
 }
 document.querySelectorAll('nav.side .nv').forEach(b => b.onclick = () => show(b.dataset.view));
 setAuthMode('signup');
+modelsReady = loadModels();
 </script>
 </body>
 </html>

@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GradeMyCar for Dealers</title>
 <meta name="description" content="Reliability grades for every car on your auction run list, from 800,000+ NHTSA owner complaints. See which cars sit in their known failure mileage before you bid.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="GradeMyCar">
+<meta property="og:title" content="GradeMyCar for Dealers: know which auction cars to pass on">
+<meta property="og:description" content="Reliability grades for every car on your run list, and whether its mileage sits where owners report that model's big failures. 14-day free trial.">
+<meta property="og:url" content="https://www.grademycar.com/dealers.html">
+<meta property="og:image" content="https://www.grademycar.com/favicon-192.png">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://www.grademycar.com/dealers.html">
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -88,7 +96,7 @@ main h1 { font-size: 22px; font-weight: 800; color: var(--ink); }
 .stat { padding: 14px 16px; }
 .stat b { display: block; font-size: 24px; font-weight: 800; color: var(--ink); }
 .stat span { font-size: 12px; color: var(--muted); font-weight: 600; }
-.add { padding: 14px 16px; display: grid; grid-template-columns: 1.6fr .7fr .6fr auto auto; gap: 10px; margin-bottom: 16px; align-items: center; }
+.add { padding: 14px 16px; display: grid; grid-template-columns: 1.6fr auto .7fr .6fr auto auto; gap: 10px; margin-bottom: 16px; align-items: center; }
 .add .row { grid-column: 1 / -1; display: grid; gap: 10px; }
 .add .msg { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
 .add .msg.err { color: var(--bad); }
@@ -154,7 +162,17 @@ body.open .drawer { transform: none; }
 .billing dt { color: var(--muted); font-weight: 600; }
 .billing dd { margin: 0; font-weight: 600; color: var(--ink); }
 
+/* ---- try-it demo (signed out) ---- */
+.demo { padding: 20px; margin-top: 20px; }
+.demo .row3 { display: grid; grid-template-columns: .6fr 1fr 1fr .8fr auto; gap: 10px; align-items: end; }
+.demo label { display: grid; gap: 5px; font-size: 12px; font-weight: 650; color: var(--muted); }
+.demo .res { margin-top: 16px; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; grid-template-columns: auto auto 1fr auto; gap: 16px; align-items: center; }
+.demo .res .car b { font-size: 15px; }
+.demo .cta { margin-top: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.sortsel { border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 600; background: #fff; }
 @media (max-width: 900px) {
+  .demo .row3 { grid-template-columns: 1fr 1fr; }
+  .demo .res { grid-template-columns: auto 1fr; }
   .hero .in { grid-template-columns: 1fr; gap: 28px; }
   .hero h1 { font-size: 32px; }
   .how, .plans { grid-template-columns: 1fr; }
@@ -210,6 +228,22 @@ body.open .drawer { transform: none; }
           <div class="amsg" id="authMsg"></div>
         </form>
       </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="demoSec" style="padding-bottom:0">
+    <h2 class="s">Try it on a car</h2>
+    <p class="sub" style="margin-top:6px;font-size:15px">No account needed. Pick a car and its miles to see what the run list shows for it.</p>
+    <div class="card demo">
+      <div class="row3">
+        <label>Year<select class="f" id="dYear"></select></label>
+        <label>Make<select class="f" id="dMake"></select></label>
+        <label>Model<select class="f" id="dModel"></select></label>
+        <label>Miles<input class="f" id="dMiles" inputmode="numeric" value="92,000"></label>
+        <button class="btn primary" id="dGo">Check it</button>
+      </div>
+      <div id="dOut"></div>
+      <div class="cta"><button class="btn primary" id="dStart">Start your free trial</button><span class="sub" style="font-size:13px">Then paste your whole run list at once.</span></div>
     </div>
   </section>
 
@@ -270,6 +304,7 @@ body.open .drawer { transform: none; }
       </div>
       <div class="card add">
         <input class="f" id="vin" placeholder="VIN (17 characters)" maxlength="17" autocomplete="off" spellcheck="false">
+        <button class="btn hide" id="scanVin" title="Scan the VIN barcode with your camera">Scan</button>
         <input class="f" id="miles" placeholder="Miles" inputmode="numeric">
         <input class="f" id="lot" placeholder="Lot # (optional)" maxlength="12">
         <button class="btn primary" id="addVin">Add VIN</button>
@@ -286,7 +321,10 @@ body.open .drawer { transform: none; }
       <div class="card">
         <div class="filters" id="filters">
           <button class="chip on" data-f="all">All</button><button class="chip" data-f="Bid">Bid</button><button class="chip" data-f="Caution">Caution</button><button class="chip" data-f="Pass">Pass</button>
-          <span class="sp"></span><button class="btn" id="clearList" style="font-size:12px;padding:6px 10px">Clear list</button>
+          <span class="sp"></span>
+          <select class="sortsel" id="sortBy" aria-label="Sort"><option value="new">Newest first</option><option value="worst">Pass first</option><option value="best">Bid first</option><option value="lot">Lot #</option></select>
+          <button class="btn" id="exportCsv" style="font-size:12px;padding:6px 10px">Export CSV</button>
+          <button class="btn" id="clearList" style="font-size:12px;padding:6px 10px">Clear list</button>
         </div>
         <div class="tablewrap"><table>
           <thead><tr><th>Lot</th><th>Vehicle</th><th>Grade</th><th>Eng / Trans</th><th>Biggest risk at this mileage</th><th>Recalls</th><th>Call</th><th></th></tr></thead>
@@ -329,6 +367,7 @@ body.open .drawer { transform: none; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-functions-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-analytics-compat.min.js"></script>
 <script src="/issue-themes.js"></script>
+<script src="/vin-scan.js"></script>
 <script>
 // ── FIREBASE ─────────────────────────────────────────────────────────────────
 const firebaseConfig = {
@@ -478,6 +517,7 @@ function route() {
   $('#authCard').classList.toggle('hide', !!user);
   $('#bizRow').classList.toggle('hide', !user);
   $('#howSec').classList.toggle('hide', !!user);
+  $('#demoSec').classList.toggle('hide', !!user);
   $('#hero').classList.toggle('hide', !!user);
   const note = $('#planNotice');
   note.classList.add('hide');
@@ -552,15 +592,16 @@ function enterApp() {
       render();
     }, err => { $('#rows').innerHTML = `<tr><td colspan="8" class="empty err">Couldn't load your list: ${esc(err.message)}</td></tr>`; });
   }
-  if (!appStarted) { appStarted = true; loadModels(); }
+  if (!appStarted) { appStarted = true; modelsReady.then(fillModels); }
 }
 
-// Graded models: reliability/{make}/grades/{model}. Years: reliability/{make}/years/{model}/{year}
+// Models with year grades (the NHTSA-graded ones): reliability/{make}/years/{model}/{year}
 let MODELS = {};
+let modelsReady = null;
 async function loadModels() {
   try {
     const makes = Object.keys(await (await fetch(`${DB_URL}/reliability.json?shallow=true`)).json() || {});
-    const lists = await Promise.all(makes.map(m => fetch(`${DB_URL}/reliability/${encodeURIComponent(m)}/grades.json?shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null)));
+    const lists = await Promise.all(makes.map(m => fetch(`${DB_URL}/reliability/${encodeURIComponent(m)}/years.json?shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null)));
     makes.forEach((m, i) => { if (lists[i]) MODELS[m] = Object.keys(lists[i]).sort(); });
   } catch (e) { console.warn('[GMC] model list failed', e); }
   const makes = Object.keys(MODELS).sort();
@@ -568,6 +609,7 @@ async function loadModels() {
   $('#mYear').innerHTML = Array.from({ length: thisYear - 1999 }, (_, i) => thisYear - i).map(y => `<option>${y}</option>`).join('');
   $('#mMake').innerHTML = makes.map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
   fillModels();
+  setupDemo();
 }
 function fillModels() { const mk = $('#mMake').value; $('#mModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
 $('#mMake').onchange = fillModels;
@@ -624,7 +666,7 @@ function render() {
   const rows = cars.map(c => ({ c, a: analyze(c) }));
   const count = v => rows.filter(r => r.a.verdict === v).length;
   $('#s-n').textContent = rows.length; $('#s-bid').textContent = count('Bid'); $('#s-cau').textContent = count('Caution'); $('#s-pass').textContent = count('Pass');
-  const shown = rows.filter(r => filter === 'all' || r.a.verdict === filter);
+  const shown = sortRows(rows.filter(r => filter === 'all' || r.a.verdict === filter));
   $('#rows').innerHTML = shown.map(({ c, a }) => `<tr class="row" data-id="${esc(c.id)}">
       <td><b>${c.lot ? '#' + esc(c.lot) : '—'}</b></td>
       <td class="car"><b>${esc(carName(c))}</b><small>${c.miles ? Number(c.miles).toLocaleString() + ' mi' : 'miles not set'}${c.vin ? ' · ' + esc(c.vin) : ''}</small></td>
@@ -637,6 +679,80 @@ function render() {
     || `<tr><td colspan="8" class="empty">${cars.length ? 'No cars match this filter.' : 'Your run list is empty. Add a VIN above to get started.'}</td></tr>`;
   renderSheetPicker();
 }
+
+// Sort order for the run list (the select above the table); remembered on this browser
+const VERDICT_RANK = { Pass: 0, Caution: 1, Bid: 2, Unknown: 3 };
+const BEST_RANK = { Bid: 0, Caution: 1, Pass: 2, Unknown: 3 };
+const GRADE_RANK = g => g ? 'FDCBA'.indexOf(g[0]) * 3 + (g[1] === '+' ? 2 : g[1] === '-' ? 0 : 1) : 99;
+let sortBy = (() => { try { return localStorage.getItem('gmc_dealer_sort') || 'new'; } catch (e) { return 'new'; } })();
+function sortRows(rows) {
+  const lotNum = c => { const n = parseInt(String(c.lot || '').replace(/\D/g, ''), 10); return isNaN(n) ? Infinity : n; };
+  const by = {
+    new: (a, b) => (b.c.addedAt || 0) - (a.c.addedAt || 0),
+    worst: (a, b) => (VERDICT_RANK[a.a.verdict] - VERDICT_RANK[b.a.verdict]) || (GRADE_RANK(a.a.o) - GRADE_RANK(b.a.o)),
+    best: (a, b) => (BEST_RANK[a.a.verdict] - BEST_RANK[b.a.verdict]) || (GRADE_RANK(b.a.o) - GRADE_RANK(a.a.o)),
+    lot: (a, b) => lotNum(a.c) - lotNum(b.c),
+  }[sortBy] || (() => 0);
+  return rows.slice().sort(by);
+}
+$('#sortBy').value = sortBy;
+$('#sortBy').onchange = e => { sortBy = e.target.value; try { localStorage.setItem('gmc_dealer_sort', sortBy); } catch (er) {} render(); };
+
+// The run list as a spreadsheet, in the order shown
+$('#exportCsv').onclick = () => {
+  const q = v => { const t = String(v ?? ''); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const rows = sortRows(cars.map(c => ({ c, a: analyze(c) })));
+  const head = ['Lot', 'Year', 'Make', 'Model', 'Miles', 'VIN', 'Call', 'Overall', 'Engine', 'Transmission', 'Biggest risk', 'Owners report it at (miles)', 'Where this car is', 'Problems with recalls', 'NHTSA complaints'];
+  const where = { in: 'In the failure window', near: 'Approaching', before: 'Before the window', past: 'Past the window' };
+  const lines = rows.map(({ c, a }) => [c.lot || '', c.year, pretty(c.make), pretty(c.model), c.miles || '', c.vin || '', a.verdict === 'Unknown' ? 'No grade' : a.verdict,
+    a.o || '', a.e || '', a.t || '', a.risk ? a.risk.label : '', a.risk && a.risk.win ? `${a.risk.win[0]}k-${a.risk.win[2]}k` : '',
+    a.risk && a.risk.state ? where[a.risk.state] : '', a.known ? a.recalls : '', a.known ? a.n : ''].map(q).join(','));
+  const blob = new Blob([[head.join(','), ...lines].join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const d = new Date(), pad = n => String(n).padStart(2, '0');
+  a.download = `run-list-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  track('dealer_export_csv', { cars: rows.length });
+};
+
+// Camera VIN scan (vin-scan.js); fills the VIN and moves on to the miles
+if (window.GMCScanVin && GMCScanVin.supported()) $('#scanVin').classList.remove('hide');
+$('#scanVin').onclick = () => GMCScanVin(vin => {
+  $('#vin').value = vin; $('#miles').focus();
+  msg(`Scanned ${vin}. Enter the miles, then Add VIN.`);
+  track('dealer_vin_scanned');
+});
+
+// ── TRY-IT DEMO (signed out) ─────────────────────────────────────────────────
+// Same grades and verdict as the run list, for one car, without an account
+function fillDemoModels() { const mk = $('#dMake').value; $('#dModel').innerHTML = (MODELS[mk] || []).map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join(''); }
+function setupDemo() {
+  const thisYear = new Date().getFullYear();
+  $('#dYear').innerHTML = Array.from({ length: thisYear - 1999 }, (_, i) => thisYear - i).map(y => `<option>${y}</option>`).join('');
+  $('#dMake').innerHTML = Object.keys(MODELS).sort().map(m => `<option value="${esc(m)}">${esc(pretty(m))}</option>`).join('');
+  $('#dMake').onchange = fillDemoModels;
+  if (MODELS.honda) { $('#dMake').value = 'honda'; fillDemoModels(); $('#dModel').value = 'accord'; $('#dYear').value = '2018'; } else fillDemoModels();
+  runDemo(false);
+}
+async function runDemo(byUser) {
+  const c = { make: $('#dMake').value, model: $('#dModel').value, year: +$('#dYear').value, miles: cleanMiles($('#dMiles').value) };
+  if (!c.model) return;
+  $('#dOut').innerHTML = '<div class="sub" style="margin-top:14px">Checking…</div>';
+  await loadYear(c.make, c.model, c.year);
+  const a = analyze(c);
+  $('#dOut').innerHTML = `<div class="res">
+    <span class="g ${gClass(a.o)}" style="width:52px;height:52px;font-size:20px">${esc(a.o || '–')}</span>
+    <div class="car"><b>${esc(carName(c))}</b><small>${c.miles ? c.miles.toLocaleString() + ' mi' : 'add miles'}${a.known ? ` · Engine ${esc(a.e)} · Transmission ${esc(a.t)}` : ''}</small></div>
+    <div class="risk">${a.known ? riskText(a.risk, c.miles) : '<span class="sub">This model year isn\'t graded yet.</span>'}</div>
+    <span class="verdict ${a.verdict}">${a.verdict === 'Unknown' ? 'No grade' : a.verdict}</span>
+  </div>`;
+  if (byUser) track('dealer_demo_check', { verdict: a.verdict, grade: a.o || 'none' });
+}
+$('#dGo').onclick = () => runDemo(true);
+$('#dMiles').onkeydown = e => { if (e.key === 'Enter') runDemo(true); };
+$('#dStart').onclick = () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setAuthMode('signup'); $('#authEmail').focus(); track('dealer_demo_cta'); };
 
 function openCar(id) {
   const c = cars.find(x => x.id === id); if (!c) return;
@@ -819,6 +935,7 @@ function show(v) {
 }
 document.querySelectorAll('nav.side .nv').forEach(b => b.onclick = () => show(b.dataset.view));
 setAuthMode('signup');
+modelsReady = loadModels();
 </script>
 </body>
 </html>

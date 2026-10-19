@@ -407,7 +407,7 @@ function hubPage(cars) {
 
 function sitemap(cars) {
   const today = new Date().toISOString().slice(0, 10);
-  const urls = [`${SITE}/`, `${SITE}/phone.html`, `${SITE}/reliability/`, ...[...cars.values()].map(c => `${SITE}/reliability/${c.slug}/`)];
+  const urls = [`${SITE}/`, `${SITE}/phone.html`, `${SITE}/dealers.html`, `${SITE}/shops.html`, `${SITE}/reliability/`, ...[...cars.values()].map(c => `${SITE}/reliability/${c.slug}/`)];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join('\n')}
