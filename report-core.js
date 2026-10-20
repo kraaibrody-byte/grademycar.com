@@ -8,6 +8,12 @@
 //
 // Wording rule: these are problems common on this model year, never a diagnosis of the
 // customer's car. The shop's note is shown in its own box, labelled as from the shop.
+//
+// Two versions, by the report's reason for visit:
+//   ppi (pre-purchase inspection): the buyer is deciding, so the A-F grades lead.
+//   repair / service: the customer already owns the car, and an F reads as "you bought a
+//   lemon". So no letter grades: recalls first (free fixes), then what owners report,
+//   where this car's miles fall, and what to watch for.
 (function (root) {
   const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   const cap = s => String(s).replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
@@ -41,20 +47,64 @@
     const pct = v => Math.min(100, (v / 200) * 100);
     return `<div class="win"><div class="band" style="left:${pct(w[0])}%;width:${pct(w[2]) - pct(w[0])}%"></div>${miles ? `<div class="pin" style="left:calc(${pct(miles / 1000)}% - 1px)"></div>` : ''}</div>`;
   }
-  function whereText(p, miles) {
-    if (!p.win) return '<div class="where">Not enough mileage reports to show when it usually happens.</div>';
+  function whereText(p, miles, who = 'This car') {
+    if (!p.win) return '<div class="where">Not enough mileage reports yet to show when it usually happens.</div>';
     const [p25, med, p75] = p.win, k = Math.round(miles / 1000);
     const s = {
-      in: `Owners usually report this at ${p25}–${p75}k miles. This car is at ${k}k, inside that range.`,
-      near: `Owners usually report this at ${p25}–${p75}k miles. This car is at ${k}k, just before that range.`,
-      before: `Owners usually report this at ${p25}–${p75}k miles (median ${med}k). This car is at ${k}k.`,
-      past: `Owners usually report this at ${p25}–${p75}k miles. This car is at ${k}k, past that range.`,
+      in: `Owners usually report this at ${p25}–${p75}k miles. ${who} is at ${k}k, inside that range.`,
+      near: `Owners usually report this at ${p25}–${p75}k miles. ${who} is at ${k}k, just before that range.`,
+      before: `Owners usually report this at ${p25}–${p75}k miles (median ${med}k). ${who} is at ${k}k.`,
+      past: `Owners usually report this at ${p25}–${p75}k miles. ${who} is at ${k}k, past that range.`,
     }[p.state];
     return `<div class="where ${p.state}">${s}</div>`;
   }
 
   // The report page body. r: the report; y: that model year's grade data.
   function reportHTML(r, y) {
+    return r.reason === 'ppi' ? buyerHTML(r, y) : ownerHTML(r, y);
+  }
+
+  // For an owner: no letter grades. Recalls, then what owners report and what to watch for.
+  function ownerHTML(r, y) {
+    const a = analyze(y, r.miles);
+    const name = carName(r), shop = esc(r.shop || 'Your mechanic');
+    const head = `<div class="rp-shop"><div><b>${shop}</b><small>Sent you this report on your car</small></div><span class="gm">GradeMyCar</span></div>`;
+    if (!a) return `${head}<div class="rp-body"><h2>${esc(name)}</h2><div class="rcard">We don't have owner data for this model year yet.</div></div>`;
+    const recalled = a.probs.filter(p => p.recall);
+    const order = { in: 0, near: 1 };
+    // The problem named in the summary line first, then others in their usual mileage, then recalls
+    const probs = a.probs.slice().sort((p, q) => ((q === a.focus) - (p === a.focus)) || ((order[p.state] ?? 2) - (order[q.state] ?? 2)) || (q.recall - p.recall) || q.count - p.count);
+    const hasWindows = probs.some(p => p.win);
+    const lead = a.focus ? `At your mileage, <b>${esc(a.focus.label.toLowerCase())}</b> is the one to keep an eye on.`
+      : hasWindows ? 'None of these usually show up at your mileage, but they\'re worth knowing about.'
+      : 'The problems owners report most. This model year is too new to show the mileage they usually happen at.';
+    // How this model year compares, in words rather than a grade (x.ok: place among x.c cars, 1 = fewest)
+    const cmp = a.rank ? (a.rank[0] / a.rank[1] <= 1 / 3 ? 'fewer complaints than most' : a.rank[0] / a.rank[1] >= 2 / 3 ? 'more complaints than most' : 'about as many complaints as most') : null;
+    const tel = String(r.shopPhone || '').replace(/[^\d+]/g, '');
+    return `${head}<div class="rp-body">
+      <div><div class="rp-sub">${Number(r.miles).toLocaleString()} miles${r.vin6 ? ' · VIN ending ' + esc(r.vin6) : ''}</div><h2>Your ${esc(name)}</h2></div>
+      ${r.note ? `<div class="note-shop"><small>Note from ${shop}</small>${esc(r.note)}</div>` : ''}
+      ${recalled.length ? `<div class="rcard rp-recall">
+        <div class="rsec">Recalls for this model year</div>
+        <p>Recalls were issued for some ${esc(r.year)} ${esc(pretty(r.model))}s for:</p>
+        <ul>${recalled.map(p => `<li>${esc(p.label)}</li>`).join('')}</ul>
+        <p>Recall repairs are free. Ask ${shop} or any ${esc(pretty(r.make))} dealer to check whether yours is covered and the work is done, or look up your VIN at <a href="https://www.nhtsa.gov/recalls" target="_blank" rel="noopener">nhtsa.gov/recalls</a>.</p>
+      </div>` : ''}
+      <div class="rcard">
+        <div class="rsec">What owners of the ${esc(name)} report</div>
+        <div class="rfine">${lead}</div>
+        ${hasWindows ? '<div class="legend"><span><i></i>Where most owners report it</span><span><i class="p"></i>Your car\'s miles</span></div>' : ''}
+        ${probs.map(p => `<div class="prob"><div class="h"><span>${esc(p.label)}${p.recall ? '<span class="badge">Recall</span>' : ''}</span><small>${p.count.toLocaleString()} owner reports</small></div>
+          ${p.win ? winBar(p.win, r.miles) + '<div class="scale"><span>0</span><span>100k</span><span>200k</span></div>' + whereText(p, r.miles, 'Your car') : ''}
+          ${p.ownerTip ? `<div class="watch"><b>What to do:</b> ${esc(p.ownerTip)}</div>` : ''}</div>`).join('') || '<div class="where">No common problems reported.</div>'}
+      </div>
+      ${tel ? `<a class="rp-call" href="tel:${esc(tel)}">Call ${shop}</a>` : ''}
+      <div class="rfine">This is not a diagnosis of your car. It shows what owners of the ${esc(name)} have reported to NHTSA, the federal agency that tracks vehicle defects${cmp ? `. Across ${a.n.toLocaleString()} complaints, this model year has ${cmp} ${esc(r.year)} vehicles, adjusted for how many were sold` : ''}. ${shop} does not pay to change what's shown here, and can't. More at <a href="https://grademycar.com" target="_blank" rel="noopener">grademycar.com</a>.</div>
+    </div>`;
+  }
+
+  // For a buyer (pre-purchase inspection): the A-F grades lead
+  function buyerHTML(r, y) {
     const a = analyze(y, r.miles);
     const name = carName(r), shop = esc(r.shop || 'Your mechanic');
     const head = `<div class="rp-shop"><div><b>${shop}</b><small>Sent you this reliability report</small></div><span class="gm">GradeMyCar</span></div>`;

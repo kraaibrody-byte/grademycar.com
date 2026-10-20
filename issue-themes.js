@@ -4,6 +4,7 @@
 // re:    matched against complaint/recall text (lowercased); one complaint can hit several
 // label: shown to users
 // tip:   what to check before buying (premium report)
+// OWNER_TIPS (below): the same problems for someone who already owns the car (shop reports)
 // drivetrain: engine/transmission problem; these lead under the grade (see headlineIssue)
 // subs:  for broad themes, the specific causes. When one clearly dominates a model year's
 //        complaints (see dominantSub), that year shows its label and tip instead, so a
@@ -147,7 +148,36 @@
     return best && best[1] >= 10 && best[1] >= 0.6 * named && best[1] >= 0.25 * total ? best[0] : null;
   }
 
-  // "stall:261:1,coolant:399:0:gasket" -> [{key, label, tip, count, recall, sub}]
+  // What an owner can watch for or do, for the shop reports a mechanic texts to a customer
+  // who already owns the car. Keyed by theme, or "theme:sub" for a dominant cause.
+  const OWNER_TIPS = {
+    stall: 'Watch for hesitation, the engine cutting out or warning lights, and ask whether any recall work is done.',
+    oil: 'Check the oil level between changes and keep up with oil changes.',
+    'oil:dilution': 'If the oil smells like gas or the level rises above full, have it checked and ask about the dealer software update.',
+    'oil:burning': 'Check the oil level every few fill-ups, and mention blue exhaust smoke or a low-oil light right away.',
+    engine: 'Listen for knocking or ticking, especially on a cold start, and don\'t ignore a check-engine light.',
+    trans: 'Mention slipping, shuddering, or delayed or hard shifts early, and ask about a transmission fluid service.',
+    aeb: 'If the collision system brakes or warns for no reason, have it checked and ask about software updates.',
+    electrical: 'Have the battery tested once it\'s a few years old, and mention any warning lights or flickering.',
+    screen: 'If the screen freezes or the camera cuts out, ask about software updates before replacing parts.',
+    steering: 'Mention a heavy, loose or notchy steering feel, or a steering warning light, right away.',
+    brakes: 'Mention grinding, pulling or a soft pedal, and keep up with brake inspections.',
+    coolant: 'Watch the temperature gauge and coolant level, and stop driving if it overheats.',
+    'coolant:gasket': 'Watch for coolant loss, white exhaust smoke or the temperature gauge climbing, and stop driving if it overheats.',
+    'coolant:leak': 'Check the coolant level, look for drips or a sweet smell, and stop driving if it overheats.',
+    'coolant:pump': 'Watch for coolant drips near the front of the engine and the temperature gauge rising.',
+    fuelleak: 'If you smell fuel, have it checked right away.',
+    fire: 'Make sure every fire-related recall is done for this VIN.',
+    airbag: 'If the airbag light stays on, have it checked, and make sure airbag recalls are done.',
+    glass: 'Check the windshield for chips and cracks, and test the wipers.',
+    lights: 'Check that every light works, and mention headlights that dim or flicker.',
+    body: 'Mention doors, locks or the liftgate that stick or don\'t latch.',
+    suspension: 'Mention clunks over bumps, or shaking or wandering at highway speed.',
+    leaks: 'Look for damp carpets or a musty smell after rain, and check underneath for rust.',
+    ac: 'If the A/C blows warm, have it checked before a small leak becomes a bigger repair.',
+  };
+
+  // "stall:261:1,coolant:399:0:gasket" -> [{key, label, tip, ownerTip, count, recall, sub}]
   // (the optional 4th part is the dominant cause, whose label and tip replace the theme's)
   function parseIssues(s) {
     if (!s) return [];
@@ -156,7 +186,8 @@
       const th = ISSUE_THEMES[key];
       if (!th) return null;
       const sub = subKey && th.subs ? th.subs.find(x => x.key === subKey) : null;
-      return { key, label: (sub || th).label, tip: (sub || th).tip, count: Number(count), recall: recall === '1', ...(sub ? { sub: subKey } : {}) };
+      return { key, label: (sub || th).label, tip: (sub || th).tip, ownerTip: OWNER_TIPS[key + ':' + subKey] || OWNER_TIPS[key] || '',
+               count: Number(count), recall: recall === '1', ...(sub ? { sub: subKey } : {}) };
     }).filter(Boolean);
   }
 

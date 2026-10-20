@@ -41,3 +41,10 @@
 .rp .scale { display: flex; justify-content: space-between; font-size: 10px; color: #94A3B8; margin-top: 4px; }
 .rp .badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 5px; background: var(--rp-bad-bg); color: var(--rp-bad); margin-left: 6px; text-transform: uppercase; vertical-align: middle; }
 .rp .rp-call { display: block; text-align: center; background: #4F46E5; color: #fff; text-decoration: none; font-weight: 700; padding: 13px; border-radius: 12px; }
+/* Owner version (repair / service visits) */
+.rp .rp-recall { border-color: #FECACA; background: #FFF7F7; font-size: 13.5px; line-height: 1.5; }
+.rp .rp-recall p { margin: 0 0 6px; }
+.rp .rp-recall p:last-child { margin: 6px 0 0; }
+.rp .rp-recall ul { margin: 0; padding-left: 18px; font-weight: 650; color: var(--rp-ink); }
+.rp .watch { font-size: 12.5px; line-height: 1.45; color: var(--rp-text); margin-top: 6px; background: #F8FAFC; border-radius: 8px; padding: 7px 9px; }
+.rp .watch b { color: var(--rp-ink); }
