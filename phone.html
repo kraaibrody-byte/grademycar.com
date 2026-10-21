@@ -351,6 +351,53 @@ select.prem-input{-webkit-appearance:none;appearance:none}
 .rate-row select:disabled{opacity:.5}
 .rate-err{color:var(--red);font-size:12px;font-weight:650;margin-top:10px;display:none}
 @media(min-width:521px){body{background:#eef2f7}.demo{box-shadow:0 0 0 1px #dfe4ec}}
+/* Desktop: a full-width site layout instead of a phone-sized column. The top header
+   replaces the bottom tab bar, each screen's content is centered at a readable width
+   (--w), and the report lays out in two columns. Phones never see any of this. */
+.dtop{display:none}
+@media(min-width:900px){
+  body{background:var(--bg)}
+  .demo{max-width:none;box-shadow:none}
+  .screen{max-width:none;left:0;transform:none;display:flex;flex-direction:column}
+  .dtop{display:flex;align-items:center;gap:24px;height:64px;flex-shrink:0;padding:0 max(24px,calc((100% - 1080px)/2));background:#fff;border-bottom:1px solid var(--line);position:relative;z-index:5}
+  .dtop .logo img{width:30px;height:30px}
+  .dlinks{display:flex;gap:4px;flex:1}
+  .dlink{border:0;background:none;padding:8px 12px;border-radius:10px;font-weight:650;font-size:14px;color:var(--muted);cursor:pointer;text-decoration:none}
+  .dlink:hover{background:#F1F5F9;color:var(--navy)}
+  .dtop .acct-btn{height:38px;border-radius:19px;padding:0 16px}
+  .app{--w:600px;height:auto;flex:1;min-height:0;padding-top:0;padding-bottom:56px;scrollbar-width:auto}
+  .app::-webkit-scrollbar{display:block}
+  #results{--w:1080px}
+  #saved{--w:760px}
+  .nav{display:none}
+  #home>.topbar{display:none}
+  .topbar,.result-header{height:auto;background:transparent;border-bottom:0;padding:28px max(24px,calc((100% - var(--w))/2)) 0}
+  .topbar strong,.rtitle{font-size:24px;letter-spacing:-.5px;color:var(--navy)}
+  .page{max-width:calc(var(--w) + 48px);margin:0 auto;padding:24px}
+  #saved .segment{margin-left:max(24px,calc((100% - var(--w))/2));margin-right:max(24px,calc((100% - var(--w))/2))}
+  .pop-row{margin:0 0 14px;padding:0;flex-wrap:wrap}
+  /* Results: the grade on top, then the free-report signup beside the unlock form
+     (owner ratings below them), then the report. order keeps the source untouched. */
+  .res-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;padding:20px max(24px,calc((100% - var(--w))/2)) 0}
+  .res-body>.example-banner,.res-body>.res-card:not(#premiumUnlockSection),#notFoundCard,#premiumLoading,#premiumResults,.res-body>.disclaimer,.res-body>div:last-child{grid-column:1/-1}
+  #ownerCard,#notFoundCard{order:1}
+  #premiumLoading,#premiumResults,.res-body>.disclaimer,.res-body>div:last-child{order:2}
+  .res-body:not(:has(#signupPrompt.hidden)) #ownerCard{grid-column:1/-1}
+  .res-body:has(#signupPrompt.hidden):has(#ownerCard.hidden) #premiumUnlockSection{grid-column:1/-1}
+  .res-body:has(#signupPrompt.hidden):has(#ownerCard.hidden) .prem-inputs{flex-direction:row}
+  .res-body:has(#signupPrompt.hidden):has(#ownerCard.hidden) .prem-inputs>div{flex:1}
+  .gc{width:84px;height:84px;font-size:28px}
+  #premiumResults:not(.hidden){display:grid!important;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  #premiumResults>.risk-card,#premiumResults>.est-note,#premiumResults>.nhtsa-card{grid-column:1/-1}
+  #premiumResults:has(#issuesSection.hidden) #ownerReports,#premiumResults:has(#ownerReports.hidden) #issuesSection{grid-column:1/-1}
+  .res-body>div:last-child{display:flex;gap:12px;max-width:560px;width:100%;justify-self:center}
+  .res-body>div:last-child>button{flex:1;margin-bottom:0}
+  /* Menu opens as a panel under the header instead of a bottom sheet */
+  .sheet-wrap{align-items:flex-start;justify-content:flex-end;padding:72px max(24px,calc((100% - 1080px)/2)) 24px;background:#0B173333}
+  .sheet{max-width:360px;max-height:100%;border-radius:18px;padding:10px 18px 14px;box-shadow:0 18px 40px #0B173333}
+  .sheet-grip{display:none}
+  .toast{left:50%;right:auto;width:420px;margin-left:-210px;top:76px;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}
+}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -359,6 +406,17 @@ select.prem-input{-webkit-appearance:none;appearance:none}
 <div class="demo">
   <div class="iphone">
     <div class="screen">
+      <!-- Desktop only (see .dtop): the site header that replaces the bottom tab bar -->
+      <header class="dtop">
+        <a class="logo" href="/"><img src="/icon128.png" alt=""><span class="logo-text">GradeMyCar</span></a>
+        <nav class="dlinks">
+          <button class="dlink" onclick="show('search')">Grade a car</button>
+          <button class="dlink" onclick="show('saved')">Saved</button>
+          <button class="dlink" onclick="openRate(null,'menu')">Rate your car</button>
+          <button class="dlink" onclick="openBuy()">Buy credits</button>
+        </nav>
+        <button class="acct-btn" onclick="headerAccount()">Account</button>
+      </header>
       <div id="toast" class="toast"></div>
 
       <!-- Modals -->
@@ -884,7 +942,7 @@ if(USE_EMU){
 }
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.10.16-b';
+const APP_VERSION='2026.10.20';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
