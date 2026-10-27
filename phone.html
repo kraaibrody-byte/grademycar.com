@@ -312,6 +312,9 @@ button.credits-chip{border:0;cursor:pointer}
 /* Auth modal extras */
 .google-btn{width:100%;height:46px;margin-top:10px;border:1.5px solid var(--line);background:#fff;border-radius:15px;font-weight:700;font-size:14px;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
 .google-btn:disabled{opacity:.6}
+.apple-btn{background:#000;border-color:#000;color:#fff}
+.signup-prompt .google-btn{height:44px;margin:0 0 8px}
+.sp-or{font-size:11px;color:var(--muted);text-align:center;margin:2px 0 8px}
 .auth-alt{text-align:center;font-size:12px;color:var(--blue);font-weight:650;margin-top:12px;cursor:pointer}
 .auth-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.45}
 .sheet-signin{margin:12px 0 6px}
@@ -447,6 +450,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
             <button type="submit" class="primary" id="authSubmit">Email me a sign-in link</button>
           </form>
           <button type="button" class="google-btn" id="googleBtn" onclick="googleSignIn()"><b style="color:#4285F4;font-size:16px">G</b>Continue with Google</button>
+          <button type="button" class="google-btn apple-btn hidden" id="appleBtn" onclick="appleSignIn()"><svg width="15" height="18" viewBox="0 0 814 1000" fill="currentColor" aria-hidden="true"><path d="M788 341c-6 4-108 62-108 190 0 148 130 200 134 202-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-167 41s-106-57-156-127C42 791 0 667 0 549c0-191 124-292 246-292 65 0 119 43 160 43 39 0 100-45 174-45 28 0 129 3 196 86zM555 163c31-37 53-88 53-139 0-7-1-14-2-20-50 2-110 34-146 76-28 32-55 83-55 135 0 8 1 16 2 18 3 1 9 2 14 2 45 0 102-30 134-72z"/></svg>Continue with Apple</button>
           <div class="auth-hint hidden" id="inAppHint">Google sign-in doesn't work inside Instagram or Facebook. Use your email and we'll send you a link.</div>
           <div class="auth-alt" id="pwToggle" onclick="togglePassword()">Use a password instead</div>
           <div class="switch" id="authSwitch" onclick="toggleAuthMode()">Already have an account? <b>Sign in</b></div>
@@ -650,7 +654,12 @@ select.prem-input{-webkit-appearance:none;appearance:none}
             <b>Your full report is free</b>
             <div id="spForm">
               <ul class="sp-perks" id="spPerks"></ul>
-              <p>Create a free account with your email and your first full report is on us. No password: we email you a sign-in link, and this car is saved to your account.</p>
+              <div id="spOneTap" class="hidden">
+                <button type="button" class="google-btn" id="spGoogle" onclick="signupPromptProvider('google',this)"><b style="color:#4285F4;font-size:16px">G</b>Continue with Google</button>
+                <button type="button" class="google-btn apple-btn hidden" id="spApple" onclick="signupPromptProvider('apple',this)"><svg width="15" height="18" viewBox="0 0 814 1000" fill="currentColor" aria-hidden="true"><path d="M788 341c-6 4-108 62-108 190 0 148 130 200 134 202-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-165-40c-77 0-104 41-167 41s-106-57-156-127C42 791 0 667 0 549c0-191 124-292 246-292 65 0 119 43 160 43 39 0 100-45 174-45 28 0 129 3 196 86zM555 163c31-37 53-88 53-139 0-7-1-14-2-20-50 2-110 34-146 76-28 32-55 83-55 135 0 8 1 16 2 18 3 1 9 2 14 2 45 0 102-30 134-72z"/></svg>Continue with Apple</button>
+                <div class="sp-or">or use your email</div>
+              </div>
+              <p>No password. We email you a link, and this car is saved to your account.</p>
               <div class="sp-row">
                 <input id="spEmail" name="email" type="email" inputmode="email" placeholder="you@email.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" aria-label="Email" onfocus="trackFieldFocus('card_email')" onkeydown="if(event.key==='Enter')signupPromptSubmit()">
                 <button class="vin-btn" id="spBtn" onclick="signupPromptSubmit()">Get it free</button>
@@ -1007,6 +1016,8 @@ let authDone = false;       // the modal closed because sign-in finished, not a 
 let usePassword = false;
 // Instagram, Facebook, TikTok and Snapchat in-app browsers, where Google blocks its sign-in page
 const IN_APP=/Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|musical_ly|TikTok|Snapchat/i.test(navigator.userAgent);
+// Turn on once Apple is set up in Firebase (Authentication → Sign-in method → Apple)
+const APPLE_SIGNIN=false;
 let signingUp = false;
 let currentResult = null;
 let currentVehicle = null;   // { year, make, model, makeData, rating }
@@ -1091,6 +1102,7 @@ function setAuthMode(mode){
   $('pwToggle').classList.toggle('hidden',confirming);
   $('pwToggle').textContent=usePassword?'Email me a link instead':'Use a password instead';
   $('googleBtn').classList.toggle('hidden',IN_APP||confirming);
+  $('appleBtn').classList.toggle('hidden',!APPLE_SIGNIN||IN_APP||confirming);
   $('inAppHint').classList.toggle('hidden',!IN_APP||confirming);
   $('forgotLink').classList.toggle('hidden',mode!=='signin');
   $('authPassword').autocomplete=mode==='signin'?'current-password':'new-password';
@@ -1198,22 +1210,37 @@ function submitAuth(){
         .catch(err=>{ trackAuthError('password',err); authMsg('err',friendlyAuthError(err),authErrorActions(err)); })
         .finally(()=>{ btn.disabled=false; finishSignIn(); });
 }
-function googleSignIn(){
-  const btn=document.getElementById('googleBtn');
+// One-tap sign-in with Google or Apple, from the modal or the post-grade card.
+// onErr shows the message where the tap happened; the modal's authMsg by default.
+function providerSignIn(method, btn, onErr){
   const source=authSource, car=saveAfterSignup;
   authMsg(null);
   btn.disabled=true;
   signingUp=true;
-  track('signup_submitted',{method:'google',source});
-  if(authMode==='signup') track('signup_started',{method:'google',source});
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .then(cred=>onSignedIn(cred,'google',source,car))
+  track('signup_submitted',{method,source});
+  if(authMode==='signup') track('signup_started',{method,source});
+  let provider;
+  if(method==='apple'){
+    provider=new firebase.auth.OAuthProvider('apple.com');
+    provider.addScope('email'); provider.addScope('name');
+  } else provider=new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then(cred=>onSignedIn(cred,method,source,car))
     .catch(err=>{
-      trackAuthError('google',err);
-      if(err&&(err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request')) return;
-      authMsg('err',friendlyAuthError(err),authErrorActions(err));
+      trackAuthError(method,err);
+      if(err&&(err.code==='auth/popup-closed-by-user'||err.code==='auth/cancelled-popup-request'||err.code==='auth/user-cancelled')) return;
+      (onErr||(e=>authMsg('err',friendlyAuthError(e),authErrorActions(e))))(err);
     })
     .finally(()=>{ btn.disabled=false; finishSignIn(); });
+}
+function googleSignIn(){ providerSignIn('google',document.getElementById('googleBtn')); }
+function appleSignIn(){ providerSignIn('apple',document.getElementById('appleBtn')); }
+// From the post-grade card: sign up on the spot and save this car, like the email link does
+function signupPromptProvider(method, btn){
+  saveAfterSignup=currentResult;
+  authSource='post_grade'; authMode='signup';
+  document.getElementById('spErr').textContent='';
+  providerSignIn(method,btn,err=>{ document.getElementById('spErr').textContent=friendlyAuthError(err); });
 }
 // Firebase emails a one-tap sign-in link. On a phone the link usually opens in the
 // default browser, not the Instagram tab it was asked for in, so everything needed
@@ -1724,6 +1751,9 @@ function onGradeShown(found){
   document.getElementById('spForm').classList.remove('hidden');
   document.getElementById('spSent').classList.add('hidden');
   document.getElementById('spErr').textContent='';
+  // One-tap buttons first where they work; Google blocks its sign-in inside Instagram/Facebook, and popups fail there
+  document.getElementById('spOneTap').classList.toggle('hidden',IN_APP);
+  document.getElementById('spApple').classList.toggle('hidden',!APPLE_SIGNIN);
   const saved=store.get('gmc_link_email');
   if(saved) document.getElementById('spEmail').value=saved;
   renderSignupPerks();
