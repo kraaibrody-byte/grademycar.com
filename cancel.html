@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Checkout Canceled - GradeMyCar</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cancel-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-sizing: border-box;
+        }
+
+        .cancel-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .cancel-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .cancel-message {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .return-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .return-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .secondary-link {
+            display: block;
+            margin-top: 1.25rem;
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="cancel-container">
+        <div class="cancel-icon">👋</div>
+        <h1 class="cancel-title">Checkout canceled</h1>
+        <p class="cancel-message">
+            No worries. You weren't charged, and your account is just how you left it.
+        </p>
+        <a href="/#pricing" class="return-btn" id="return-btn">Back to pricing</a>
+        <a href="/" class="secondary-link" id="home-link">Go to GradeMyCar</a>
+    </div>
+
+    <script>
+        // Buyers who started checkout in the phone app (phone.html) go back there
+        try {
+            var r = localStorage.getItem('gmc_return') || '';
+            if (r.indexOf('phone:') === 0 && Date.now() - Number(r.slice(6)) < 3600000) {
+                document.getElementById('return-btn').href = '/phone.html';
+                document.getElementById('return-btn').textContent = 'Back to the App';
+                document.getElementById('home-link').style.display = 'none';
+            }
+            localStorage.removeItem('gmc_return');
+        } catch (e) {}
+    </script>
+</body>
+</html>

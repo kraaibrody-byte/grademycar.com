@@ -319,7 +319,7 @@
     </div>
     <button class="btn-login" id="li-submit">Sign in</button>
     <p class="login-note">
-      This uses the same Firebase project as grademycar.com. Any account can sign in here, but the Users / Roadmap Flags data will only load once your Firebase Realtime Database rules grant your account read/write access — see the Setup panel after signing in.
+      Admin accounts only.
     </p>
   </div>
 </div>
@@ -673,7 +673,17 @@ $("li-submit").addEventListener("click", async () => {
 
 $("signout-btn").addEventListener("click", () => signOut(auth));
 
+// The database rules and admin Cloud Functions are what actually protect the data;
+// this just keeps other signed-in accounts from seeing the admin page at all.
+const ADMIN_UID = "Q348i5PL2IXcvK4F8Ew0dNK7pt53";
+
 onAuthStateChanged(auth, (user) => {
+  if (user && user.uid !== ADMIN_UID) {
+    signOut(auth);
+    $("login-error").textContent = "This account doesn't have admin access.";
+    $("login-error").style.display = "block";
+    return;
+  }
   if (user) {
     $("login-screen").style.display = "none";
     $("app").style.display = "block";
