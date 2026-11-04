@@ -127,6 +127,7 @@ window.RELIABILITY_DATA = {
         'hhr': { engine: 'B', transmission: 'B-', overall: 'B-' },
         'avalanche': { engine: 'B+', transmission: 'B', overall: 'B' },
         'captiva': { engine: 'B-', transmission: 'C+', overall: 'C+' },
+        'aveo': { engine: 'C', transmission: 'C-', overall: 'C-' },
         'bolt': { engine: 'A', transmission: 'A', overall: 'A' }
       },
       'nissan': {
@@ -1030,6 +1031,7 @@ window.LIFESPAN_DATA = {
     'ssr': { avgLifespan: 160000, maxReported: 230000, percentReach250k: 7.9, commonIssues: ['convertible top', 'electrical'] },
     'hhr': { avgLifespan: 150000, maxReported: 210000, percentReach250k: 7.1, commonIssues: ['timing chain', 'electrical'] },
     'captiva': { avgLifespan: 140000, maxReported: 190000, percentReach250k: 6.7, commonIssues: ['transmission', 'electrical'] },
+    'aveo': { avgLifespan: 145000, maxReported: 195000, percentReach250k: 5.5, commonIssues: ['timing belt', 'transmission failure', 'ignition/electrical'] },
     'bolt': { avgLifespan: 220000, maxReported: 320000, percentReach250k: 12.8, commonIssues: ['battery degradation', 'charging system'] }
   },
 
