@@ -2063,7 +2063,7 @@
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, getAdditionalUserInfo, GoogleAuthProvider, signOut, onAuthStateChanged, onIdTokenChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
         import { getDatabase, ref, set, get, push, update, serverTimestamp, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
         import { getAnalytics, logEvent, setUserId, setUserProperties } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
@@ -2124,6 +2124,13 @@
         // GA user_id is the Firebase uid (opaque, never the email)
         onAuthStateChanged(auth, (u) => { try { if (analytics) setUserId(analytics, u ? u.uid : null); } catch (e) {} });
         // Analytics events for non-module scripts (share button)
+        // sign_up is the ONE canonical "account created" event (see ANALYTICS.md). Call this
+        // only after Firebase Auth confirmed a brand-new account; it fires once per uid.
+        window.gmcTrackSignUp = (uid, method) => {
+            const key = 'gmc_su_' + uid;
+            try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+            window.gmcTrack('sign_up', Object.assign({ method }, window.GMCAttribution ? GMCAttribution.params() : {}));
+        };
         window.gmcTrack = (name, params) => {
             const p = Object.assign({ app: 'web' }, GA ? GA.common() : {}, params || {});
             if (NO_ANALYTICS) { console.debug('[GMC track]', name, p); return; }
@@ -2613,6 +2620,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     try {
                         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        // Firebase Auth has confirmed a new account: count it now, so a slow or failed database write can't lose it
+                        window.gmcTrackSignUp(userCredential.user.uid, 'email');
                         
                         // Create user record in Realtime Database, with 1 free report credit.
                         // Database rules only allow creating it once, so if the login handler
@@ -2625,8 +2634,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             totalPurchases: 0,
                             totalSpent: 0
                         }).catch(e => console.warn('User record already exists:', e));
-                        window.gmcTrack('sign_up', Object.assign({ method: 'email' }, window.GMCAttribution ? GMCAttribution.params() : {}));
-
                         document.getElementById('email').value = '';
                         document.getElementById('password').value = '';
                         loginModal.style.display = 'none';
@@ -2676,6 +2683,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         const cred = await signInWithPopup(auth, new GoogleAuthProvider());
                         const user = cred.user;
+                        // Firebase Auth decides whether this Google account is new; a missing database record does not
+                        const isNewAccount = !!(getAdditionalUserInfo(cred) || {}).isNewUser;
                         const userRef = ref(database, `users/${user.uid}`);
                         const snap = await get(userRef);
                         if (!snap.exists()) {
@@ -2688,10 +2697,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                 totalPurchases: 0,
                                 totalSpent: 0
                             }).catch(e => console.warn('User record already exists:', e));
-                            window.gmcTrack('sign_up', Object.assign({ method: 'google' }, window.GMCAttribution ? GMCAttribution.params() : {}));
-                        } else {
-                            window.gmcTrack('login', { method: 'google' });
                         }
+                        if (isNewAccount) window.gmcTrackSignUp(user.uid, 'google');
+                        else window.gmcTrack('login', { method: 'google' });
                         loginModal.style.display = 'none';
                         hideMessages();
                     } catch (error) {

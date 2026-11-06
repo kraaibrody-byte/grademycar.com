@@ -1,5 +1,5 @@
-// First-touch UTM attribution and analytics flags, shared by index.html, phone.html
-// and success.html. Loaded in <head> so it runs before Firebase Analytics reads the URL.
+// First-touch UTM attribution and analytics flags, shared by index.html, phone.html,
+// dealers.html and shops.html. Loaded in <head> so it runs before Firebase Analytics reads the URL.
 //
 // - The first visit that carries UTMs is kept in localStorage and never overwritten;
 //   GMCAttribution.params() returns it as event params to attach to sign_up.
@@ -8,6 +8,7 @@
 // - Flags for your own devices, set by opening any page once with:
 //     ?internal=1   tag all your events internal (filter them out of reports); ?internal=0 undoes it
 //     ?gmc_test=1   send no analytics at all from this browser;                 ?gmc_test=0 undoes it
+//   Analytics is also off automatically on localhost and on any host other than grademycar.com.
 //     ?gmc_debug=1  show this browser's events in GA4 DebugView;               ?gmc_debug=0 undoes it
 (function(){
   var KEY='gmc_first_touch', FIELDS=['utm_source','utm_medium','utm_campaign','utm_content'];
@@ -41,6 +42,9 @@
     return m?decodeURIComponent(m[1]):null;
   }
   var LOCAL=/^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname)||/\.(localhost|test)$/.test(location.hostname);
+  // Only the real site reports analytics. Previews, staging copies, firebaseapp.com/web.app
+  // mirrors and anything else log to the console instead, so test traffic can't reach reports.
+  var PROD=/^(www\.)?grademycar\.com$/.test(location.hostname);
 
   window.GMCAttribution={
     params:function(){
@@ -54,7 +58,7 @@
       }catch(e){ return {}; }
     },
     // No analytics from local testing or from a browser flagged with ?gmc_test=1
-    analyticsOff:function(){ return LOCAL||get('gmc_test')==='1'; },
+    analyticsOff:function(){ return LOCAL||!PROD||get('gmc_test')==='1'; },
     internal:function(){ return get('gmc_internal')==='1'; },
     // Params added to every custom event
     common:function(){

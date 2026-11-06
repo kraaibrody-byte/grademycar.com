@@ -7,7 +7,6 @@
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-    <script src="/attribution.js"></script>
     <style>
         body {
             font-family: system-ui, -apple-system, sans-serif;
@@ -161,8 +160,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
-        import { getAnalytics, logEvent, setUserId, setUserProperties } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
-
+        
         const firebaseConfig = {
             apiKey: "AIzaSyCsVQCXfyRFt7fpcE-5Xvm_P3bULlGYMIU",
             authDomain: "grademycar.firebaseapp.com",
@@ -178,25 +176,9 @@
         const auth = getAuth(app);
         const functions = getFunctions(app);
 
-        // Same rules as the app: nothing from localhost or ?gmc_test=1 browsers;
-        // ?internal=1 devices are tagged (see attribution.js)
-        const GA = window.GMCAttribution;
-        const NO_ANALYTICS = !GA || GA.analyticsOff();
-        const analytics = NO_ANALYTICS ? null : getAnalytics(app);
-        if (analytics && GA.internal()) { try { setUserProperties(analytics, { internal_user: 'true' }); } catch (e) {} }
-
-        // purchase is logged only after the server has checked with Stripe that this
-        // session is paid and belongs to this user, and only once per session in this
-        // browser (refreshing the page doesn't log it again). The Stripe webhook also
-        // sends it server-side with the same transaction_id, which GA uses to dedupe.
-        function logPurchase(purchase, uid) {
-            const key = 'gmc_purchase_logged:' + purchase.transaction_id;
-            try { if (localStorage.getItem(key)) return; } catch (e) {}
-            const params = Object.assign({ app: 'web', source: 'web' }, GA ? GA.common() : {}, purchase);
-            if (NO_ANALYTICS) console.debug('[GMC track] purchase', params);
-            else { try { setUserId(analytics, uid); logEvent(analytics, 'purchase', params); } catch (e) {} }
-            try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
-        }
+        // No analytics here on purpose. `purchase` is reported only by the Stripe webhook
+        // (server side, from the paid checkout.session.completed event), never from this page:
+        // a success screen can be reloaded, bookmarked or reached without a payment. See ANALYTICS.md.
 
         const sessionId = new URLSearchParams(window.location.search).get('session_id');
         const verify = httpsCallable(functions, 'verifyPurchase');
@@ -225,7 +207,6 @@
                     const c = parseInt(d.credits, 10);
                     document.getElementById('bundle-credits').textContent = c > 0 ? `${c} credits` : 'Unlimited Access';
                 }
-                logPurchase(res.purchase, user.uid);
             });
         } else {
             // No session ID, probably accessed directly

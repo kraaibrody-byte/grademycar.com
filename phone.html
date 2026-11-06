@@ -1174,7 +1174,7 @@ function submitAuth(){
   authMsg(null);
   if(authMode==='confirm'){
     if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('email_link','client/invalid-email'); authMsg('err','Enter the email address you used to request the link.'); return; }
-    track('signup_submitted',{method:'email_link_confirm',source:authSource});
+    track('auth_attempt',{mode:'signin_link',method:'email_link_confirm',source:authSource});
     btn.disabled=true;
     finishLinkSignIn(email).finally(()=>{ btn.disabled=false; });
     return;
@@ -1182,7 +1182,7 @@ function submitAuth(){
   if(!usePassword){
     if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('email_link','client/invalid-email'); authMsg('err','Enter your email address, like name@gmail.com.'); return; }
     btn.disabled=true;
-    track('signup_submitted',{method:'email_link',source:authSource});
+    track('auth_attempt',{mode:authMode,method:'email_link',source:authSource});
     if(authMode==='signup') track('signup_started',{method:'email_link',source:authSource});
     sendSignInLink(email,authSource,saveAfterSignup)
       .then(()=>authMsg('ok',`Check your email. Tap the link we sent to ${email} to finish. It may open in your browser instead of this app. That's fine. Not there after a minute? Check spam or Promotions.`,linkSentActions()))
@@ -1201,7 +1201,7 @@ function submitAuth(){
   btn.disabled=true;
   // Hold off the credit check until the new account's record (with its free credit) exists
   signingUp=true;
-  track('signup_submitted',{method:'password',source});
+  track('auth_attempt',{mode,method:'password',source});
   if(mode==='signup') track('signup_started',{method:'password',source});
   const action=mode==='signin'
     ?auth.signInWithEmailAndPassword(email,password)
@@ -1217,7 +1217,7 @@ function providerSignIn(method, btn, onErr){
   authMsg(null);
   btn.disabled=true;
   signingUp=true;
-  track('signup_submitted',{method,source});
+  track('auth_attempt',{mode:authMode,method,source});
   if(authMode==='signup') track('signup_started',{method,source});
   let provider;
   if(method==='apple'){
@@ -1321,14 +1321,13 @@ async function onSignedIn(cred, method, source, car){
   authDone=true; closeAccount();
   store.set('gmc_has_account','1');
   if(isNew){
-    // sign_up fires once per account: only when Firebase reports a brand-new user,
-    // and the per-account flag stops a double tap or reload from sending it again.
+    // sign_up is the ONE canonical "account created" event (see ANALYTICS.md). It fires
+    // only here, when Firebase Auth itself reports a brand-new user (isNewUser), and the
+    // per-account flag stops a double tap or reload from sending it again.
     // Sent before the database write so a slow or failed write can't lose it.
     if(!store.get('gmc_su_'+user.uid)){
       store.set('gmc_su_'+user.uid,'1');
-      const p=Object.assign({method,source},window.GMCAttribution?GMCAttribution.params():{});
-      track('sign_up',p);
-      track('signup_completed',p);
+      track('sign_up',Object.assign({method,source},window.GMCAttribution?GMCAttribution.params():{}));
     }
     // Same user record index.html creates on signup, with 1 free credit
     // (database rules allow a new record to start at 0 or 1 credits, never more)
@@ -1785,7 +1784,7 @@ function signupPromptSubmit(){
   errEl.textContent='';
   if(!/^\S+@\S+\.\S+$/.test(email)){ trackAuthError('email_link','client/invalid-email'); errEl.textContent='Enter your email address, like name@gmail.com.'; return; }
   btn.disabled=true; btn.textContent='…';
-  track('signup_submitted',{method:'email_link',source:'post_grade'});
+  track('auth_attempt',{mode:'signup',method:'email_link',source:'post_grade'});
   track('signup_started',Object.assign({method:'email_link',source:'post_grade'},gradeParams()));
   sendSignInLink(email,'post_grade',currentResult).then(()=>{
     document.getElementById('spForm').classList.add('hidden');
@@ -2230,6 +2229,9 @@ async function unlockPremium(){
   const unlockBtn=document.getElementById('unlockBtn');
   unlockBtn.disabled=true; unlockBtn.textContent='Checking credits…';
   let spend;
+  // unlock_attempt = the user tapped Unlock (before the server answers); it also fires when
+  // they are out of credits. Compare with unlock_report, which is the confirmed unlock.
+  track('unlock_attempt',{make,model,year:String(year)});
   try{
     const res=await functions.httpsCallable('useReportCredit')({
       vehicleInfo:{make:displayMake(make),model:displayModel(model),year,mileage},
@@ -2247,7 +2249,9 @@ async function unlockPremium(){
   }
   hasUnlimited=!!spend.unlimitedActive;
   if(typeof spend.creditsRemaining==='number') userCredits=spend.creditsRemaining;
-  track('unlock_report',{make,model,year:String(year),unlimited:hasUnlimited,has_price:price>0});
+  // unlock_report = the server (useReportCredit) accepted the unlock: a credit was spent,
+  // or an unlimited plan covered it. It is NOT a purchase and says nothing about money.
+  track('unlock_report',{make,model,year:String(year),unlimited:hasUnlimited,credit_spent:!hasUnlimited,has_price:price>0});
   updateCreditsDisplay();
   toast(hasUnlimited?'Unlimited plan: no credit used':`1 credit used, ${userCredits} left`);
 
