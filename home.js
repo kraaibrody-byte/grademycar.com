@@ -30,7 +30,9 @@
 
   // Grade for one make/model/year: the model-year grade when we have one, else the model's.
   // A year newer than every graded year gets no grade (tooNew) rather than the model-wide
-  // one, which comes from older years, often before a redesign.
+  // one, which comes from older years, often before a redesign. Up to LAST_GRADED_YEAR it's
+  // a year we left out (cutOff), not a new car.
+  const LAST_GRADED_YEAR = 2024; // LAST_YEAR in scripts/nhtsa-models.js
   function gradeFor(makeData, make, spelled, year) {
     const model = GMCModels.canonical(make, Object.keys(makeData?.grades || {}), spelled);
     const base = makeData?.grades?.[model];
@@ -42,7 +44,7 @@
     }
     const graded = Object.keys(years).filter(k => years[k]?.o).map(Number);
     const latest = graded.length ? Math.max(...graded) : null;
-    if (latest && Number(year) > latest) return { tooNew: true, refYear: latest, ref: years[latest].o, ev: !!base?.ev, issues: [] };
+    if (latest && Number(year) > latest) return { tooNew: true, cutOff: Number(year) <= LAST_GRADED_YEAR, refYear: latest, ref: years[latest].o, ev: !!base?.ev, issues: [] };
     if (base?.source === 'nhtsa' && base.overall) return { ...base, yearGraded: false, issues: [] };
     // Older letters with no NHTSA data behind them don't count as a grade
     if (base?.overall) return { ungraded: true, ev: !!base.ev, issues: [] };
@@ -142,7 +144,7 @@
     $('hg-name').textContent = name;
     const v = $('hg-verdict');
     const noGrade = rating.tooNew || rating.ungraded;
-    v.textContent = rating.tooNew ? 'Too new to grade yet' : rating.ungraded ? 'Not graded yet' : verdict(rating.overall);
+    v.textContent = rating.cutOff || rating.ungraded ? 'Not graded yet' : rating.tooNew ? 'Too new to grade yet' : verdict(rating.overall);
     v.className = 'lp-result-verdict ' + (noGrade ? '' : tone(rating.overall));
     $('hg-share').style.display = noGrade ? 'none' : '';
 
@@ -185,8 +187,10 @@
       GMCNhtsa.factsText(year, make, model).then(t => { if (shown === thisResult) $('hg-note').textContent = `${note} ${t}`; });
       return;
     }
-    $('hg-note').textContent = rating.tooNew
-      ? `The ${year} is too new to grade: owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${rating.refYear} got a ${rating.ref}, but a newer model year can be quite different, especially after a redesign.`
+    $('hg-note').textContent = rating.cutOff
+      ? `The ${year} isn't graded: we don't have reliable enough data for that model year to compare it fairly with other cars. For reference, the ${rating.refYear} is graded ${rating.ref}.`
+      : rating.tooNew
+      ? `The ${year} is too new to grade: owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${rating.refYear} is graded ${rating.ref}, but a newer model year can be quite different, especially after a redesign.`
       : rating.yearGraded
       ? `From ${Number(rating.complaints).toLocaleString()} owner complaints filed with NHTSA for the ${year} model year${rating.limited ? '. Newer model year, so this grade may change.' : '.'}`
       : rating.source === 'nhtsa'
@@ -204,7 +208,7 @@
       const rating = gradeFor(await loadMake(make), make, model, year);
       if (!rating) { $('hg-note').textContent = `We don't have data for the ${fmtMake(make)} ${fmtModel(model)} yet.`; return; }
       render({ year, make, model, rating }, true);
-      track('hero_grade', { make, model, year: String(year), grade: rating.overall || (rating.tooNew ? 'too_new' : rating.ungraded ? 'not_graded' : 'none') });
+      track('hero_grade', { make, model, year: String(year), grade: rating.overall || (rating.cutOff ? 'not_graded' : rating.tooNew ? 'too_new' : rating.ungraded ? 'not_graded' : 'none') });
       if (window.innerWidth < 980) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (err) {
       $('hg-note').textContent = "Couldn't load grades. Check your connection and try again.";

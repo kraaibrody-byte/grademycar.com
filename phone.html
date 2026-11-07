@@ -952,7 +952,7 @@ if(USE_EMU){
 }
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.11.07-b';
+const APP_VERSION='2026.11.07-c';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -2080,8 +2080,8 @@ async function checkGrade(){
 
     // Save to search history (local for guests, local + Firestore when signed in)
     saveSearch({year,make,model,grade:rating?.overall||null});
-    track('grade_car',{make,model,year:String(year),found:!!rating?.overall,too_new:!!rating?.tooNew,not_graded:!!rating?.ungraded});
-    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||(rating?.tooNew?'too_new':rating?.ungraded?'not_graded':'none'),has_vin:!!vin,signed_in:!!currentUser});
+    track('grade_car',{make,model,year:String(year),found:!!rating?.overall,too_new:!!rating?.tooNew&&!rating.cutOff,not_graded:!!rating?.ungraded||!!rating?.cutOff});
+    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||(rating?.cutOff?'not_graded':rating?.tooNew?'too_new':rating?.ungraded?'not_graded':'none'),has_vin:!!vin,signed_in:!!currentUser});
     onGradeShown(!!(rating?.overall||rating?.tooNew));
     renderRiskTeaser();
     renderOwnerCard();
@@ -2096,13 +2096,15 @@ async function checkGrade(){
 // NHTSA-graded models have per-year grades in reliability/{make}/years/{model}/{year}
 // as {e,t,o: letters, n: complaints, l: 1 when the year is too new for full data}.
 // A year newer than every graded year gets no grade ({tooNew}) rather than the
-// model-wide one: that comes from older years, often before a redesign.
+// model-wide one: that comes from older years, often before a redesign. Up to
+// LAST_GRADED_YEAR it's a year we left out (cutOff), not a new car.
+const LAST_GRADED_YEAR=2024; // LAST_YEAR in scripts/nhtsa-models.js
 // Models without NHTSA data have older letters with no source, so they count as ungraded.
 function yearRating(modelRating, y, year, yearsData){
   if(!y?.o){
     const graded=Object.keys(yearsData||{}).filter(k=>yearsData[k]?.o).map(Number);
     const latest=graded.length?Math.max(...graded):null;
-    if(latest && Number(year)>latest) return {tooNew:true, source:'nhtsa', ev:modelRating?.ev, refYear:latest, ref:yearsData[latest].o};
+    if(latest && Number(year)>latest) return {tooNew:true, cutOff:Number(year)<=LAST_GRADED_YEAR, source:'nhtsa', ev:modelRating?.ev, refYear:latest, ref:yearsData[latest].o};
     if(modelRating && modelRating.source!=='nhtsa') return {ungraded:true, ev:modelRating.ev};
     return modelRating;
   }
@@ -2115,8 +2117,10 @@ function renderGradeSource(rating, year){
   document.getElementById('engineLabel').textContent=rating?.ev?'Motor & Battery':'Engine';
   document.getElementById('transLabel').textContent=rating?.ev?'Drivetrain':'Transmission';
   let html='';
-  if(rating?.tooNew){
-    html=`The <b>${esc(year)}</b> is too new to grade. Owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${esc(rating.refYear)} got a <b>${esc(rating.ref)}</b>, but a newer model year can be quite different, especially after a redesign.`;
+  if(rating?.cutOff){
+    html=`The <b>${esc(year)}</b> isn't graded: we don't have reliable enough data for that model year to compare it fairly with other cars. For reference, the ${esc(rating.refYear)} is graded <b>${esc(rating.ref)}</b>.`;
+  } else if(rating?.tooNew){
+    html=`The <b>${esc(year)}</b> is too new to grade. Owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${esc(rating.refYear)} is graded <b>${esc(rating.ref)}</b>, but a newer model year can be quite different, especially after a redesign.`;
   } else if(rating?.yearGraded){
     html=`Graded for the <b>${esc(year)}</b> model year from <b>${Number(rating.complaints).toLocaleString()}</b> owner complaints filed with NHTSA, adjusted for how many were sold.`;
     if(rating.limited) html+=' Newer model year, so fewer complaints are in yet. This grade may change.';
