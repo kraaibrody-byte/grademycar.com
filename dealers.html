@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GradeMyCar for Dealers</title>
-<meta name="description" content="Reliability grades for every car on your auction run list, from 800,000+ NHTSA owner complaints. See which cars sit in their known failure mileage before you bid.">
+<meta name="description" content="Reliability grades for every car on your auction run list, from 897,000+ NHTSA owner complaints. See which cars sit in their known failure mileage before you bid.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GradeMyCar">
 <meta property="og:title" content="GradeMyCar for Dealers: know which auction cars to pass on">
@@ -195,7 +195,7 @@ body.open .drawer { transform: none; }
             <a class="lp-btn lp-btn-ghost lp-btn-lg" href="#demoSec">Try it on a car</a>
           </div>
           <ul class="lp-facts">
-            <li><b>121</b> popular models</li>
+            <li><b>162</b> popular models</li>
             <li><b>2000–2024</b> model years</li>
             <li><b>Cancel</b> anytime</li>
           </ul>
@@ -210,8 +210,8 @@ body.open .drawer { transform: none; }
 
     <section class="lp-stats">
       <div class="lp-wrap lp-stats-grid" data-reveal-children>
-        <div><div class="lp-stat-num">800,000+</div><div class="lp-stat-label">owner complaints filed with <b>NHTSA</b>, read and sorted by problem</div></div>
-        <div><div class="lp-stat-num">2,183</div><div class="lp-stat-label">model years graded, <b>engine and transmission</b> separately</div></div>
+        <div><div class="lp-stat-num">897,000+</div><div class="lp-stat-label">owner complaints filed with <b>NHTSA</b>, read and sorted by problem</div></div>
+        <div><div class="lp-stat-num">2,794</div><div class="lp-stat-label">model years graded, <b>engine and transmission</b> separately</div></div>
         <div><div class="lp-stat-num">1 scan</div><div class="lp-stat-label">reads the VIN barcode with your <b>phone's camera</b> at the auction</div></div>
       </div>
     </section>
@@ -290,9 +290,9 @@ body.open .drawer { transform: none; }
           <h2>Good questions before you sign up.</h2>
         </div>
         <div class="lp-faq" data-reveal>
-          <details><summary>Where do the grades come from?</summary><p>From the complaints owners file with NHTSA, the federal agency that tracks vehicle defects and runs recalls. We've sorted more than 800,000 of them by problem and compared each model year with other cars from the same year, adjusted for how many were sold.</p></details>
+          <details><summary>Where do the grades come from?</summary><p>From the complaints owners file with NHTSA, the federal agency that tracks vehicle defects and runs recalls. We've sorted more than 897,000 of them by problem and compared each model year with other cars from the same year, adjusted for how many were sold.</p></details>
           <details><summary>Does it tell me if this specific car will break?</summary><p>No. Grades describe the model year, not one car's condition. They tell you what to look for and how much risk you're taking on, so you know which condition reports and inspections matter most.</p></details>
-          <details><summary>Which cars are covered?</summary><p>121 popular models from 2000 to 2024, including the trucks, SUVs and sedans that make up most auction lanes. Brand-new model years show up once there's enough owner data to grade them fairly.</p></details>
+          <details><summary>Which cars are covered?</summary><p>162 popular models from 2000 to 2024, including the trucks, SUVs and sedans that make up most auction lanes. Brand-new model years show up once there's enough owner data to grade them fairly.</p></details>
           <details><summary>Does it work at the auction?</summary><p>Yes. It runs in your phone's browser. Scan the VIN barcode on the car or the auction label, add the miles, and the car is graded in seconds.</p></details>
           <details><summary>How does the free trial work?</summary><p>You get 14 days free. You add a card at sign-up and aren't charged until the trial ends. Cancel anytime from Plan &amp; billing, and you won't be charged.</p></details>
         </div>
@@ -943,7 +943,7 @@ function openCar(id) {
       <li>Grades describe the model year, not this specific car.</li>
     </ul>
     <div style="margin-top:18px"><button class="btn primary" id="toSheet">Make lot sheet</button></div>`
-    : `<div class="notice" style="margin-top:16px">${a.loading ? 'Loading…' : `We don't have a grade for the ${esc(c.year)} ${esc(pretty(c.model))}. GradeMyCar grades 121 popular models, 2000–2024; the newest years need more time on the road.`}</div>`}`;
+    : `<div class="notice" style="margin-top:16px">${a.loading ? 'Loading…' : `We don't have a grade for the ${esc(c.year)} ${esc(pretty(c.model))}. GradeMyCar grades 162 popular models, 2000–2024; the newest years need more time on the road.`}</div>`}`;
   document.body.classList.add('open');
   $('#closeDrawer').onclick = closeCar;
   const ts = $('#toSheet');

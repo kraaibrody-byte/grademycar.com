@@ -44,11 +44,17 @@ async function getJSON(url, tries = 8) {
   }
 }
 
+// Written to a temp file first, so an interrupted run can't leave half a file behind
+function saveJSON(file, v) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(`${file}.tmp`, JSON.stringify(v));
+  fs.renameSync(`${file}.tmp`, file);
+}
+
 async function cached(file, fn) {
   if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
   const v = await fn();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(v));
+  saveJSON(file, v);
   return v;
 }
 
@@ -64,12 +70,32 @@ async function pool(items, fn) {
   await Promise.all(workers);
 }
 
-// NHTSA model names a make has complaints for in a given year
-function modelNames(make, year) {
-  return cached(path.join(CACHE, 'models', make, `${year}.json`), async () => {
-    const j = await getJSON(`${API}/products/vehicle/models?modelYear=${year}&make=${encodeURIComponent(make)}&issueType=c`);
-    return [...new Set((j.results || []).map(r => r.model.trim().toUpperCase()))];
-  });
+// NHTSA model names a make has complaints for in a given year. Without max the API
+// cuts the list at about 20 names, and even with it each request covers only about 100
+// raw rows. `count` shrinks to match, so a partial list looks complete: keep asking with
+// a higher offset until two pages in a row come back empty (a page can be empty midway).
+// Lists from before this fix (models/) stay as a floor: a name they have is never dropped,
+// and an empty response is not saved over them.
+const NAMES_PAGE = 100;
+async function modelNames(make, year) {
+  const file = path.join(CACHE, 'models-v2', make, `${year}.json`);
+  if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, 'utf8'));
+  const oldFile = path.join(CACHE, 'models', make, `${year}.json`);
+  const old = fs.existsSync(oldFile) ? JSON.parse(fs.readFileSync(oldFile, 'utf8')) : [];
+  const results = [];
+  for (let offset = 0, empty = 0; empty < 2; offset += NAMES_PAGE) {
+    const j = await getJSON(`${API}/products/vehicle/models?modelYear=${year}&make=${encodeURIComponent(make)}&issueType=c&max=1000&offset=${offset}`);
+    const page = j.results || [];
+    empty = page.length ? 0 : empty + 1;
+    results.push(...page);
+  }
+  const fresh = [...new Set(results.map(r => r.model.trim().toUpperCase()))];
+  const lost = old.filter(n => !fresh.includes(n));
+  if (lost.length) console.warn(`${make} ${year}: keeping ${lost.length} cached names missing from NHTSA's response: ${lost.join(', ')}`);
+  if (!fresh.length) return old; // nothing to trust, so nothing saved; the next run retries
+  const names = [...new Set([...fresh, ...old])];
+  saveJSON(file, names);
+  return names;
 }
 
 // Complaints for one NHTSA make/model/year, as [[odiNumber, groupBits, themeBits], ...]
@@ -99,7 +125,7 @@ function recallIds(make, model, year) {
   });
 }
 
-module.exports = { GROUP_NAMES };
+module.exports = { GROUP_NAMES, modelNames };
 if (require.main !== module) return;
 
 (async () => {

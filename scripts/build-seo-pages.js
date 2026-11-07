@@ -30,6 +30,7 @@ const SEGMENTS = [
     ['nissan', 'versa', 'Nissan', 'Versa'], ['volkswagen', 'golf', 'Volkswagen', 'Golf'],
     ['toyota', 'prius', 'Toyota', 'Prius'], ['ford', 'focus', 'Ford', 'Focus'],
     ['ford', 'fiesta', 'Ford', 'Fiesta'], ['chevrolet', 'cruze', 'Chevrolet', 'Cruze'],
+    ['dodge', 'dart', 'Dodge', 'Dart'],
   ]},
   { id: 'midsize-cars', name: 'Midsize Car', plural: 'midsize cars', cars: [
     ['toyota', 'camry', 'Toyota', 'Camry'], ['honda', 'accord', 'Honda', 'Accord'],
@@ -38,6 +39,16 @@ const SEGMENTS = [
     ['mazda', 'mazda6', 'Mazda', 'Mazda6'], ['ford', 'fusion', 'Ford', 'Fusion'],
     ['volkswagen', 'passat', 'Volkswagen', 'Passat'], ['nissan', 'maxima', 'Nissan', 'Maxima'],
     ['chrysler', '200', 'Chrysler', '200'],
+    ['subaru', 'legacy', 'Subaru', 'Legacy'],
+  ]},
+  { id: 'subcompact-cars', name: 'Subcompact Car', plural: 'subcompact cars', cars: [
+    ['toyota', 'yaris', 'Toyota', 'Yaris'], ['honda', 'fit', 'Honda', 'Fit'],
+    ['hyundai', 'accent', 'Hyundai', 'Accent'], ['kia', 'rio', 'Kia', 'Rio'],
+    ['mini', 'cooper', 'Mini', 'Cooper'],
+  ]},
+  { id: 'full-size-cars', name: 'Full-Size Car', plural: 'full-size cars', cars: [
+    ['toyota', 'avalon', 'Toyota', 'Avalon'], ['chevrolet', 'impala', 'Chevrolet', 'Impala'],
+    ['ford', 'taurus', 'Ford', 'Taurus'], ['chrysler', '300', 'Chrysler', '300'],
   ]},
   { id: 'small-suvs', name: 'Subcompact SUV', plural: 'subcompact SUVs', cars: [
     ['honda', 'hr-v', 'Honda', 'HR-V'], ['nissan', 'kicks', 'Nissan', 'Kicks'],
@@ -45,6 +56,7 @@ const SEGMENTS = [
     ['kia', 'soul', 'Kia', 'Soul'], ['chevrolet', 'trailblazer', 'Chevrolet', 'Trailblazer'],
     ['toyota', 'c-hr', 'Toyota', 'C-HR'], ['subaru', 'crosstrek', 'Subaru', 'Crosstrek'],
     ['jeep', 'compass', 'Jeep', 'Compass'], ['buick', 'encore', 'Buick', 'Encore'],
+    ['jeep', 'renegade', 'Jeep', 'Renegade'],
   ]},
   { id: 'compact-suvs', name: 'Compact SUV', plural: 'compact SUVs', cars: [
     ['toyota', 'rav4', 'Toyota', 'RAV4'], ['honda', 'cr-v', 'Honda', 'CR-V'],
@@ -54,6 +66,7 @@ const SEGMENTS = [
     ['subaru', 'forester', 'Subaru', 'Forester'], ['volkswagen', 'tiguan', 'Volkswagen', 'Tiguan'],
     ['jeep', 'cherokee', 'Jeep', 'Cherokee'], ['gmc', 'terrain', 'GMC', 'Terrain'],
     ['toyota', 'venza', 'Toyota', 'Venza'],
+    ['jeep', 'liberty', 'Jeep', 'Liberty'], ['mitsubishi', 'outlander', 'Mitsubishi', 'Outlander'],
   ]},
   { id: 'midsize-suvs', name: 'Midsize SUV', plural: 'midsize SUVs', cars: [
     ['toyota', 'highlander', 'Toyota', 'Highlander'], ['honda', 'pilot', 'Honda', 'Pilot'],
@@ -68,35 +81,45 @@ const SEGMENTS = [
     ['dodge', 'durango', 'Dodge', 'Durango'], ['gmc', 'acadia', 'GMC', 'Acadia'],
     ['toyota', '4runner', 'Toyota', '4Runner'], ['buick', 'enclave', 'Buick', 'Enclave'],
     ['dodge', 'journey', 'Dodge', 'Journey'],
+    ['nissan', 'xterra', 'Nissan', 'Xterra'],
   ]},
   { id: 'full-size-suvs', name: 'Full-Size SUV', plural: 'full-size SUVs', cars: [
     ['chevrolet', 'tahoe', 'Chevrolet', 'Tahoe'], ['chevrolet', 'suburban', 'Chevrolet', 'Suburban'],
     ['ford', 'expedition', 'Ford', 'Expedition'], ['gmc', 'yukon', 'GMC', 'Yukon'],
     ['toyota', 'sequoia', 'Toyota', 'Sequoia'], ['cadillac', 'escalade', 'Cadillac', 'Escalade'],
+    ['nissan', 'armada', 'Nissan', 'Armada'], ['lincoln', 'navigator', 'Lincoln', 'Navigator'],
   ]},
   { id: 'off-road', name: 'Off-Road SUV', plural: 'off-road SUVs', cars: [
     ['jeep', 'wrangler', 'Jeep', 'Wrangler'], ['ford', 'bronco', 'Ford', 'Bronco'],
     ['toyota', '4runner', 'Toyota', '4Runner'], ['jeep', 'gladiator', 'Jeep', 'Gladiator'],
+    ['nissan', 'xterra', 'Nissan', 'Xterra'], ['lexus', 'gx', 'Lexus', 'GX'],
   ]},
   { id: 'full-size-trucks', name: 'Full-Size Truck', plural: 'full-size trucks', cars: [
     ['ford', 'f-150', 'Ford', 'F-150'], ['chevrolet', 'silverado', 'Chevrolet', 'Silverado'],
     ['dodge', 'ram', 'Ram', '1500'], ['gmc', 'sierra', 'GMC', 'Sierra'],
     ['toyota', 'tundra', 'Toyota', 'Tundra'],
+    ['nissan', 'titan', 'Nissan', 'Titan'],
   ]},
   { id: 'midsize-trucks', name: 'Midsize Truck', plural: 'midsize trucks', cars: [
     ['toyota', 'tacoma', 'Toyota', 'Tacoma'], ['ford', 'ranger', 'Ford', 'Ranger'],
     ['chevrolet', 'colorado', 'Chevrolet', 'Colorado'], ['nissan', 'frontier', 'Nissan', 'Frontier'],
     ['jeep', 'gladiator', 'Jeep', 'Gladiator'], ['honda', 'ridgeline', 'Honda', 'Ridgeline'],
+    ['gmc', 'canyon', 'GMC', 'Canyon'],
   ]},
   { id: 'minivans', name: 'Minivan', plural: 'minivans', cars: [
     ['toyota', 'sienna', 'Toyota', 'Sienna'], ['honda', 'odyssey', 'Honda', 'Odyssey'],
     ['dodge', 'grand caravan', 'Dodge', 'Grand Caravan'], ['kia', 'carnival', 'Kia', 'Carnival'],
     ['chrysler', 'pacifica', 'Chrysler', 'Pacifica'],
+    ['kia', 'sedona', 'Kia', 'Sedona'], ['chrysler', 'town & country', 'Chrysler', 'Town & Country'],
+  ]},
+  { id: 'vans', name: 'Full-Size Van', plural: 'full-size vans', cars: [
+    ['ford', 'transit', 'Ford', 'Transit'],
   ]},
   { id: 'sports-cars', name: 'Sports Car', plural: 'sports cars', cars: [
     ['ford', 'mustang', 'Ford', 'Mustang'], ['chevrolet', 'camaro', 'Chevrolet', 'Camaro'],
     ['dodge', 'charger', 'Dodge', 'Charger'], ['dodge', 'challenger', 'Dodge', 'Challenger'],
     ['subaru', 'wrx', 'Subaru', 'WRX'],
+    ['chevrolet', 'corvette', 'Chevrolet', 'Corvette'],
   ]},
   { id: 'luxury', name: 'Luxury Vehicle', plural: 'luxury vehicles', cars: [
     ['lexus', 'rx', 'Lexus', 'RX'], ['lexus', 'es', 'Lexus', 'ES'], ['lexus', 'gs', 'Lexus', 'GS'], ['lexus', 'nx', 'Lexus', 'NX'],
@@ -106,6 +129,13 @@ const SEGMENTS = [
     ['mercedes-benz', 'glc', 'Mercedes-Benz', 'GLC'], ['mercedes-benz', 'gle', 'Mercedes-Benz', 'GLE'],
     ['acura', 'mdx', 'Acura', 'MDX'], ['acura', 'rdx', 'Acura', 'RDX'], ['acura', 'tlx', 'Acura', 'TLX'],
     ['audi', 'a4', 'Audi', 'A4'], ['audi', 'q5', 'Audi', 'Q5'],
+    ['audi', 'a3', 'Audi', 'A3'], ['audi', 'a6', 'Audi', 'A6'], ['audi', 'q7', 'Audi', 'Q7'],
+    ['bmw', 'x1', 'BMW', 'X1'], ['lexus', 'is', 'Lexus', 'IS'], ['lexus', 'gx', 'Lexus', 'GX'],
+    ['mercedes-benz', 's-class', 'Mercedes-Benz', 'S-Class'], ['mercedes-benz', 'cla', 'Mercedes-Benz', 'CLA'],
+    ['volvo', 'xc90', 'Volvo', 'XC90'], ['volvo', 'xc60', 'Volvo', 'XC60'], ['porsche', 'cayenne', 'Porsche', 'Cayenne'],
+    ['cadillac', 'xt5', 'Cadillac', 'XT5'], ['cadillac', 'srx', 'Cadillac', 'SRX'], ['cadillac', 'cts', 'Cadillac', 'CTS'],
+    ['land rover', 'range rover', 'Land Rover', 'Range Rover'], ['infiniti', 'g35', 'Infiniti', 'G35'],
+    ['infiniti', 'g37', 'Infiniti', 'G37'], ['acura', 'tl', 'Acura', 'TL'],
   ]},
   { id: 'electric', name: 'Electric Vehicle', plural: 'electric vehicles', cars: [
     ['tesla', 'model 3', 'Tesla', 'Model 3'], ['tesla', 'model y', 'Tesla', 'Model Y'],

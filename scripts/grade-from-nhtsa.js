@@ -137,7 +137,7 @@ function pct(sorted, v) {
 const rows = [];
 for (const m of MODELS) {
   for (let y = FIRST_YEAR; y <= LAST_YEAR; y++) {
-    if ((m.from && y < m.from) || (m.to && y > m.to)) continue;
+    if ((m.from && y < m.from) || (m.to && y > m.to) || m.skip?.includes(y)) continue;
     const c = readCounts(m, y);
     if (!c || c.total < MIN_COMPLAINTS) continue;
     const exposure = salesFor(m, y); // thousand cars sold that model year
