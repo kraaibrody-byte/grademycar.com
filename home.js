@@ -31,7 +31,8 @@
   // Grade for one make/model/year: the model-year grade when we have one, else the model's.
   // A year newer than every graded year gets no grade (tooNew) rather than the model-wide
   // one, which comes from older years, often before a redesign.
-  function gradeFor(makeData, model, year) {
+  function gradeFor(makeData, make, spelled, year) {
+    const model = GMCModels.canonical(make, Object.keys(makeData?.grades || {}), spelled);
     const base = makeData?.grades?.[model];
     const years = makeData?.years?.[model] || {};
     const y = years[year];
@@ -42,7 +43,9 @@
     const graded = Object.keys(years).filter(k => years[k]?.o).map(Number);
     const latest = graded.length ? Math.max(...graded) : null;
     if (latest && Number(year) > latest) return { tooNew: true, refYear: latest, ref: years[latest].o, ev: !!base?.ev, issues: [] };
-    if (base?.overall) return { ...base, yearGraded: false, issues: [] };
+    if (base?.source === 'nhtsa' && base.overall) return { ...base, yearGraded: false, issues: [] };
+    // Older letters with no NHTSA data behind them don't count as a grade
+    if (base?.overall) return { ungraded: true, ev: !!base.ev, issues: [] };
     return null;
   }
 
@@ -122,7 +125,7 @@
     if (!makeSel.value) { modelSel.innerHTML = '<option value="">Model</option>'; return; }
     try {
       const data = await loadMake(makeSel.value);
-      const models = Object.keys(data?.grades || {}).sort((a, b) => fmtModel(a).localeCompare(fmtModel(b)));
+      const models = GMCModels.list(makeSel.value, Object.keys(data?.grades || {})).sort((a, b) => fmtModel(a).localeCompare(fmtModel(b)));
       modelSel.innerHTML = '<option value="">Model</option>' + models.map(m => `<option value="${esc(m)}">${esc(fmtModel(m))}</option>`).join('');
       modelSel.disabled = false;
     } catch (e) {
@@ -138,20 +141,21 @@
     $('hg-tag').classList.toggle('live', live);
     $('hg-name').textContent = name;
     const v = $('hg-verdict');
-    v.textContent = rating.tooNew ? 'Too new to grade yet' : verdict(rating.overall);
-    v.className = 'lp-result-verdict ' + (rating.tooNew ? '' : tone(rating.overall));
-    $('hg-share').style.display = rating.tooNew ? 'none' : '';
+    const noGrade = rating.tooNew || rating.ungraded;
+    v.textContent = rating.tooNew ? 'Too new to grade yet' : rating.ungraded ? 'Not graded yet' : verdict(rating.overall);
+    v.className = 'lp-result-verdict ' + (noGrade ? '' : tone(rating.overall));
+    $('hg-share').style.display = noGrade ? 'none' : '';
 
     const ring = $('hg-ring'), fg = $('hg-ring-fg'), letter = $('hg-grade');
-    letter.textContent = rating.tooNew ? '—' : rating.overall;
-    letter.className = rating.tooNew ? '' : tone(rating.overall);
+    letter.textContent = noGrade ? '—' : rating.overall;
+    letter.className = noGrade ? '' : tone(rating.overall);
     fg.style.stroke = toneColor(rating.overall);
     fg.style.strokeDashoffset = 326.7;
     ring.classList.remove('pop');
     void ring.offsetWidth; // restart the animation
     ring.classList.add('pop');
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      fg.style.strokeDashoffset = String(rating.tooNew ? 326.7 : 326.7 * (1 - score(rating.overall) / 100));
+      fg.style.strokeDashoffset = String(noGrade ? 326.7 : 326.7 * (1 - score(rating.overall) / 100));
     }));
 
     $('hg-eng-label').textContent = rating.ev ? 'Motor & battery' : 'Engine';
@@ -171,7 +175,16 @@
 
     const q = new URLSearchParams({ year, make, model, src: live ? 'home_hero' : 'home_example' });
     $('hg-full').href = `/phone.html?${q}`;
+    $('hg-full').textContent = rating.ungraded ? 'See more →' : 'Full report →';
     $('hg-rate').href = `/phone.html?${new URLSearchParams({ rate: 1, year, make, model, src: live ? 'home_hero' : 'home_example' })}`;
+    $('hg-rate').textContent = rating.ungraded ? 'Own one? Rate it →' : 'Own one? Rate it and get a free full report →';
+    if (rating.ungraded) {
+      const note = `We only give a letter grade after analyzing the owner complaints filed with NHTSA for a model, and we haven't done this one yet.`;
+      const thisResult = shown;
+      $('hg-note').textContent = `${note} Checking NHTSA…`;
+      GMCNhtsa.factsText(year, make, model).then(t => { if (shown === thisResult) $('hg-note').textContent = `${note} ${t}`; });
+      return;
+    }
     $('hg-note').textContent = rating.tooNew
       ? `The ${year} is too new to grade: owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${rating.refYear} got a ${rating.ref}, but a newer model year can be quite different, especially after a redesign.`
       : rating.yearGraded
@@ -188,10 +201,10 @@
     const card = $('hg-result');
     card.classList.add('loading');
     try {
-      const rating = gradeFor(await loadMake(make), model, year);
+      const rating = gradeFor(await loadMake(make), make, model, year);
       if (!rating) { $('hg-note').textContent = `We don't have data for the ${fmtMake(make)} ${fmtModel(model)} yet.`; return; }
       render({ year, make, model, rating }, true);
-      track('hero_grade', { make, model, year: String(year), grade: rating.overall || (rating.tooNew ? 'too_new' : 'none') });
+      track('hero_grade', { make, model, year: String(year), grade: rating.overall || (rating.tooNew ? 'too_new' : rating.ungraded ? 'not_graded' : 'none') });
       if (window.innerWidth < 980) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (err) {
       $('hg-note').textContent = "Couldn't load grades. Check your connection and try again.";
@@ -202,7 +215,7 @@
 
   // Live example on load (the static markup is the fallback)
   loadMake('ford').then(d => {
-    const rating = gradeFor(d, 'focus', '2014');
+    const rating = gradeFor(d, 'ford', 'focus', '2014');
     if (rating && !shown) render({ year: '2014', make: 'ford', model: 'focus', rating }, false);
   }).catch(() => {});
 

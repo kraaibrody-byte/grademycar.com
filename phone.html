@@ -6,11 +6,11 @@
 <title>GradeMyCar – Grade Any Car in Seconds</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
-<meta name="description" content="Free reliability grades for any used car, plus deal scores, lifespan estimates, and NHTSA safety & recall data.">
+<meta name="description" content="Free reliability grades for popular used cars, plus deal scores, lifespan estimates, and NHTSA safety & recall data.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="GradeMyCar">
 <meta property="og:title" content="GradeMyCar – Grade Any Car in Seconds">
-<meta property="og:description" content="Free reliability grades for any used car, plus deal scores, lifespan estimates, and safety & recall data.">
+<meta property="og:description" content="Free reliability grades for popular used cars, plus deal scores, lifespan estimates, and safety & recall data.">
 <meta property="og:url" content="https://grademycar.com/phone.html">
 <meta property="og:image" content="https://grademycar.com/icon128.png">
 <meta name="twitter:card" content="summary">
@@ -582,7 +582,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
           </div>
           <div class="cta">
             <button class="primary" onclick="checkGrade()">Check Grade &nbsp; ›</button>
-            <div class="helper">Free reliability grades for any car. No sign-in or listing required.</div>
+            <div class="helper">Free reliability grades for popular models, and NHTSA recalls and complaints for other cars. No sign-in or listing required.</div>
           </div>
           <div class="or-row"><span>or paste a VIN</span></div>
           <div class="vin-card">
@@ -770,7 +770,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
               </div>
               <div class="recall-scope" id="recallScope"></div>
               <div id="recallsList"></div>
-              <div id="noRecalls" class="hidden" style="font-size:12px;color:var(--muted);padding:4px 0">No recalls on record for this model year.</div>
+              <div id="noRecalls" class="hidden" style="font-size:12px;color:var(--muted);padding:4px 0">We couldn't find recalls listed for this model year. NHTSA may list it under another name, so this doesn't prove there are none.</div>
               <div class="vin-check" id="vinCheck"></div>
             </div>
 
@@ -903,6 +903,7 @@ select.prem-input{-webkit-appearance:none;appearance:none}
 
 <!-- Firebase compat SDK (cdnjs — required for preview CSP) -->
 <script src="/issue-themes.js"></script>
+<script src="/nhtsa-lookup.js"></script>
 <script src="/share-card.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.13.0/firebase-auth-compat.min.js"></script>
@@ -951,7 +952,7 @@ if(USE_EMU){
 }
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.11.06';
+const APP_VERSION='2026.11.07';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1618,7 +1619,7 @@ async function onMakeInput(){
     if(r.ok){
       const models=await r.json();
       if(models){
-        const sorted=Object.keys(models).sort();
+        const sorted=GMCModels.list(makeVal,Object.keys(models)).sort();
         modelSel.innerHTML='<option value="">Select model</option>'+sorted.map(m=>`<option value="${esc(m)}">${esc(displayModel(m))}</option>`).join('');
         return;
       }
@@ -1645,7 +1646,9 @@ async function fillSearch(make, model, year, chip){
   if(!selectValue(document.getElementById('make'),make)){ toast("Couldn't load that make. Check your connection."); return false; }
   lastMakeLoaded=''; // force reload
   await onMakeInput();
-  if(!selectValue(document.getElementById('model'),model)){ toast(`No data for ${displayModel(model)} yet`); return false; }
+  // Older saved searches and links can use another spelling (f150 for f-150)
+  const modelSel=document.getElementById('model');
+  if(!selectValue(modelSel,GMCModels.canonical(make,[...modelSel.options].map(o=>o.value).filter(Boolean),model))){ toast(`No data for ${displayModel(model)} yet`); return false; }
   return true;
 }
 
@@ -1861,9 +1864,10 @@ function driveText(d){
 }
 // Match NHTSA's model name to one of our model keys ("RX" → "rx", "F-150" → "f-150")
 function pickModelOption(sel, nhtsaModel, trim){
-  const want=String(nhtsaModel||'').toLowerCase().trim();
-  const wantFull=(want+' '+String(trim||'').toLowerCase()).trim();
   const opts=[...sel.options].map(o=>o.value).filter(Boolean);
+  const make=document.getElementById(sel.id==='rateModel'?'rateMake':'make').value;
+  const want=String(GMCModels.canonical(make,opts,String(nhtsaModel||'').trim())).toLowerCase().trim();
+  const wantFull=(want+' '+String(trim||'').toLowerCase()).trim();
   const norm=s=>s.replace(/[\s-]/g,'');
   let hit=opts.find(o=>o===want)||opts.find(o=>norm(o)===norm(want))||opts.find(o=>o===wantFull);
   if(!hit){
@@ -2018,11 +2022,7 @@ async function fetchNHTSARating(year, make, model){
 
 async function fetchRecalls(year, make, model){
   try{
-    const url=`https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${year}`;
-    const r=await fetch(url);
-    if(!r.ok) return [];
-    const data=await r.json();
-    return data.results||[];
+    return (await GMCNhtsa.recalls(year,make,model)).results;
   }catch(e){ console.warn('[GMC] recalls error:',e); return []; }
 }
 
@@ -2040,7 +2040,8 @@ async function checkGrade(){
   try{
     const makeData=await fetchMakeData(make);
     const gradesSection=makeData?.grades||makeData||null;
-    const mKey=gradesSection?findModelKey(gradesSection,model):null;
+    const found=gradesSection?findModelKey(gradesSection,model):null;
+    const mKey=found?GMCModels.canonical(make,Object.keys(gradesSection),found):null;
     const modelRating=mKey?gradesSection[mKey]:null;
     const yearsData=mKey?makeData?.years?.[mKey]:null;
     const rating=yearRating(modelRating, yearsData?.[year], year, yearsData);
@@ -2063,13 +2064,14 @@ async function checkGrade(){
     setGradeCircle('transCircle',rating?.transmission);
     setGradeCircle('overallCircle',rating?.overall);
     renderGradeSource(rating,year);
-    document.getElementById('notFoundCard').classList.toggle('hidden',!!(rating?.overall||rating?.tooNew));
+    document.getElementById('notFoundCard').classList.toggle('hidden',!!(rating?.overall||rating?.tooNew||rating?.ungraded));
     document.getElementById('shareBtn').classList.toggle('hidden',!rating?.overall);
 
     // Reset premium area
     document.getElementById('premiumResults').classList.add('hidden');
     document.getElementById('premiumLoading').classList.add('hidden');
-    document.getElementById('premiumUnlockSection').classList.remove('hidden');
+    // The report promises year-by-year problems, which an ungraded car doesn't have
+    document.getElementById('premiumUnlockSection').classList.toggle('hidden',!!rating?.ungraded);
     document.getElementById('premMileage').value='';
     document.getElementById('premPrice').value='';
     updateUnlimitedNote();
@@ -2078,8 +2080,8 @@ async function checkGrade(){
 
     // Save to search history (local for guests, local + Firestore when signed in)
     saveSearch({year,make,model,grade:rating?.overall||null});
-    track('grade_car',{make,model,year:String(year),found:!!rating?.overall,too_new:!!rating?.tooNew});
-    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||(rating?.tooNew?'too_new':'none'),has_vin:!!vin,signed_in:!!currentUser});
+    track('grade_car',{make,model,year:String(year),found:!!rating?.overall,too_new:!!rating?.tooNew,not_graded:!!rating?.ungraded});
+    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||(rating?.tooNew?'too_new':rating?.ungraded?'not_graded':'none'),has_vin:!!vin,signed_in:!!currentUser});
     onGradeShown(!!(rating?.overall||rating?.tooNew));
     renderRiskTeaser();
     renderOwnerCard();
@@ -2095,11 +2097,13 @@ async function checkGrade(){
 // as {e,t,o: letters, n: complaints, l: 1 when the year is too new for full data}.
 // A year newer than every graded year gets no grade ({tooNew}) rather than the
 // model-wide one: that comes from older years, often before a redesign.
+// Models without NHTSA data have older letters with no source, so they count as ungraded.
 function yearRating(modelRating, y, year, yearsData){
   if(!y?.o){
     const graded=Object.keys(yearsData||{}).filter(k=>yearsData[k]?.o).map(Number);
     const latest=graded.length?Math.max(...graded):null;
     if(latest && Number(year)>latest) return {tooNew:true, source:'nhtsa', ev:modelRating?.ev, refYear:latest, ref:yearsData[latest].o};
+    if(modelRating && modelRating.source!=='nhtsa') return {ungraded:true, ev:modelRating.ev};
     return modelRating;
   }
   return {engine:y.e, transmission:y.t, overall:y.o, ev:modelRating?.ev, source:'nhtsa',
@@ -2124,11 +2128,18 @@ function renderGradeSource(rating, year){
   } else if(rating?.source==='nhtsa'){
     const why=Number(year)<2000?`We grade model years from 2000 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
     html=`${why}, so this is the model's grade across the ${esc(rating.years||'recent')} model years, from NHTSA owner complaints.`;
-  } else if(rating?.overall){
-    html='Model-level estimate across model years.';
+  } else if(rating?.ungraded){
+    html='<b>Not graded yet.</b> We only give a letter grade after analyzing the owner complaints filed with NHTSA for a model, and we haven\'t done this one yet.<div id="nhtsaFacts" style="margin-top:8px">Checking NHTSA…</div>';
   }
   el.innerHTML=html;
   el.classList.toggle('hidden',!html);
+  if(rating?.ungraded){
+    const v=currentVehicle;
+    GMCNhtsa.factsText(year,v.make,v.model).then(t=>{
+      const f=document.getElementById('nhtsaFacts');
+      if(f&&currentVehicle===v) f.textContent=t;
+    });
+  }
   document.getElementById('whyPanel').classList.add('hidden');
 }
 
@@ -2613,7 +2624,7 @@ async function renderOwnerCard(){
   const n=st?.n||0;
   const mine=myOwnerReports[ownerKey(v.year,v.make.toLowerCase(),v.model.toLowerCase())];
   const btn=`<button class="owner-btn" onclick="openRate(currentVehicle,'results_card')">${mine?'Update your rating':'Own one? Rate it'}</button>`;
-  const reward=!currentUser||!ownerCredited?' and get a free full report':'';
+  const reward=(!currentUser||!ownerCredited)&&!v.rating?.ungraded?' and get a free full report':'';
   if(n>=OWNER_MIN){
     const pct=x=>Math.round(100*x/n)+'%';
     const probs=Object.entries(st.p||{}).sort((a,b)=>b[1]-a[1]).slice(0,3)
@@ -2644,7 +2655,7 @@ async function loadRateModels(make){
   try{
     const r=await fetch(`${DB_URL}/reliability/${encodeURIComponent(make)}/grades.json?shallow=true`);
     const models=r.ok?await r.json():null;
-    sel.innerHTML='<option value="">Model</option>'+Object.keys(models||{}).sort().map(m=>`<option value="${esc(m)}">${esc(displayModel(m))}</option>`).join('');
+    sel.innerHTML='<option value="">Model</option>'+GMCModels.list(make,Object.keys(models||{})).sort().map(m=>`<option value="${esc(m)}">${esc(displayModel(m))}</option>`).join('');
   }catch(e){ sel.innerHTML='<option value="">Model</option>'; }
 }
 function onRateMake(){ const m=document.getElementById('rateMake').value; if(m) loadRateModels(m); else document.getElementById('rateModel').innerHTML='<option value="">Model</option>'; }

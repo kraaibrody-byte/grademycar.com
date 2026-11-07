@@ -20,6 +20,7 @@
     <script src="/attribution.js"></script>
     <script src="reliability-data.js"></script>
     <script src="/issue-themes.js"></script>
+    <script src="/nhtsa-lookup.js"></script>
     <script src="/share-card.js"></script>
     <style>
         * {
@@ -1732,7 +1733,7 @@
             <div class="lp-freebar" data-reveal>
                 <div>
                     <div class="lp-freebar-title"><span class="lp-pill">Always free</span></div>
-                    <p>Grade any car, any year: engine, transmission &amp; overall grades, the #1 problem owners report, and a shareable report card. No account needed.</p>
+                    <p>Grade popular models for any year: engine, transmission &amp; overall grades, the #1 problem owners report, and a shareable report card. No account needed.</p>
                 </div>
                 <div>
                     <div class="lp-freebar-title"><span class="lp-pill lp-pill-pro">Premium report</span></div>
@@ -1809,7 +1810,7 @@
             <div class="lp-faq">
                 <details data-reveal>
                     <summary>Is it really free?</summary>
-                    <p>Yes. Grading any car is free with no account: engine, transmission and overall grades, plus the #1 problem owners report. The premium report (from $1.99) adds every reported problem with what to check, a deal score, miles remaining and full recall data.</p>
+                    <p>Yes. Looking up any car is free with no account. Models we've graded show engine, transmission and overall grades, plus the #1 problem owners report. Other cars show their NHTSA recall and complaint counts until we've graded them. For graded models, the premium report (from $1.99) adds every reported problem with what to check, a deal score, miles remaining and full recall data.</p>
                 </details>
                 <details data-reveal>
                     <summary>Where does the data come from?</summary>
@@ -3105,16 +3106,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 // The dataset includes squashed alias keys for listing matching (f150, fjcruiser);
                 // only show the canonical spelling in the dropdown
-                const allModels = Object.keys(data[make]);
-                const squash = m => m.replace(/[\s.\-&]+/g, '').replace('and', '');
-                // Prefer "&" spellings, then the key with the most separators (f-150 over f150)
-                const rank = m => (m.includes('&') ? 100 : 0) + (m.match(/[\s.\-]/g) || []).length;
-                const canonical = {};
-                allModels.forEach(m => {
-                    const k = squash(m);
-                    if (!canonical[k] || rank(m) > rank(canonical[k])) canonical[k] = m;
-                });
-                const models = Object.values(canonical).sort();
+                const models = GMCModels.list(make, Object.keys(data[make])).sort();
                 models.forEach(model => {
                     const opt = document.createElement('option');
                     opt.value = model;
@@ -3317,7 +3309,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             submitBtn.addEventListener('click', async () => {
                 const make = makeSelect.value;
-                const model = modelSelect.value;
+                const model = GMCModels.canonical(make, Object.keys(data[make] || {}), modelSelect.value);
                 const year = yearSelect.value;
                 const modelRating = data[make] && data[make][model];
                 // Prefer the grade for this exact model year when we have one
@@ -3329,7 +3321,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const tooNew = !yg?.o && latestYear && Number(year) > latestYear;
                 const rating = yg?.o
                     ? { engine: yg.e, transmission: yg.t, overall: yg.o, ev: modelRating?.ev }
-                    : tooNew ? { ev: modelRating?.ev, source: 'nhtsa' } : modelRating;
+                    : tooNew ? { ev: modelRating?.ev, source: 'nhtsa' }
+                    // Older letters with no NHTSA data behind them don't count as a grade
+                    : modelRating && modelRating.source !== 'nhtsa' ? { ungraded: true, ev: modelRating.ev } : modelRating;
                 const topIssue = window.GMCIssues ? GMCIssues.headlineIssue(GMCIssues.parseIssues(yg?.i)) : null;
                 const gradeNote = tooNew
                     ? `The ${window.escapeHTML(String(year))} is too new to grade: owners haven't had it long enough to file many complaints with NHTSA. For reference, the ${latestYear} got a <b>${window.YEAR_GRADES[make][model][latestYear].o}</b>, but a newer model year can be quite different, especially after a redesign.`
@@ -3359,6 +3353,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p class="lookup-not-found">No reliability data available for this vehicle yet.</p>
                     `;
                     resultBox.classList.add('show');
+                    return;
+                }
+
+                if (rating.ungraded) {
+                    resultBox.innerHTML = `
+                        <div class="lookup-result-header">
+                            <div><div class="lookup-result-title">${displayName}</div>${vinSub}</div>
+                            ${vinRecallBtn}
+                        </div>
+                        <p class="lookup-not-found"><b>Not graded yet.</b> We only give a letter grade after analyzing the owner complaints filed with NHTSA for a model, and we haven't done this one yet.</p>
+                        <p class="lookup-subtitle" id="lookup-nhtsa-facts">Checking NHTSA…</p>
+                        <a class="rate-own-link" href="/phone.html?${new URLSearchParams({ rate: 1, year, make, model, src: 'dashboard' })}" target="_blank" rel="noopener">Own one? Rate it →</a>
+                    `;
+                    resultBox.classList.add('show');
+                    const factsEl = document.getElementById('lookup-nhtsa-facts');
+                    GMCNhtsa.factsText(year, make, model).then(t => { factsEl.textContent = t; });
                     return;
                 }
 
@@ -3665,7 +3675,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     let recallsHtml = '';
                     if (recallData.totalRecalls === 0) {
-                        recallsHtml = '<p class="premium-no-recalls">✓ No recalls found for this make/model/year.</p>';
+                        recallsHtml = '<p class="premium-no-recalls">We couldn\'t find recalls listed for this model year. NHTSA may list it under another name, so this doesn\'t prove there are none. Check the VIN at nhtsa.gov/recalls.</p>';
                     } else {
                         recallsHtml = recallData.recalls.slice(0, 5).map(r => `
                             <div class="premium-recall-item">
@@ -3688,16 +3698,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             async function fetchNhtsaRecalls(make, model, year) {
-                const url = `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&modelYear=${encodeURIComponent(year)}`;
-                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-
-                if (res.status === 400) {
-                    return { totalRecalls: 0, recalls: [] };
-                }
-                if (!res.ok) throw new Error(`Recall API error: ${res.status}`);
-
-                const responseData = await res.json();
-                const results = Array.isArray(responseData?.results) ? responseData.results : [];
+                const { results } = await GMCNhtsa.recalls(year, make, model);
                 const recalls = results.map(r => ({
                     component: r.Component,
                     summary: r.Summary
