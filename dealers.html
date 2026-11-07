@@ -437,8 +437,9 @@ body.open .drawer { transform: none; }
       <div class="head"><div><h1>Lot sheets</h1><div class="sub">A printable reliability sheet for the window or the deal jacket.</div></div></div>
       <div id="sheetLocked" class="card billing hide">
         <h2 style="font-size:17px;color:var(--ink)">Lot sheets are on Dealer Pro</h2>
-        <p class="sub" style="margin:8px 0 16px">Print an independent reliability grade for the cars on your front line. Switch plans in billing; Stripe prorates the difference.</p>
-        <button class="btn primary" data-portal>Upgrade in billing</button>
+        <p class="sub" style="margin:8px 0 16px">Print an independent reliability grade for the cars on your front line. Dealer Pro is $249/month instead of $149/month. Stripe shows the exact charge and when the new price starts before you confirm.</p>
+        <button class="btn primary" data-portal="upgrade">Upgrade to Dealer Pro</button>
+        <div class="amsg" style="margin-top:8px"></div>
       </div>
       <div id="sheetOpen">
         <div class="pick"><select class="f" id="sheetCar"></select><button class="btn primary" id="printSheet">Print</button></div>
@@ -452,7 +453,14 @@ body.open .drawer { transform: none; }
         <dl id="billDl"></dl>
         <button class="btn primary" data-portal>Manage billing</button>
         <div class="sub" style="font-size:12px;margin-top:10px">Change card, switch plan, download invoices or cancel on Stripe's secure page.</div>
-        <div class="amsg" id="portalMsg" style="margin-top:8px"></div>
+        <div class="amsg" style="margin-top:8px"></div>
+      </div>
+      <div class="card billing hide" id="upgradeCard" style="margin-top:14px">
+        <h2 style="font-size:17px;color:var(--ink)">Upgrade to Dealer Pro</h2>
+        <p class="sub" style="margin:8px 0 16px">$249/month instead of $149/month. Everything you have now, plus printable reliability lot sheets that show buyers an independent grade on the cars you sell.</p>
+        <button class="btn primary" data-portal="upgrade">Upgrade to Dealer Pro</button>
+        <div class="sub" style="font-size:12px;margin-top:10px">Opens Stripe's secure page, where you pick Dealer Pro. Stripe shows the exact charge and when the new price starts before you confirm, and nothing changes until you do. Lot sheets unlock here once it goes through.</div>
+        <div class="amsg" style="margin-top:8px"></div>
       </div>
     </section>
   </main>
@@ -663,9 +671,12 @@ document.querySelectorAll('[data-plan]').forEach(b => b.onclick = async () => {
 });
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-portal]'); if (!b) return;
-  b.disabled = true; $('#portalMsg').textContent = '';
+  // The message sits in the button's own card, since the button may be on either view
+  const m = b.closest('.card').querySelector('.amsg');
+  b.disabled = true; m.textContent = '';
+  if (b.dataset.portal === 'upgrade') track('dealer_upgrade_click', { status: dealer && dealer.status });
   try { const res = await functions.httpsCallable('createDealerPortal')(); location.href = res.data.url; }
-  catch (err) { $('#portalMsg').className = 'amsg err'; $('#portalMsg').textContent = err.message || 'Couldn\'t open billing.'; b.disabled = false; }
+  catch (err) { m.className = 'amsg err'; m.textContent = err.message || 'Couldn\'t open billing.'; b.disabled = false; }
 });
 
 // ── APP ──────────────────────────────────────────────────────────────────────
@@ -1076,6 +1087,7 @@ function renderBilling() {
     ['Account', esc(user.email || '')],
   ].filter(Boolean);
   $('#billDl').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('#upgradeCard').classList.toggle('hide', d.plan === 'pro' || !['active', 'trialing'].includes(d.status) || !!d.cancelAtPeriodEnd);
 }
 
 // ── NAV ──────────────────────────────────────────────────────────────────────
