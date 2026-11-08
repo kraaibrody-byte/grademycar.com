@@ -109,7 +109,8 @@ const MODELS = [
   { key: 'tesla/model s', src: [['tesla', /^MODEL S/]], sales: 30, from: 2012, ev: true },
   { key: 'tesla/model x', src: [['tesla', /^MODEL X/]], sales: 25, from: 2016, ev: true },
   // Stellantis
-  { key: 'dodge/ram', src: [['dodge', /^RAM 1500/], ['ram', /^(RAM )?1500/]], sales: 450 },
+  // from 2005: NHTSA's bulk files have 2000-2004 RAM 1500 complaints, but no 1500-only sales figure supports grading them
+  { key: 'dodge/ram', src: [['dodge', /^RAM 1500/], ['ram', /^(RAM )?1500/]], sales: 450, from: 2005 },
   { key: 'dodge/charger', src: [['dodge', /^CHARGER( SRT)?$/]], sales: 85, from: 2006 },
   { key: 'dodge/challenger', src: [['dodge', /^CHALLENGER/]], sales: 55, from: 2008 },
   { key: 'dodge/durango', src: [['dodge', /^DURANGO( SRT)?$/]], sales: [[2000, 150], [2005, 65]] },

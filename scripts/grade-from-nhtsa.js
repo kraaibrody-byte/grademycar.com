@@ -36,6 +36,11 @@ const MIN_COMPLAINTS = 8;
 // mileage each top problem is typically reported. Complaints arrive at whatever mileage
 // the cars have reached, so young model years would look like they fail early: only
 // years at least MILEAGE_MIN_AGE old, and problems with MILEAGE_MIN mileages, get one.
+// Without the bulk-file complaints, a regrade would quietly drop thousands (2000-2004 RAM 1500)
+if (!fs.existsSync(path.join(CACHE, 'complaints-bulk'))) {
+  console.error('Missing', path.join(CACHE, 'complaints-bulk'), '- run scripts/bulk-complaints.js first');
+  process.exit(1);
+}
 const MILEAGE_FILE = path.join(CACHE, 'mileage.json');
 const MILEAGE = fs.existsSync(MILEAGE_FILE) ? JSON.parse(fs.readFileSync(MILEAGE_FILE, 'utf8')) : null;
 const MILEAGE_MIN = 30, MILEAGE_MIN_AGE = 6;
@@ -72,6 +77,16 @@ function readCounts(m, y) {
   const seen = new Map(); // odiNumber -> [groupBits, themeBits]
   for (const f of cachedFiles(m, y, 'complaints-v3')) {
     for (const [id, bits, themes] of JSON.parse(fs.readFileSync(f, 'utf8'))) {
+      const prev = seen.get(id) || [0, 0];
+      seen.set(id, [prev[0] | bits, prev[1] | themes]);
+    }
+  }
+  // Complaints the API never returned, from NHTSA's bulk files (scripts/bulk-complaints.js).
+  // Only new IDs: one the API has keeps the parts and themes the API gave it.
+  const fromApi = new Set(seen.keys());
+  for (const f of cachedFiles(m, y, 'complaints-bulk')) {
+    for (const [id, bits, themes] of JSON.parse(fs.readFileSync(f, 'utf8'))) {
+      if (fromApi.has(id)) continue;
       const prev = seen.get(id) || [0, 0];
       seen.set(id, [prev[0] | bits, prev[1] | themes]);
     }

@@ -54,6 +54,14 @@ const ids = new Set();
     else if (e.name.endsWith('.json')) for (const [id] of JSON.parse(fs.readFileSync(p, 'utf8'))) ids.add(String(id));
   }
 })(path.join(CACHE, 'complaints-v3'));
+// and the complaints only the bulk files have (scripts/bulk-complaints.js)
+if (fs.existsSync(path.join(CACHE, 'complaints-bulk'))) (function walk(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p);
+    else if (e.name.endsWith('.json')) for (const [id] of JSON.parse(fs.readFileSync(p, 'utf8'))) ids.add(String(id));
+  }
+})(path.join(CACHE, 'complaints-bulk'));
 console.log('Complaints in cache:', ids.size.toLocaleString());
 
 function readZip(file, miles, subs) {

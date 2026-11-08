@@ -125,7 +125,7 @@ function recallIds(make, model, year) {
   });
 }
 
-module.exports = { GROUP_NAMES, modelNames };
+module.exports = { GROUPS, GROUP_NAMES, modelNames };
 if (require.main !== module) return;
 
 (async () => {
