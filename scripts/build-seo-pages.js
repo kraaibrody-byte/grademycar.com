@@ -217,6 +217,8 @@ function head({ title, description, canonical, jsonld }) {
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/reliability/style.css">
+<script defer src="/attribution.js"></script>
+<script type="module" src="/reliability/track.js"></script>
 ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j)}</script>`).join('\n')}
 </head>
 <body>

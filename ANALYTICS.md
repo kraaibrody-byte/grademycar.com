@@ -27,6 +27,20 @@ that actually did the thing: Firebase Authentication for accounts, Stripe for pa
 | `select_plan`, `begin_checkout` | They picked a plan / were sent to Stripe Checkout. Not a payment |
 | `purchase_returned` | The browser came back from Stripe to the app. Not a payment, can be reloaded |
 
+## Reliability pages (`/reliability/`, static SEO pages)
+
+`reliability/track.js` (added by `scripts/build-seo-pages.js`, so every regenerated page has it) uses the
+same flags as the app via `/attribution.js` (off on localhost and non-grademycar.com hosts and with
+`?gmc_test=1`; `?internal=1` adds `internal=true`, `traffic_type=internal` and the `internal_user`
+property). It is loaded deferred and does not download Firebase when analytics is off. The
+noindex shared-report page `/r/` is not instrumented.
+
+| Event | Means |
+|---|---|
+| `page_view` | Automatic from Firebase Analytics. Filter by page path starting `/reliability/` |
+| `reliability_grade_seen` | A model page loaded showing its overall grade. Params `make`, `model`, `grade`. Not hub pages. Fires on load, not on scroll |
+| `seo_cta_click` | A click or form submit that leads into the app (`/phone.html` links, the year picker). Params `src` (`seo_nav`, `seo_foot`, `seo_page`, `seo_year`, `seo_issues`, `seo_rate`), `page_type` (`model` or `hub`), and `make`, `model` on model pages. An attempt to enter the app, not a signup |
+
 Removed: `signup_completed` (it was always a second copy of `sign_up`; both fired on the same line).
 Renamed: `signup_submitted` -> `auth_attempt`. Old rows keep their old names in BigQuery.
 
