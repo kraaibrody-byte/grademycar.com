@@ -963,7 +963,7 @@ if(USE_EMU){
 }
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.11.23-b';
+const APP_VERSION='2026.11.26-a';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -1654,7 +1654,7 @@ function selectValue(sel, val){
   return !!opt;
 }
 async function fillSearch(make, model, year, chip){
-  if(chip){ document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c===chip)); markLookupStart('chip'); }
+  if(chip){ document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c===chip)); markLookupStart('chip',carIdentity(year,make,model)); }
   selectValue(document.getElementById('year'),year);
   await makesReady;
   if(!selectValue(document.getElementById('make'),make)){ toast("Couldn't load that make. Check your connection."); return false; }
@@ -1671,11 +1671,25 @@ async function fillSearch(make, model, year, chip){
 // (not just opening the screen); grade_shown fires when results render. The gap
 // between app_open → lookup_start → grade_shown shows where people drop off.
 let lookupStarted=false, lookupMethod=null;
-function markLookupStart(method){
+// Public car identity for analytics (year/make/model only, lowercase; never the VIN).
+// Only the parts known so far are included, so lookup_start may carry a partial car.
+function carIdentity(year,make,model){
+  const c={};
+  const y=String(year??'').trim(), mk=String(make??'').trim().toLowerCase(), md=String(model??'').trim().toLowerCase();
+  if(/^\d{4}$/.test(y)) c.car_year=y;
+  if(mk) c.car_make=mk;
+  if(md) c.car_model=md;
+  return c;
+}
+function selectedCar(){
+  const v=id=>document.getElementById(id)?.value||'';
+  return carIdentity(v('year')||v('homeYear'),v('make')||v('homeMake'),v('model')||v('homeModel'));
+}
+function markLookupStart(method,car){
   lookupMethod=method;
   if(lookupStarted) return;
   lookupStarted=true;
-  track('lookup_start',{method});
+  track('lookup_start',Object.assign({method},car||selectedCar()));
 }
 ['year','make','model'].forEach(id=>document.getElementById(id).addEventListener('change',()=>markLookupStart('dropdown')));
 
@@ -2141,7 +2155,7 @@ async function checkGrade(){
     // Save to search history (local for guests, local + Firestore when signed in)
     saveSearch({year,make,model,grade:rating?.overall||null});
     track('grade_car',{make,model,year:String(year),found:!!rating?.overall,too_new:!!rating?.tooNew&&!rating.cutOff,not_graded:!!rating?.ungraded||!!rating?.cutOff});
-    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||(rating?.cutOff?'not_graded':rating?.tooNew?'too_new':rating?.ungraded?'not_graded':'none'),has_vin:!!vin,signed_in:!!currentUser});
+    track('grade_shown',{method:lookupMethod||'unknown',found:!!rating?.overall,grade:rating?.overall||(rating?.cutOff?'not_graded':rating?.tooNew?'too_new':rating?.ungraded?'not_graded':'none'),has_vin:!!vin,signed_in:!!currentUser,...carIdentity(year,make,model)});
     onGradeShown(!!(rating?.overall||rating?.tooNew));
     renderRiskTeaser();
     renderOwnerCard();
