@@ -50,6 +50,29 @@ const MILEAGE_MIN = 30, MILEAGE_MIN_AGE = 6;
 const SUBS_FILE = path.join(CACHE, 'subcauses.json');
 const SUBCAUSES = fs.existsSync(SUBS_FILE) ? JSON.parse(fs.readFileSync(SUBS_FILE, 'utf8')) : null;
 
+// Engine size of each complaint's car, from its partial VIN (scripts/vin-engines.js).
+// Used for the engine callout: when one engine of a model year draws far more of its
+// engine complaints than its share of the cars, the app says so (it doesn't change the
+// grade). Sales by engine aren't published, so an engine's share of the cars is
+// estimated from its share of the complaints about anything other than the engine or
+// transmission, which owners file at roughly the same rate whichever engine they have.
+const VINS_FILE = path.join(CACHE, 'vins.json'), DECODE_FILE = path.join(CACHE, 'vin-decode.json');
+const ENGINE_OF = (() => {
+  if (!fs.existsSync(VINS_FILE) || !fs.existsSync(DECODE_FILE)) return null;
+  const vins = JSON.parse(fs.readFileSync(VINS_FILE, 'utf8')), dec = JSON.parse(fs.readFileSync(DECODE_FILE, 'utf8'));
+  const out = new Map();
+  for (const [id, p] of Object.entries(vins)) if (dec[p]?.l) out.set(Number(id), dec[p].l);
+  return out;
+})();
+const SPLIT = {
+  minFleetShare: 0.03, minFleet: 15, // below this an "engine" is mostly mistyped VINs
+  minEngine: 60,                     // engine complaints with a known engine, for the year
+  minHigh: 30,                       // engine complaints for the engine called out
+  high: 1.5, spread: 2.5,            // worst engine: 1.5x its share, and 2.5x the best one's ratio
+  minPe: 0.37,                       // only years whose engine grade is B+ or worse
+};
+const ENGINE_BIT = 1 << GROUP_NAMES.indexOf('engine'), TRANS_BIT = 1 << GROUP_NAMES.indexOf('powertrain');
+
 // Percentile (share of model-years doing better) -> letter. Best first.
 const CURVE = [
   [0.15, 'A'], [0.25, 'A-'], [0.37, 'B+'], [0.49, 'B'], [0.60, 'B-'],
@@ -95,8 +118,15 @@ function readCounts(m, y) {
   const sum = { total: seen.size, themes: {} };
   const themeMiles = {}, themeSubs = {};
   for (const name of GROUP_NAMES) sum[name] = 0;
+  const byEngine = {}; // liters -> [engine complaints, complaints about neither engine nor transmission]
   for (const [id, [bits, themes]] of seen) {
     GROUP_NAMES.forEach((name, i) => { if (bits & (1 << i)) sum[name]++; });
+    const l = !m.ev && ENGINE_OF?.get(Number(id));
+    if (l) {
+      const e = (byEngine[l] ||= [0, 0]);
+      if (bits & ENGINE_BIT) e[0]++;
+      else if (!(bits & TRANS_BIT)) e[1]++;
+    }
     const mi = MILEAGE?.[id];
     THEMES.forEach((k, i) => {
       if (!(themes & (1 << i))) return;
@@ -108,6 +138,7 @@ function readCounts(m, y) {
       }
     });
   }
+  sum.byEngine = byEngine;
   // Problem types a recall covered for this model year
   let recalled = 0;
   const campaigns = new Set();
@@ -137,6 +168,22 @@ function readCounts(m, y) {
     }
   }
   return sum;
+}
+
+// Engine callout for one model year, or null when no engine stands out clearly.
+// "1.6:179:73:41,2.0:47:19:41,2.5:19:2:13" = per engine (most common first): liters,
+// 100 x (share of engine complaints / share of cars), % of engine complaints, % of cars.
+function engineSplit(byEngine) {
+  const all = Object.values(byEngine).reduce((s, [, f]) => s + f, 0);
+  const valid = Object.entries(byEngine).filter(([, [, f]]) => f >= SPLIT.minFleet && f / all >= SPLIT.minFleetShare);
+  if (valid.length < 2) return null;
+  const E = valid.reduce((s, [, [e]]) => s + e, 0), F = valid.reduce((s, [, [, f]]) => s + f, 0);
+  if (E < SPLIT.minEngine) return null;
+  const list = valid.map(([l, [e, f]]) => ({ l, e, ratio: (e / E) / (f / F), es: e / E, fs: f / F }));
+  const hi = list.reduce((a, b) => (b.ratio > a.ratio ? b : a)), lo = list.reduce((a, b) => (b.ratio < a.ratio ? b : a));
+  if (hi.ratio < SPLIT.high || hi.e < SPLIT.minHigh || hi.ratio < SPLIT.spread * lo.ratio) return null;
+  return list.sort((a, b) => b.fs - a.fs)
+    .map(x => `${x.l}:${Math.round(100 * x.ratio)}:${Math.round(100 * x.es)}:${Math.round(100 * x.fs)}`).join(',');
 }
 
 // Percentile of v within sorted ascending array (0 = best/lowest rate)
@@ -202,11 +249,13 @@ for (const m of MODELS) {
   if (!mine.length) { console.warn('no data:', m.key); continue; }
   const years = {};
   for (const r of mine) {
+    const engines = r.pe >= SPLIT.minPe ? engineSplit(r.c.byEngine) : null;
     years[r.y] = {
       engine: letter(r.pe), transmission: letter(r.pt), overall: letter(r.ps),
       complaints: r.c.total, engineComplaints: m.ev ? r.c.evdrive : r.c.engine, transComplaints: r.c.powertrain,
       issues: r.c.issues, recalls: r.c.recalls, why: r.c.miles ? { ...r.why, mi: r.c.miles } : r.why,
       ...(r.newish ? { limited: true } : {}),
+      ...(engines ? { engines } : {}),
     };
   }
   // Model grade: average standing over the last ~10 model years people are shopping for
@@ -242,5 +291,14 @@ if (REPORT) {
   for (const [k, v] of Object.entries(out).sort((a, b) => a[0].localeCompare(b[0]))) {
     const ys = Object.entries(v.years).map(([y, g]) => `${String(y).slice(2)}:${g.engine}/${g.transmission}/${g.overall}`).join(' ');
     console.log(`${k.padEnd(28)} ${v.model.engine}/${v.model.transmission}/${v.model.overall}  | ${ys}`);
+  }
+  if (!ENGINE_OF) console.log('\nNo engine callouts: run scripts/vin-engines.js first');
+  else {
+    const calls = Object.entries(out).flatMap(([k, v]) => Object.entries(v.years).filter(([, g]) => g.engines).map(([y, g]) => [k, y, g]));
+    console.log(`\nEngine callouts: ${calls.length} model years (liters: x share of cars, % of engine complaints / % of cars)`);
+    for (const [k, y, g] of calls) {
+      const parts = g.engines.split(',').map(s => { const [l, x, es, fs] = s.split(':'); return `${l}L ${(x / 100).toFixed(2)}x (${es}/${fs}%)`; });
+      console.log(`${k.padEnd(28)} ${y} engine ${g.engine.padEnd(2)} | ${parts.join('  ')}`);
+    }
   }
 }

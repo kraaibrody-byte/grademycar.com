@@ -89,6 +89,9 @@ h1{font-size:32px;line-height:1.05;margin:8px 0 9px;letter-spacing:-1.5px;color:
 .grade-source{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:11px;line-height:1.45;color:var(--muted);text-align:center}
 .grade-source b{color:var(--ink)}
 .top-issue{margin-top:8px;font-size:12px;color:var(--ink);line-height:1.45}
+.engine-note{margin-top:8px;font-size:12px;line-height:1.45;padding:8px 10px;border-radius:10px;background:var(--bg);color:var(--ink)}
+.engine-note.bad{background:#FFF7ED;color:#7C2D12}
+.engine-note.good{background:#ECFDF5;color:#065F46}
 /* "Why this grade?" panel */
 .why-link{display:inline-block;margin-top:8px;border:0;background:none;color:var(--blue);font-weight:700;font-size:12px;cursor:pointer;padding:4px}
 .why{margin-top:10px;text-align:left;background:var(--bg);border-radius:13px;padding:12px 14px;font-size:12px;line-height:1.5;color:var(--ink)}
@@ -952,7 +955,7 @@ if(USE_EMU){
 }
 // Bump on every release, and set the same value in /version.json. Shown at the
 // bottom of the More menu and sent with app_open.
-const APP_VERSION='2026.11.09-a';
+const APP_VERSION='2026.11.26';
 
 // Home Screen apps on iPhone keep serving an old copy of this page. On each open,
 // compare with /version.json (never cached) and reload onto the new copy if behind.
@@ -2110,7 +2113,32 @@ function yearRating(modelRating, y, year, yearsData){
   }
   return {engine:y.e, transmission:y.t, overall:y.o, ev:modelRating?.ev, source:'nhtsa',
           yearGraded:true, complaints:y.n, limited:!!y.l,
-          issues:window.GMCIssues?GMCIssues.parseIssues(y.i):[], why:y.x||null};
+          issues:window.GMCIssues?GMCIssues.parseIssues(y.i):[], why:y.x||null, engines:parseEngines(y.g)};
+}
+// Engine callout `g` (engineSplit in scripts/grade-from-nhtsa.js), set only for model
+// years where one engine draws far more than its share of the engine complaints:
+// "1.6:179:73:41,..." per engine = liters, 100 × ratio, % of engine complaints, % of cars.
+// The share of cars is estimated from each engine's share of the other complaints.
+function parseEngines(g){
+  if(!g) return null;
+  const list=String(g).split(',').map(s=>{const [l,x,es,fs]=s.split(':');return {l,ratio:Number(x)/100,es:Number(es),fs:Number(fs)};})
+    .filter(e=>/^\d+\.\d$/.test(e.l)&&e.ratio>=0&&e.fs>0);
+  return list.length>1?list:null;
+}
+// "1.6" from the decoded VIN's engine text ("1.6L 4-cyl turbo"), the same rounding as `g`
+function vinLiters(vin){ const m=String(vin?.engine||'').match(/^(\d+\.\d)L/); return m?m[1]:null; }
+function engineCalloutHtml(rating, vin, year, model){
+  const list=rating?.engines; if(!list) return '';
+  const cars=`${esc(year)} ${esc(displayModel(model))}s`;
+  const worst=list.reduce((a,b)=>b.ratio>a.ratio?b:a);
+  const mine=vin?list.find(e=>e.l===vinLiters(vin)):null;
+  if(mine){
+    if(mine.ratio>=1.5) return `<div class="engine-note bad">This car's <b>${mine.l}L</b> engine is about ${mine.fs}% of ${cars} but has <b>${mine.es}% of their engine complaints</b>. Ask for proof of engine repairs and recall work.</div>`;
+    if(mine.ratio<=0.67) return `<div class="engine-note good">Good news: this car's <b>${mine.l}L</b> engine is about ${mine.fs}% of ${cars} but has only <b>${mine.es}% of their engine complaints</b>. ${worst.es>=50?`Most come from the ${worst.l}L.`:`The ${worst.l}L has the most for its share.`}</div>`;
+    return `<div class="engine-note">This car's <b>${mine.l}L</b> engine has about its share of the engine complaints: ${mine.es}%, for about ${mine.fs}% of ${cars}.</div>`;
+  }
+  if(vin) return ''; // its engine is one we couldn't split out, so say nothing rather than guess
+  return `<div class="engine-note">Engine matters for this year: the <b>${worst.l}L</b> is about ${worst.fs}% of ${cars} but has <b>${worst.es}% of their engine complaints</b>. Look the car up by VIN to see which engine it has.</div>`;
 }
 function renderGradeSource(rating, year){
   const el=document.getElementById('gradeSource');
@@ -2128,6 +2156,7 @@ function renderGradeSource(rating, year){
     const top=window.GMCIssues?GMCIssues.headlineIssue(rating.issues):null;
     const topMi=top&&rating.why?.mi?.[top.key];
     if(top) html+=`<div class="top-issue">${esc(top.heading)}: <b>${esc(top.label)}</b> (${top.count.toLocaleString()})${top.recall?'<span class="recall-pill">Recall issued</span>':''}${topMi?`<br>Usually reported around <b>${topMi[1]}k miles</b>`:''}</div>`;
+    html+=engineCalloutHtml(rating, currentVehicle?.vin, year, currentVehicle?.model);
     html+='<button class="why-link" onclick="toggleWhy()">Why this grade? ›</button>';
   } else if(rating?.source==='nhtsa'){
     const why=Number(year)<2000?`We grade model years from 2000 on`:Number(year)>=new Date().getFullYear()-1?`The ${esc(year)} hasn't been out long enough to grade`:`Not enough ${esc(year)} data`;
@@ -2197,6 +2226,12 @@ function whyHtml(v){
     const near=ys.slice(Math.max(0,i-2),i+3);
     h+=`<p>Other years of the ${esc(displayModel(v.model))}:<span class="yrs">`+
        near.map(y=>`<span class="${y===Number(v.year)?'me':''}">${y} · ${esc(v.yearsData[y].o)}</span>`).join('')+`</span></p>`;
+  }
+  // Every engine of the callout, so the one line under the grade can be checked
+  if(r.engines){
+    h+=`<p><b>By engine</b> (share of the ${year} ${esc(displayModel(v.model))}'s engine complaints, then of its cars):<span class="yrs">`+
+       r.engines.map(e=>`<span class="${e.l===vinLiters(v.vin)?'me':''}">${e.l}L · ${e.es}% / ${e.fs}%</span>`).join('')+`</span></p>`+
+       `<p class="fine">Engines come from the partial VIN NHTSA keeps with each complaint. Sales by engine aren't published, so each engine's share of the cars is estimated from its share of the complaints about anything other than the engine or transmission. The grade itself covers all engines.</p>`;
   }
   h+=`<p class="fine">Grades compare each car only with cars from the same model year, by complaints per 1,000 sold, so they're relative: a C means more complaints than most ${year} cars, not that every one has problems. Sales figures are estimates, and NHTSA mostly hears from owners who had a problem.</p>`;
   const nhtsa=`https://www.nhtsa.gov/vehicle/${encodeURIComponent(v.year)}/${encodeURIComponent(displayMake(v.make).toUpperCase())}/${encodeURIComponent(displayModel(v.model).toUpperCase())}`;
